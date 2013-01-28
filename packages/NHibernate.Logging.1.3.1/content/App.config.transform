@@ -1,0 +1,6 @@
+<?xml version="1.0"?>
+<configuration>
+    <appSettings>
+        <add key="nhibernate-logger" value="NHibernate.Logging.CommonLogging.CommonLoggingLoggerFactory, NHibernate.Logging.CommonLogging"/>
+    </appSettings>
+</configuration>

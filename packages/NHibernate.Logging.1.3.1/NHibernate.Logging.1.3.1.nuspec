@@ -1,0 +1,23 @@
+<?xml version="1.0"?>
+<package xmlns="http://schemas.microsoft.com/packaging/2011/08/nuspec.xsd">
+  <metadata>
+    <id>NHibernate.Logging</id>
+    <version>1.3.1</version>
+    <authors>Matthias Gernand</authors>
+    <owners>Matthias Gernand</owners>
+    <licenseUrl>http://nhlogging.codeplex.com/license</licenseUrl>
+    <projectUrl>http://nhlogging.codeplex.com/</projectUrl>
+    <requireLicenseAcceptance>true</requireLicenseAcceptance>
+    <description>Provides an interface between NHibernate and Common.Logging.
+
+		Thanks to Matthew Ferreira for creating the nuget package in the first place.</description>
+    <tags>ORM, Logger</tags>
+    <dependencies>
+      <dependency id="Common.Logging" version="2.1.1" />
+      <dependency id="NHibernate" version="3.3.1.4000" />
+    </dependencies>
+    <references>
+      <reference file="NHibernate.Logging.CommonLogging.dll" />
+    </references>
+  </metadata>
+</package>

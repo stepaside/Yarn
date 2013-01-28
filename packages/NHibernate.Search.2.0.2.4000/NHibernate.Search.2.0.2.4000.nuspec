@@ -1,0 +1,24 @@
+<?xml version="1.0"?>
+<package xmlns="http://schemas.microsoft.com/packaging/2011/08/nuspec.xsd">
+  <metadata>
+    <id>NHibernate.Search</id>
+    <version>2.0.2.4000</version>
+    <title>NHibernate Search</title>
+    <authors>NHibernate Community</authors>
+    <owners>NHibernate Community</owners>
+    <licenseUrl>http://www.gnu.org/licenses/lgpl.html</licenseUrl>
+    <projectUrl>http://nhforge.org/</projectUrl>
+    <iconUrl>http://darioquintana.com.ar/files/nhsearch-logo.png</iconUrl>
+    <requireLicenseAcceptance>false</requireLicenseAcceptance>
+    <description>NHibernate Search brings the power of full text search engines to the persistence domain model by combining NHibernate with the capabilities of the Lucene.Net search engine.</description>
+    <summary>NHibernate Search brings the power of full text search engines to the persistence domain model by combining NHibernate with the capabilities of the Lucene.Net search engine.</summary>
+    <tags>NHibernate Search Lucene FullText Text</tags>
+    <dependencies>
+      <dependency id="NHibernate" version="3.1.0.4000" />
+      <dependency id="Lucene" version="2.9.2.2" />
+    </dependencies>
+    <references>
+      <reference file="NHibernate.Search.dll" />
+    </references>
+  </metadata>
+</package>
