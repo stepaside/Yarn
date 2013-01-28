@@ -1,7 +1,7 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 11.00
 # Visual Studio 2010
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Yarn", "Yarn.Data\Yarn.csproj", "{1456F6C6-1DF4-496B-AE91-286483C63E4D}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Yarn", "Yarn\Yarn.csproj", "{1456F6C6-1DF4-496B-AE91-286483C63E4D}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
