@@ -8,12 +8,10 @@ using NHibernate.Dialect;
 
 namespace Yarn.Data.NHibernateProvider.SqliteClient
 {
-    public class SQLiteDataContext : NHibernateDataContext<SQLiteConfiguration, ConnectionStringBuilder, SQLiteDialect>
+    public abstract class SQLiteDataContext : NHibernateDataContext<SQLiteConfiguration, ConnectionStringBuilder, SQLiteDialect>
     {
-        public SQLiteDataContext() : this(null) { }
-
-        public SQLiteDataContext(string contextKey = null)
-            : base(SQLiteConfiguration.Standard.InMemory().ShowSql(), contextKey)
+        public SQLiteDataContext(SQLiteConfiguration configuration, string contextKey = null)
+            : base(configuration, contextKey)
         { }
 
         protected override Tuple<ISessionFactory, NHibernate.Cfg.Configuration> ConfigureSessionFactory(string factoryKey)

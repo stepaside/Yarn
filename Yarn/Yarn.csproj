@@ -132,6 +132,8 @@
     <Compile Include="Data\EntityFrameworkProvider\ContextExtensions.cs" />
     <Compile Include="Data\EntityFrameworkProvider\FullTextRepository.cs" />
     <Compile Include="Data\EntityFrameworkProvider\SqlClient\SqlFullTextProvider.cs" />
+    <Compile Include="Data\NHibernateProvider\SqliteClient\FileDataContext.cs" />
+    <Compile Include="Data\NHibernateProvider\SqliteClient\InMemoryDataContext.cs" />
     <Compile Include="Extensions\ExpressionExtensions.cs" />
     <Compile Include="Extensions\ExpressionVisitor.cs" />
     <Compile Include="Extensions\ParameterRebinder.cs" />
