@@ -4,3 +4,4 @@ obj
 *.suo
 /Yarn.suo
 /Yarn.sln.docstates.suo
+packages
