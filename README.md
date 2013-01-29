@@ -11,5 +11,7 @@ Currently supports
   - SQL Server
   - MySql
   - SQLite
+  - Oracle
+  - Postgres
 - RavendDB
 - MongoDB
