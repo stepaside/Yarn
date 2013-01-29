@@ -6,21 +6,25 @@ using Yarn;
 
 namespace Yarn.Data.EntityFrameworkProvider
 {
-    public class FullTextRepository : Repository
+    public class FullTextRepository : Repository, IFullTextRepository
     {
-        private FullTextProvider _fullTextProvider;
+        private IFullTextProvider _fullTextProvider;
+
+        public FullTextRepository()
+            : this(null)
+        { }
 
         public FullTextRepository(string contextKey = null)
             : base(contextKey)
         { }
 
-        public FullTextProvider FullText
+        public IFullTextProvider FullText
         {
             get
             {
                 if (_fullTextProvider == null)
                 {
-                    _fullTextProvider = ObjectFactory.Resolve<FullTextProvider>(_contextKey);
+                    _fullTextProvider = ObjectFactory.Resolve<IFullTextProvider>(_contextKey);
                     _fullTextProvider.DataContext = this.DataContext;
                 }
                 return _fullTextProvider;

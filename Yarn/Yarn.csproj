@@ -125,6 +125,7 @@
     <Compile Include="IDataContext.cs" />
     <Compile Include="IDataContextCache.cs" />
     <Compile Include="IFullTextProvider.cs" />
+    <Compile Include="IFullTextRepository.cs" />
     <Compile Include="IMigration.cs" />
     <Compile Include="IRepository.cs" />
     <Compile Include="ISpecification.cs" />
