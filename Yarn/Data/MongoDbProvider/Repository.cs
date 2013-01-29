@@ -17,7 +17,7 @@ using System.Globalization;
 
 namespace Yarn.Data.MongoDbProvider
 {
-    public class Repository : IRepository
+    public class Repository : IRepository, IMetaDataProvider
     {
         private PluralizationService _pluralizer = PluralizationService.CreateService(CultureInfo.CurrentCulture);
         private ConcurrentDictionary<Type, MongoCollection> _collections = new ConcurrentDictionary<Type,MongoCollection>();
@@ -199,5 +199,19 @@ namespace Yarn.Data.MongoDbProvider
         {
             return BsonClassMap.LookupClassMap(typeof(T)).IdMemberMap.Getter(entity);
         }
+
+        #region IMetaDataProvider Members
+
+        IEnumerable<string> IMetaDataProvider.GetPrimaryKey<T>()
+        {
+            return new[] { BsonClassMap.LookupClassMap(typeof(T)).IdMemberMap.MemberName };
+        }
+
+        IDictionary<string, object> IMetaDataProvider.GetPrimaryKeyValue<T>(T entity)
+        {
+            return new Dictionary<string, object> { { ((IMetaDataProvider)this).GetPrimaryKey<T>().First(), GetId<T>(entity) } };
+        }
+
+        #endregion
     }
 }

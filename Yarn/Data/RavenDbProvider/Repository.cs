@@ -8,7 +8,7 @@ using Raven.Client.Linq;
 
 namespace Yarn.Data.RavenDbProvider
 {
-    public class Repository : IRepository
+    public class Repository : IRepository, IMetaDataProvider
     {
         private IDataContext<IDocumentSession> _context;
         private bool _waitForNonStaleResults;
@@ -184,5 +184,21 @@ namespace Yarn.Data.RavenDbProvider
                 p.WaitForNonStaleResults();
             }
         }
+
+        #region IMetaDataProvider Members
+
+        IEnumerable<string> IMetaDataProvider.GetPrimaryKey<T>()
+        {
+            return new[] { this.PrivateContext.Session.Advanced.DocumentStore.Conventions.GetIdentityProperty(typeof(T)).Name };
+        }
+
+        IDictionary<string, object> IMetaDataProvider.GetPrimaryKeyValue<T>(T entity)
+        {
+            var key = ((IMetaDataProvider)this).GetPrimaryKey<T>().First();
+            var value = this.PrivateContext.Session.Advanced.GetDocumentId(entity);
+            return new Dictionary<string, object> { { key, value } };
+        }
+        
+        #endregion
     }
 }

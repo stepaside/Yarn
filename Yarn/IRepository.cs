@@ -24,7 +24,7 @@ namespace Yarn
         T Remove<T>(T entity) where T : class;
         T Remove<T, ID>(ID id) where T : class;
         T Merge<T>(T entity) where T : class;
-
+                
         // Count methods
         long Count<T>() where T : class;
         long Count<T>(ISpecification<T> criteria) where T : class;

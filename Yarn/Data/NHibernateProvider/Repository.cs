@@ -7,10 +7,12 @@ using Yarn;
 using NHibernate;
 using NHibernate.Linq;
 using NHibernate.Transform;
+using NHibernate.Engine;
+using Yarn.Reflection;
 
 namespace Yarn.Data.NHibernateProvider
 {
-    public class Repository : IRepository
+    public class Repository : IRepository, IMetaDataProvider
     {
         private IDataContext<ISession> _context;
         protected readonly string _contextKey;
@@ -199,5 +201,20 @@ namespace Yarn.Data.NHibernateProvider
                 }
             }
         }
+
+        #region IMetaDataProvider Members
+
+        IEnumerable<string> IMetaDataProvider.GetPrimaryKey<T>()
+        {
+            return new[] { this.PrivateContext.Session.SessionFactory.GetClassMetadata(typeof(T)).IdentifierPropertyName };
+        }
+
+        IDictionary<string, object> IMetaDataProvider.GetPrimaryKeyValue<T>(T entity)
+        {
+            var key = ((IMetaDataProvider)this).GetPrimaryKey<T>().First();
+            return new Dictionary<string, object> { { key, PropertyAccessor.Get(entity, key) } };
+        }
+
+        #endregion
     }
 }

@@ -1,19 +1,15 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Linq.Expressions;
-using System.Text;
-using Yarn;
-using NHibernate;
-using NHibernate.Linq;
-using NHibernate.Transform;
 using System.Data.Entity;
 using System.Data.Entity.Infrastructure;
 using System.Data.Entity.Migrations;
+using System.Linq;
+using System.Linq.Expressions;
+using Yarn.Reflection;
 
 namespace Yarn.Data.EntityFrameworkProvider
 {
-    public class Repository : IRepository
+    public class Repository : IRepository, IMetaDataProvider
     {
         private IDataContext<DbContext> _context;
         protected readonly string _contextKey;
@@ -195,5 +191,28 @@ namespace Yarn.Data.EntityFrameworkProvider
                 }
             }
         }
+
+        #region IMetaDataProvider Members
+
+        IEnumerable<string> IMetaDataProvider.GetPrimaryKey<T>()
+        {
+            return ((IObjectContextAdapter)this.PrivateContext.Session)
+                    .ObjectContext.CreateObjectSet<T>()
+                    .EntitySet.ElementType.KeyMembers.Select(k => k.Name);
+        
+        }
+
+        IDictionary<string, object> IMetaDataProvider.GetPrimaryKeyValue<T>(T entity)
+        {
+            var values = new Dictionary<string, object>();
+            var primaryKey = ((IMetaDataProvider)this).GetPrimaryKey<T>();
+            foreach (var key in primaryKey)
+            {
+                values[key] = PropertyAccessor.Get(entity, key);
+            }
+            return values;
+        }
+
+        #endregion
     }
 }
