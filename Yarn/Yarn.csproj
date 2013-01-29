@@ -101,6 +101,7 @@
     <Reference Include="System.Core" />
     <Reference Include="System.Data.Entity" />
     <Reference Include="System.Data.Entity.Design" />
+    <Reference Include="System.Runtime.Caching" />
     <Reference Include="System.Transactions" />
     <Reference Include="System.Web" />
     <Reference Include="System.Xml.Linq" />
@@ -110,6 +111,9 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Cache\CachedRepository.cs" />
+    <Compile Include="Cache\CacheExtensions.cs" />
+    <Compile Include="Cache\ICacheProvider.cs" />
     <Compile Include="Data\DbFactory.cs" />
     <Compile Include="Data\EntityFrameworkProvider\DbContextCache.cs" />
     <Compile Include="Data\EntityFrameworkProvider\ContextExtensions.cs" />
