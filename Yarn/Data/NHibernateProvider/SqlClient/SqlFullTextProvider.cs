@@ -10,6 +10,11 @@ namespace Yarn.Data.NHibernateProvider.SqlClient
     {
         private string[] _fields = null;
 
+        public SqlFullTextProvider()
+        {
+            _fields = new string[] { };
+        }
+
         public SqlFullTextProvider(params string[] fields)
             : base()
         {
