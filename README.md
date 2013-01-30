@@ -19,7 +19,7 @@ Here is what it currently supports:
 ###Quick example of the pattern usage###
 
 ```c#
-// Bind IRepository to to specific implementation (this should happen during application startup)
+// Bind IRepository to specific implementation (this should happen during application startup)
 ObjectFactory.Bind<IRepository, Yarn.Data.MongoDbProvider.Repository>();
 
 // Resolve IRepository (this may happen anywhere within application)
@@ -31,7 +31,7 @@ var category = repo.GetById<Category, int>(1000);
 ###Slightly more sophisticated example utilizing multiple implementations of IRepository###
 
 ```c#
-// Bind IRepository to to specific implementation (this should happen during application startup)
+// Bind IRepository to specific implementation (this should happen during application startup)
 ObjectFactory.Bind<IRepository, Yarn.Data.MongoDbProvider.Repository>("mongo");
 ObjectFactory.Bind<IRepository, Yarn.Data.EntityFrameworkProvider.Repository>("ef");
 
@@ -63,26 +63,25 @@ var categories = repo.FindAll<Category>(c => c.Name.Contains("cat"));
   ObjectFactory.Bind<IFullTextProvider, Yarn.Data.EntityFrameworkProvider.SqlClient.SqlFullTextProvider>();
   
   var repo = ObjectFactory.Resolve<IRepository>();
-  var categories = repo.FullText.Seach<Category>("hello world");
+  var categories = ((IFullTextRepository)repo).FullText.Seach<Category>("hello world");
   ```
 
 - NHibernate
 
   ```c#
-  // Currently works only with SQL Server provider for EF
   ObjectFactory.Bind<IRepository, Yarn.Data.NHibernateProvider.FullTextRepository>();
   ObjectFactory.Bind<IFullTextProvider, Yarn.Data.NHibernateProvider.LuceneClient.LuceneFullTextProvider>();
   // One can resort to use of SQL Server full text as well
   // ObjectFactory.Bind<IFullTextProvider, Yarn.Data.NHibernateProvider.SqlClient.SqlFullTextProvider>();
   
   var repo = ObjectFactory.Resolve<IRepository>();
-  var categories = repo.FullText.Seach<Category>("hello world");
+  var categories = ((IFullTextRepository)repo).FullText.Seach<Category>("hello world");
   ```
   
 ###Example of the specification pattern implementation with IRepository
 
 ```c#
-// Bind IRepository to to specific implementation (this should happen during application startup)
+// Bind IRepository to specific implementation (this should happen during application startup)
 ObjectFactory.Bind<IRepository, Yarn.Data.EntityFrameworkProvider.Repository>();
 
 // Resolve IRepository (this may happen anywhere within application)
@@ -102,7 +101,7 @@ public class SimpleCache : ICacheProvider
   // Implementation goes here
 }
 
-// Bind IRepository to to specific implementation (this should happen during application startup)
+// Bind IRepository to specific implementation (this should happen during application startup)
 ObjectFactory.Bind<IRepository, Yarn.Data.EntityFrameworkProvider.Repository>();
 
 // Resolve IRepository (this may happen anywhere within application)
@@ -114,9 +113,9 @@ var cachedRepo = repo.UseCache<SimpleCache>();
 // Create a specification to abstract search criteria
 var spec = new Specification<Category>(c => c.Name.Contains("hello")).Or(c => c.Name.Contains("world"));
 
-// This call produce cache miss, hnce the databse is hit
+// This call produces a cache miss, hence the database is hit
 var categories1 = cachedRepo.FindAll<Category>(spec);
 
-// This call produces cache hit, not trip to the database
+// This call produces a cache hit, hence there will be not trip to the database
 var categories2 = cachedRepo.FindAll<Category>(spec);
 ```
