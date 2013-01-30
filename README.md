@@ -3,7 +3,7 @@ Yarn
 *yet another repository for .net*
 
 Yarn is a generic repository pattern implementation for .Net.
-It tries to "enforce" the same approach to data persistence regardless of the underlying technology.
+Its goal is to enforce consistent approach to data persistence regardless of the underlying technology.
 
 Here is what it currently supports:
 - EF
