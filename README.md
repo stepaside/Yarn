@@ -13,7 +13,7 @@ Here is what it currently supports:
   - SQLite
   - Oracle
   - Postgres
-- RavendDB
+- RavenDB
 - MongoDB
 
 ###Quick example of the pattern usage###
