@@ -42,17 +42,6 @@ var repo = ObjectFactory.Resolve<IRepository>("ef");
 var category = repo.GetById<Category, int>(1000);
 ```
 
-###Example of the full text search implementation with IRepository###
-
-```c#
-// Currently works only with SQL Server provider for EF
-ObjectFactory.Bind<IRepository, Yarn.Data.EntityFrameworkProvider.FullTextRepository>();
-ObjectFactory.Bind<IFullTextProvider, Yarn.Data.EntityFrameworkProvider.SqlClient.SqlFullTextProvider>();
-
-var repo = ObjectFactory.Resolve<IRepository>();
-var categories = repo.FullText.Seach<Category>("hello world");
-```
-
 ###Example of NHibernate implementation of IRepository###
 
 ```c#
@@ -62,4 +51,72 @@ ObjectFactory.Bind<IDataContext, Yarn.Data.NHibernateProvider.MySqlClient.MySqlD
 
 var repo = ObjectFactory.Resolve<IRepository>();
 var categories = repo.FindAll<Category>(c => c.Name.Contains("cat"));
+```
+
+###Example of the full text search implementation with IRepository###
+
+- EF
+
+  ```c#
+  // Currently works only with SQL Server provider for EF
+  ObjectFactory.Bind<IRepository, Yarn.Data.EntityFrameworkProvider.FullTextRepository>();
+  ObjectFactory.Bind<IFullTextProvider, Yarn.Data.EntityFrameworkProvider.SqlClient.SqlFullTextProvider>();
+  
+  var repo = ObjectFactory.Resolve<IRepository>();
+  var categories = repo.FullText.Seach<Category>("hello world");
+  ```
+
+- NHibernate
+
+  ```c#
+  // Currently works only with SQL Server provider for EF
+  ObjectFactory.Bind<IRepository, Yarn.Data.NHibernateProvider.FullTextRepository>();
+  ObjectFactory.Bind<IFullTextProvider, Yarn.Data.NHibernateProvider.LuceneClient.LuceneFullTextProvider>();
+  // One can resort to use of SQL Server full text as well
+  // ObjectFactory.Bind<IFullTextProvider, Yarn.Data.NHibernateProvider.SqlClient.SqlFullTextProvider>();
+  
+  var repo = ObjectFactory.Resolve<IRepository>();
+  var categories = repo.FullText.Seach<Category>("hello world");
+  ```
+  
+###Example of the specification pattern implementation with IRepository
+
+```c#
+// Bind IRepository to to specific implementation (this should happen during application startup)
+ObjectFactory.Bind<IRepository, Yarn.Data.EntityFrameworkProvider.Repository>();
+
+// Resolve IRepository (this may happen anywhere within application)
+var repo = ObjectFactory.Resolve<IRepository>();
+
+// Create a specification to abstract search criteria
+var spec = new Specification<Category>(c => c.Name.Contains("hello")).Or(c => c.Name.Contains("world"));
+var categories = repo.FindAll<Category>(spec);
+```
+
+###Example of utilizing caching with IRepository
+
+```c#
+// Implement a cache provider to support caching of your choice
+public class SimpleCache : ICacheProvider
+{
+  // Implementation goes here
+}
+
+// Bind IRepository to to specific implementation (this should happen during application startup)
+ObjectFactory.Bind<IRepository, Yarn.Data.EntityFrameworkProvider.Repository>();
+
+// Resolve IRepository (this may happen anywhere within application)
+var repo = ObjectFactory.Resolve<IRepository>();
+
+// Create a repository decorator to support caching
+var cachedRepo = repo.UseCache<SimpleCache>();
+
+// Create a specification to abstract search criteria
+var spec = new Specification<Category>(c => c.Name.Contains("hello")).Or(c => c.Name.Contains("world"));
+
+// This call produce cache miss, hnce the databse is hit
+var categories1 = cachedRepo.FindAll<Category>(spec);
+
+// This call produces cache hit, not trip to the database
+var categories2 = cachedRepo.FindAll<Category>(spec);
 ```
