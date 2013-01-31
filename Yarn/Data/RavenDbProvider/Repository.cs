@@ -5,6 +5,7 @@ using System.Linq.Expressions;
 using Yarn;
 using Raven.Client;
 using Raven.Client.Linq;
+using Yarn.Specification;
 
 namespace Yarn.Data.RavenDbProvider
 {
@@ -42,14 +43,24 @@ namespace Yarn.Data.RavenDbProvider
             return FindAll(criteria).FirstOrDefault();
         }
 
-        public IEnumerable<T> FindAll<T>(Expression<Func<T, bool>> criteria) where T : class
+        public IEnumerable<T> FindAll<T>(Expression<Func<T, bool>> criteria, int offset = 0, int limit = 0) where T : class
         {
-            return _context.Session.Query<T>().Customize(q => CustomizeQuery(q, _waitForNonStaleResults)).Where(criteria).ToList();
+            var results = this.All<T>().Where(criteria);
+            if (offset >= 0 && limit > 0)
+            {
+                results = results.Skip(offset).Take(limit);
+            }
+            return results;
         }
-        
-        public IEnumerable<T> FindAll<T>(ISpecification<T> criteria) where T : class
+
+        public IEnumerable<T> FindAll<T>(ISpecification<T> criteria, int offset = 0, int limit = 0) where T : class
         {
-            return criteria.Apply(this.All<T>());
+            var results = criteria.Apply(this.All<T>());
+            if (offset >= 0 && limit > 0)
+            {
+                results = results.Skip(offset).Take(limit);
+            }
+            return results;
         }
 
         public T FindOne<T>(Expression<Func<T, bool>> criteria, bool waitForNonStaleResults = false) where T : class
@@ -110,7 +121,7 @@ namespace Yarn.Data.RavenDbProvider
 
         public IQueryable<T> All<T>() where T : class
         {
-            return _context.Session.Query<T>();
+            return _context.Session.Query<T>().Customize(q => CustomizeQuery(q, _waitForNonStaleResults));
         }
 
         public long Count<T>() where T : class
@@ -136,7 +147,39 @@ namespace Yarn.Data.RavenDbProvider
 
         public IList<T> Execute<T>(string command, params System.Tuple<string, object>[] parameters) where T : class
         {
-            throw new NotSupportedException();
+            // Execute is used to query RavenDB index
+            var indexQuery = _context.Session.Query<T>(command);
+            if (parameters.Length > 0)
+            {
+                // De-duplicate parameters and oraganize them into a dictionary
+                var args = parameters.GroupBy(p => p.Item1).ToDictionary(g => g.Key, g => g.First().Item2, StringComparer.OrdinalIgnoreCase);
+
+                object criteria, offset, limit;
+
+                if (args.TryGetValue("criteria", out criteria))
+                {
+                    if (criteria is Expression<Func<T, bool>>)
+                    {
+                        indexQuery = indexQuery.Where((Expression<Func<T, bool>>)criteria);
+                    }
+                    else if (criteria is Specification<T>)
+                    {
+                        indexQuery = indexQuery.Where(((Specification<T>)criteria).Predicate);
+                    }
+                }
+
+                if (args.TryGetValue("offset", out offset) && offset is int && ((int)offset > 0))
+                {
+                    indexQuery = indexQuery.Skip((int)offset);
+                }
+
+                if (args.TryGetValue("limit", out limit) && limit is int && ((int)limit > 0))
+                {
+                    indexQuery = (IRavenQueryable<T>)indexQuery.Take((int)limit);
+                }
+            }
+
+            return indexQuery.ToArray();
         }
 
         public IDataContext<IDocumentSession> PrivateContext

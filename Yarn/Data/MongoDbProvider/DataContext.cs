@@ -56,11 +56,38 @@ namespace Yarn.Data.MongoDbProvider
             // No transaction support
         }
 
-        public void CreateIndex<T>(IList<string> names, bool ascending = true, bool background = true, TimeSpan ttl = new TimeSpan(), bool unique = false, bool dropDups = false)
+        public void CreateIndex<T>(Tuple<string, bool>[] names, bool background = true, TimeSpan ttl = new TimeSpan(), bool unique = false, bool dropDups = false, bool sparse = false)
         {
+            var ascending = new List<string>();
+            var descending = new List<string>();
+            foreach (var n in names)
+            {
+                if (n.Item2)
+                {
+                    ascending.Add(n.Item1);
+                }
+                else
+                {
+                    descending.Add(n.Item1);
+                }
+            }
+
             var builder = new IndexKeysBuilder();
-            builder = ascending ? builder.Ascending(names.ToArray()) : builder.Descending(names.ToArray());
-            _database.GetCollection<T>(typeof(T).Name).EnsureIndex(builder, IndexOptions.SetBackground(background).SetTimeToLive(ttl).SetUnique(unique).SetDropDups(dropDups));
+            if (ascending.Count > 0)
+            {
+                builder = builder.Ascending(ascending.ToArray());
+            }
+            if (descending.Count > 0)
+            {
+                builder = builder.Descending(descending.ToArray());
+            }
+
+            _database.GetCollection<T>(typeof(T).Name).EnsureIndex(builder, 
+                                                                    IndexOptions.SetBackground(background)
+                                                                                .SetTimeToLive(ttl)
+                                                                                .SetUnique(unique)
+                                                                                .SetDropDups(dropDups)
+                                                                                .SetSparse(sparse));
         }
 
         public MongoDatabase Session

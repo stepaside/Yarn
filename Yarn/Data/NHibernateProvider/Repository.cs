@@ -70,14 +70,24 @@ namespace Yarn.Data.NHibernateProvider
             return FindAll(criteria).FirstOrDefault();
         }
 
-        public IEnumerable<T> FindAll<T>(Expression<Func<T, bool>> criteria) where T : class
+        public IEnumerable<T> FindAll<T>(Expression<Func<T, bool>> criteria, int offset = 0, int limit = 0) where T : class
         {
-            return this.All<T>().Where(criteria);
+            var results = this.All<T>().Where(criteria);
+            if (offset >= 0 && limit > 0)
+            {
+                results = results.Skip(offset).Take(limit);
+            }
+            return results;
         }
-        
-        public IEnumerable<T> FindAll<T>(ISpecification<T> criteria) where T : class
+
+        public IEnumerable<T> FindAll<T>(ISpecification<T> criteria, int offset = 0, int limit = 0) where T : class
         {
-            return criteria.Apply(this.All<T>());
+            var results = criteria.Apply(this.All<T>());
+            if (offset >= 0 && limit > 0)
+            {
+                results = results.Skip(offset).Take(limit);
+            }
+            return results;
         }
 
         public IList<T> Execute<T>(string command, params System.Tuple<string, object>[] parameters) where T : class

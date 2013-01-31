@@ -36,14 +36,24 @@ namespace Yarn.Data.EntityFrameworkProvider
             return FindAll(criteria).FirstOrDefault();
         }
         
-        public IEnumerable<T> FindAll<T>(Expression<Func<T, bool>> criteria) where T : class
+        public IEnumerable<T> FindAll<T>(Expression<Func<T, bool>> criteria, int offset = 0, int limit = 0) where T : class
         {
-            return this.Table<T>().Where(criteria);
+            var results = this.Table<T>().Where(criteria);
+            if (offset >= 0 && limit > 0)
+            {
+                results = results.Skip(offset).Take(limit);
+            }
+            return results;
         }
 
-        public IEnumerable<T> FindAll<T>(ISpecification<T> criteria) where T : class
+        public IEnumerable<T> FindAll<T>(ISpecification<T> criteria, int offset = 0, int limit = 0) where T : class
         {
-            return criteria.Apply(Table<T>());
+            var results = criteria.Apply(Table<T>());
+            if (offset >= 0 && limit > 0)
+            {
+                results = results.Skip(offset).Take(limit);
+            }
+            return results;
         }
 
         public IList<T> Execute<T>(string command, params System.Tuple<string, object>[] parameters) where T : class
@@ -131,7 +141,7 @@ namespace Yarn.Data.EntityFrameworkProvider
 
         public IQueryable<T> All<T>() where T : class
         {
-            return this.Table<T>().AsQueryable<T>();
+            return this.Table<T>();
         }
 
         public long Count<T>() where T : class

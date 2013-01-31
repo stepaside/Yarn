@@ -13,8 +13,8 @@ namespace Yarn
         T GetById<T, ID>(ID id) where T : class;
         T Find<T>(ISpecification<T> criteria) where T : class;
         T Find<T>(Expression<Func<T, bool>> criteria) where T : class;
-        IEnumerable<T> FindAll<T>(ISpecification<T> criteria) where T : class;
-        IEnumerable<T> FindAll<T>(Expression<Func<T, bool>> criteria) where T : class;
+        IEnumerable<T> FindAll<T>(ISpecification<T> criteria, int offset = 0, int limit = 0) where T : class;
+        IEnumerable<T> FindAll<T>(Expression<Func<T, bool>> criteria, int offset = 0, int limit = 0) where T : class;
 
         // Execute methods
         IList<T> Execute<T>(string command, params System.Tuple<string, object>[] parameters) where T : class;

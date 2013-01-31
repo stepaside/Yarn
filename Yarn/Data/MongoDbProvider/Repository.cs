@@ -46,14 +46,24 @@ namespace Yarn.Data.MongoDbProvider
             return FindAll(criteria).FirstOrDefault();
         }
 
-        public IEnumerable<T> FindAll<T>(Expression<Func<T, bool>> criteria) where T : class
+        public IEnumerable<T> FindAll<T>(Expression<Func<T, bool>> criteria, int offset = 0, int limit = 0) where T : class
         {
-            return this.All<T>().Where(criteria);
+            var results = this.All<T>().Where(criteria);
+            if (offset >= 0 && limit > 0)
+            {
+                results = results.Skip(offset).Take(limit);
+            }
+            return results;
         }
 
-        public IEnumerable<T> FindAll<T>(ISpecification<T> criteria) where T : class
+        public IEnumerable<T> FindAll<T>(ISpecification<T> criteria, int offset = 0, int limit = 0) where T : class
         {
-            return criteria.Apply(this.All<T>());
+            var results = criteria.Apply(this.All<T>());
+            if (offset >= 0 && limit > 0)
+            {
+                results = results.Skip(offset).Take(limit);
+            }
+            return results;
         }
 
         public T Add<T>(T entity) where T : class
@@ -136,7 +146,96 @@ namespace Yarn.Data.MongoDbProvider
 
         public IList<T> Execute<T>(string command, params System.Tuple<string, object>[] parameters) where T : class
         {
-            throw new NotSupportedException();
+            IList<T> items = new T[] { };
+            var args = parameters.GroupBy(p => p.Item1).ToDictionary(g => g.Key, g => g.First().Item2, StringComparer.OrdinalIgnoreCase);
+
+            if (command == "aggregate")
+            {
+                object collection, pipeline;
+                if ((args.TryGetValue("collection", out collection) && collection is string)
+                    && (args.TryGetValue("pipeline", out pipeline) && pipeline is BsonArray))
+                {
+                    var result = _context.Session.RunCommand(new CommandDocument 
+                                                        {
+                                                            { "aggregate",  (string)collection},
+                                                            { "pipeline", (BsonArray)pipeline }
+                                                        });
+                    items = result.Response["result"].AsBsonArray.Select(v => BsonSerializer.Deserialize<T>(v.AsBsonDocument)).ToArray();
+                }
+            }
+            else if (command == "mapReduce")
+            {
+                object collection, map, reduce, query, sort, limit, finalize;
+                if ((args.TryGetValue("collection", out collection) && collection is string)
+                    && (args.TryGetValue("map", out map) && (map is string || map is BsonJavaScript))
+                    && (args.TryGetValue("reduce", out reduce) && (reduce is string || reduce is BsonJavaScript)))
+                {
+                    var commandDoc = new CommandDocument { { "mapReduce", (string)collection } };
+
+                    if (map is string)
+                    {
+                        commandDoc.Add("map", BsonJavaScript.Create((string)map));
+                    }
+                    else
+                    {
+                        commandDoc.Add("map", (BsonJavaScript)map);
+                    }
+
+                    if (reduce is string)
+                    {
+                        commandDoc.Add("reduce", BsonJavaScript.Create((string)reduce));
+                    }
+                    else
+                    {
+                        commandDoc.Add("reduce", (BsonJavaScript)reduce);
+                    }
+
+                    if (args.TryGetValue("query", out query) && (query is string || query is BsonDocument))
+                    {
+                        if (query is string)
+                        {
+                            commandDoc.Add("query", BsonDocument.Parse((string)query));
+                        }
+                        else
+                        {
+                            commandDoc.Add("query", (BsonDocument)query);
+                        }
+                    }
+
+                    if (args.TryGetValue("sort", out sort) && (sort is string || sort is BsonDocument))
+                    {
+                        if (sort is string)
+                        {
+                            commandDoc.Add("sort", BsonDocument.Parse((string)sort));
+                        }
+                        else
+                        {
+                            commandDoc.Add("sort", (BsonDocument)sort);
+                        }
+                    }
+
+                    if (args.TryGetValue("limit", out limit) && limit is int)
+                    {
+                        commandDoc.Add("limit", (int)limit);
+                    }
+
+                    if (args.TryGetValue("finalize", out finalize) && (finalize is string || finalize is BsonJavaScript))
+                    {
+                        if (finalize is string)
+                        {
+                            commandDoc.Add("finalize", BsonDocument.Parse((string)finalize));
+                        }
+                        else
+                        {
+                            commandDoc.Add("finalize", (BsonDocument)finalize);
+                        }
+                    }
+
+                    var result = _context.Session.RunCommand(commandDoc);
+                    items = result.Response["result"].AsBsonArray.Select(v => BsonSerializer.Deserialize<T>(v.AsBsonDocument)).ToArray();
+                }
+            }
+            return items;
         }
 
         public IDataContext<MongoDatabase> PrivateContext

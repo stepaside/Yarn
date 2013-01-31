@@ -57,18 +57,22 @@ namespace Yarn.Cache
             return item;
         }
 
-        public IEnumerable<T> FindAll<T>(ISpecification<T> criteria) where T : class
+        public IEnumerable<T> FindAll<T>(ISpecification<T> criteria, int offset = 0, int limit = 0) where T : class
         {
-            return FindAll<T>(((Specification<T>)criteria).Predicate);
+            return FindAll<T>(((Specification<T>)criteria).Predicate, offset, limit);
         }
 
-        public IEnumerable<T> FindAll<T>(System.Linq.Expressions.Expression<Func<T, bool>> criteria) where T : class
+        public IEnumerable<T> FindAll<T>(System.Linq.Expressions.Expression<Func<T, bool>> criteria, int offset = 0, int limit = 0) where T : class
         {
-            var key = typeof(T).FullName + ".FindAll(criteria:" + criteria.ToString() + ")";
+            // Reduce invalid cache combinations
+            if (offset < 0) offset = 0;
+            if (limit < 0) limit = 0;
+
+            var key = typeof(T).FullName + ".FindAll(criteria:" + criteria.ToString() + ",offset:" + offset + ",limit:" + limit + ")";
             var items = _cache.Get<IList<T>>(key);
             if (items == null)
             {
-                items = _repository.FindAll<T>(criteria).ToArray();
+                items = _repository.FindAll<T>(criteria, offset, limit).ToArray();
                 _cache.Set<IList<T>>(key, items);
                 RecordQuery<T>(key);
             }
