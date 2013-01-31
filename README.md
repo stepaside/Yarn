@@ -50,7 +50,7 @@ ObjectFactory.Bind<IRepository, Yarn.Data.NHibernateProvider.Repository>();
 ObjectFactory.Bind<IDataContext, Yarn.Data.NHibernateProvider.MySqlClient.MySqlDataContext>();
 
 var repo = ObjectFactory.Resolve<IRepository>();
-var categories = repo.FindAll<Category>(c => c.Name.Contains("cat"));
+var categories = repo.FindAll<Category>(c => c.Name.Contains("cat"), offset: 50, limit: 10);
 ```
 
 ###Example of the full text search implementation with IRepository###
