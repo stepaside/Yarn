@@ -32,8 +32,8 @@ var category = repo.GetById<Category, int>(1000);
 
 ```c#
 // Bind IRepository to specific implementation (this should happen during application startup)
-// For this example one must provide ef.Model application setting and ef.Connection connection string setting
-// (ef.Model points to an assembly which contains model class definisions)
+// For this example one must provide "ef.Model" application setting and "ef.Connection" connection string setting
+// ("ef.Model" points to an assembly which contains model class definition)
 ObjectFactory.Bind<IRepository, Yarn.Data.MongoDbProvider.Repository>("mongo");
 ObjectFactory.Bind<IRepository, Yarn.Data.EntityFrameworkProvider.Repository>("ef");
 
@@ -48,7 +48,7 @@ var category = repo.GetById<Category, int>(1000);
 
 ```c#
 // With NHibernate one must specify implementation of the data context to be used with repository
-// For this example one must provide nh.Model application setting and nh.Connection connection string setting
+// For this example one must provide "nh.Model" application setting and "nh.Connection" connection string setting
 ObjectFactory.Bind<IRepository, Yarn.Data.NHibernateProvider.Repository>("nh");
 ObjectFactory.Bind<IDataContext, Yarn.Data.NHibernateProvider.MySqlClient.MySqlDataContext>("nh");
 
