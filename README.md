@@ -119,6 +119,6 @@ var spec = new Specification<Category>(c => c.Name.Contains("hello")).Or(c => c.
 // This call produces a cache miss, hence the database is hit
 var categories1 = cachedRepo.FindAll<Category>(spec);
 
-// This call produces a cache hit, hence there will be not trip to the database
+// This call produces a cache hit, hence there will be no trip to the database
 var categories2 = cachedRepo.FindAll<Category>(spec);
 ```
