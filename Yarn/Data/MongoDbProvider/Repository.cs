@@ -14,6 +14,7 @@ using MongoDB.Bson.Serialization.Attributes;
 using MongoDB.Bson.Serialization;
 using System.Data.Entity.Design.PluralizationServices;
 using System.Globalization;
+using MongoDB.Driver.Builders;
 
 namespace Yarn.Data.MongoDbProvider
 {
@@ -35,7 +36,14 @@ namespace Yarn.Data.MongoDbProvider
         {
             return GetCollection<T>().FindOneByIdAs<T>(BsonValue.Create(id));
         }
-       
+
+        public IEnumerable<T> GetByIdList<T, ID>(IList<ID> ids) where T : class
+        {
+            var primaryKey = ((IMetaDataProvider)this).GetPrimaryKey<T>().First();
+            var query = Query.In(primaryKey, BsonArray.Create(ids));
+            return GetCollection<T>().FindAs<T>(query);
+        }
+
         public T Find<T>(Expression<Func<T, bool>> criteria) where T : class
         {
             return this.FindAll(criteria).FirstOrDefault();

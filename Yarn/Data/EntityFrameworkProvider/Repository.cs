@@ -26,6 +26,19 @@ namespace Yarn.Data.EntityFrameworkProvider
             return this.Table<T>().Find(id);
         }
 
+        public IEnumerable<T> GetByIdList<T, ID>(IList<ID> ids) where T : class
+        {
+            var primaryKey = ((IMetaDataProvider)this).GetPrimaryKey<T>().First();
+
+            var parameter = Expression.Parameter(typeof(T));
+            var body = Expression.Convert(Expression.PropertyOrField(parameter, primaryKey), typeof(ID));
+            var idSelector = Expression.Lambda<Func<T, ID>>(body, parameter);
+            
+            var predicate = BuildOrExpression<T, ID>(idSelector, ids);
+
+            return this.Table<T>().Where(predicate);
+        }
+
         public T Find<T>(Expression<Func<T, bool>> criteria) where T : class
         {
             return this.Table<T>().FirstOrDefault(criteria);
@@ -224,5 +237,31 @@ namespace Yarn.Data.EntityFrameworkProvider
         }
 
         #endregion
+
+        private static Expression<Func<T, bool>> BuildOrExpression<T, ID>(Expression<Func<T, ID>> valueSelector, IEnumerable<ID> values)
+            where T : class
+        {
+
+            if (null == valueSelector) 
+            { 
+                throw new ArgumentNullException("valueSelector"); 
+            }
+
+            if (null == values) 
+            { 
+                throw new ArgumentNullException("values"); 
+            }
+
+            var p = valueSelector.Parameters.Single();
+
+            if (!values.Any())
+            {
+                return e => false;
+            }
+
+            var equals = values.Select(value => (Expression)Expression.Equal(valueSelector.Body, Expression.Constant(value, typeof(ID))));
+            var body = equals.Aggregate<Expression>((accumulate, equal) => Expression.Or(accumulate, equal));
+            return Expression.Lambda<Func<T, bool>>(body, p);
+        } 
     }
 }

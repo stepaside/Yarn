@@ -39,6 +39,19 @@ namespace Yarn.Cache
             return item;
         }
 
+        public IEnumerable<T> GetByIdList<T, ID>(IList<ID> ids) where T : class
+        {
+            var key = typeof(T).FullName + ".GetByIdList(ids:[" + string.Join(",", ids.OrderBy(_=>_)) + "])";
+            var items = _cache.Get<IList<T>>(key);
+            if (items == null)
+            {
+                items = _repository.GetByIdList<T, ID>(ids).ToArray();
+                _cache.Set<IList<T>>(key, items);
+                RecordQuery<T>(key);
+            }
+            return items;
+        }
+
         public T Find<T>(ISpecification<T> criteria) where T : class
         {
             return Find<T>(((Specification<T>)criteria).Predicate);

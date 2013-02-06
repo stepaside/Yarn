@@ -11,6 +11,7 @@ namespace Yarn
     {
         // Retrieve methods
         T GetById<T, ID>(ID id) where T : class;
+        IEnumerable<T> GetByIdList<T, ID>(IList<ID> ids) where T : class;
         T Find<T>(ISpecification<T> criteria) where T : class;
         T Find<T>(Expression<Func<T, bool>> criteria) where T : class;
         IEnumerable<T> FindAll<T>(ISpecification<T> criteria, int offset = 0, int limit = 0) where T : class;

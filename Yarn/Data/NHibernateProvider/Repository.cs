@@ -9,6 +9,7 @@ using NHibernate.Linq;
 using NHibernate.Transform;
 using NHibernate.Engine;
 using Yarn.Reflection;
+using NHibernate.Criterion;
 
 namespace Yarn.Data.NHibernateProvider
 {
@@ -40,6 +41,16 @@ namespace Yarn.Data.NHibernateProvider
             {
                 return session.Get<T>(id);
             }
+        }
+
+        public IEnumerable<T> GetByIdList<T, ID>(IList<ID> ids) where T : class
+        {
+            var session = this.PrivateContext.Session;
+            var criteria = session.CreateCriteria<T>();
+            var idsRestriction = Restrictions.Disjunction();
+            ids.ForEach(id => idsRestriction.Add(Restrictions.IdEq(id)));
+            criteria.Add(idsRestriction);
+            return criteria.Future<T>();
         }
 
         public T LoadById<T, ID>(ID id) where T : class
