@@ -26,6 +26,7 @@ ObjectFactory.Bind<IRepository, Yarn.Data.MongoDbProvider.Repository>();
 // Let's assume we have defined entity Category
 var repo = ObjectFactory.Resolve<IRepository>();
 var category = repo.GetById<Category, int>(1000);
+var categories = repo.GetByIdList<Category, int>(new[] { 1000, 1100 });
 ```
 
 ###Slightly more sophisticated example utilizing multiple implementations of IRepository###
