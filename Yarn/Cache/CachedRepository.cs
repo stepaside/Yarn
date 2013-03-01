@@ -8,7 +8,7 @@ using System.Collections.Concurrent;
 namespace Yarn.Cache
 {
     public class CachedRepository<TCache> : IRepository
-        where TCache : class, ICacheProvider, new()
+        where TCache : class, ICachedResultProvider, new()
     {
         private static ConcurrentDictionary<Type, HashSet<string>> _queries = new ConcurrentDictionary<Type, HashSet<string>>();
 
