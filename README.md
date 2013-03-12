@@ -100,7 +100,7 @@ var categories = repo.FindAll<Category>(spec);
 
 ```c#
 // Implement a cache provider to support caching of your choice
-public class SimpleCache : ICacheProvider
+public class SimpleCache : ICachedResultProvider
 {
   // Implementation goes here
 }
