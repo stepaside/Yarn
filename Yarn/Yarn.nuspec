@@ -1,0 +1,18 @@
+<?xml version="1.0"?>
+<package >
+  <metadata>
+    <id>$id$</id>
+    <version>$version$</version>
+    <title>$title$</title>
+    <authors>$author$</authors>
+    <owners>$author$</owners>
+    <projectUrl>https://github.com/stepaside/Yarn</projectUrl>
+    <requireLicenseAcceptance>false</requireLicenseAcceptance>
+    <description>$description$</description>
+    <copyright>Copyright © Max Stepanskiy 2012</copyright>
+    <tags>Repository Repository-Pattern NHibernate-Repository EntityFramework-Repository EFR-epository RavenDB-Repository MongoDB-Repository</tags>
+	<releaseNotes>
+	Yarn is a generic repository pattern implementation for .Net. Its goal is to enforce consistent approach to data persistence regardless of the underlying technology.
+	</releaseNotes>
+  </metadata>
+</package>
