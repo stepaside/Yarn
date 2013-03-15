@@ -23,6 +23,8 @@ namespace Yarn.Data.EntityFrameworkProvider
 
         public DataContext() : this(true, false, null) { }
 
+        public DataContext(string contextKey = null) : this(true, false, contextKey) { }
+
         public DataContext(bool enableLazyLoading = true, bool recreateDatabaseIfExists = false, string contextKey = null)
         {
             _enableLazyLoading = enableLazyLoading;
@@ -33,14 +35,14 @@ namespace Yarn.Data.EntityFrameworkProvider
         protected DbContext CreateDbContext(string contextKey)
         {
             var tuple = _dbModelBuilders.GetOrAdd(contextKey, key => ConfigureDbModel(key));
-            var connectionKey = contextKey + ".Connection";
 
             if (tuple.Item2 != null)
             {
-                return (DbContext)Activator.CreateInstance(tuple.Item2, new object[] { connectionKey });
+                return (DbContext)Activator.CreateInstance(tuple.Item2);
             }
             else
             {
+                var connectionKey = contextKey + ".Connection";
                 var builder = tuple.Item1;
                 var connection = DbFactory.CreateConnection(connectionKey);
                 var dbModel = builder.Build(connection);
@@ -64,17 +66,16 @@ namespace Yarn.Data.EntityFrameworkProvider
         protected Tuple<DbModelBuilder, Type> ConfigureDbModel(string contextKey)
         {
             var assemblyKey = contextKey + ".Model";
-            var connectionKey = contextKey + ".Connection";
 
             Assembly assembly = null;
-            var assemblyLocation = ConfigurationManager.AppSettings.Get(assemblyKey);
-            if (Uri.IsWellFormedUriString(assemblyLocation, UriKind.Absolute))
+            var assemblyLocationOrName = ConfigurationManager.AppSettings.Get(assemblyKey);
+            if (Uri.IsWellFormedUriString(assemblyLocationOrName, UriKind.Absolute))
             {
-                assembly = Assembly.LoadFrom(assemblyLocation);
+                assembly = Assembly.LoadFrom(assemblyLocationOrName);
             }
             else
             {
-                assembly = Assembly.Load(assemblyLocation);
+                assembly = Assembly.Load(assemblyLocationOrName);
             }
 
             DbModelBuilder builder = null;
@@ -84,7 +85,7 @@ namespace Yarn.Data.EntityFrameworkProvider
 
             foreach (var type in assembly.GetTypes())
             {
-                if (typeof(DbContext).IsAssignableFrom(type) && type.GetConstructors().Select(c => c.GetParameters()).Any(p => p.Length == 1 && p[0].ParameterType == typeof(string)))
+                if (typeof(DbContext).IsAssignableFrom(type))
                 {
                     isCodeFirst = false;
                     dbContextType = type;

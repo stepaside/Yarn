@@ -192,6 +192,10 @@ namespace Yarn.Data.EntityFrameworkProvider
                 if (_context == null)
                 {
                     _context = ObjectFactory.Resolve<IDataContext<DbContext>>(_contextKey);
+                    if (_context == null)
+                    {
+                        _context = new DataContext(_contextKey);
+                    }
                 }
                 return _context;
             }

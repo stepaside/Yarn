@@ -29,14 +29,22 @@ namespace Yarn
         public static T Resolve<T>(object key = null)
             where T : class
         {
+            T instance;
             if (key == null)
             {
-                return _container.Resolve<T>();
+                if (!_container.TryResolve<T>(out instance))
+                {
+                    instance = null;
+                }
             }
             else
             {
-                return _container.Resolve<T>(key);
+                if (!_container.TryResolve<T>(key, out instance))
+                {
+                    instance = null;
+                }
             }
+            return instance;
         }
     }
 }
