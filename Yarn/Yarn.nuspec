@@ -12,7 +12,7 @@
     <copyright>Copyright © Max Stepanskiy 2012</copyright>
     <tags>Repository Repository-Pattern NHibernate-Repository EntityFramework-Repository EFR-epository RavenDB-Repository MongoDB-Repository</tags>
 	<releaseNotes>
-	Yarn is a generic repository pattern implementation for .Net. Its goal is to enforce consistent approach to data persistence regardless of the underlying technology.
+	* Fixed issues with resolving EF data context
 	</releaseNotes>
   </metadata>
 </package>
