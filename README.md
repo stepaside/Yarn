@@ -37,6 +37,7 @@ var categories = repo.GetByIdList<Category, int>(new[] { 1000, 1100 });
 // ("ef.Model" points to an assembly which contains model class definition)
 ObjectFactory.Bind<IRepository, Yarn.Data.MongoDbProvider.Repository>("mongo");
 ObjectFactory.Bind<IRepository, Yarn.Data.EntityFrameworkProvider.Repository>("ef");
+ObjectFactory.Bind<IDataContext<DbContext>, Yarn.Data.EntityFrameworkProvider.DataContext>();
 
 // Resolve IRepository (this may happen anywhere within application)
 // "mongo" will resolve to MongoDB implementation, while "ef" will resolve to EF implementation
