@@ -50,8 +50,12 @@ var category = repo.GetById<Category, int>(1000);
 ```c#
 // With NHibernate one must specify implementation of the data context to be used with repository
 // For this example one must provide "NHibernate.MySqlClient.Model" application setting and "NHibernate.MySqlClient.Connection" connection string setting
-ObjectFactory.Bind<IRepository, Yarn.Data.NHibernateProvider.Repository>(new Yarn.Data.NHibernateProvider.Repository("nh"), "nh");
-ObjectFactory.Bind<IDataContext, Yarn.Data.NHibernateProvider.MySqlClient.MySqlDataContext>("nh");
+ObjectFactory.Bind<IRepository, Yarn.Data.NHibernateProvider.Repository>(new Yarn.Data.NHibernateProvider.Repository("nh_uow"), "nh");
+ObjectFactory.Bind<IDataContext, Yarn.Data.NHibernateProvider.MySqlClient.MySqlDataContext>("nh_uow");
+
+// In order to use NHibernate with SQL Server one has to bind IDataContext to the SQL Server implementation
+// Similarly to the MySQL example "NHibernate.SqlClient.Model" application setting and "NHibernate.SqlClient.Connection" connection string setting should be defined
+// ObjectFactory.Bind<IDataContext, Yarn.Data.NHibernateProvider.SqlClient.SqlDataContext>("nh_uow");
 
 var repo = ObjectFactory.Resolve<IRepository>("nh");
 var categories = repo.FindAll<Category>(c => c.Name.Contains("cat"), offset: 50, limit: 10);
