@@ -13,7 +13,7 @@ using NHibernate.Criterion;
 
 namespace Yarn.Data.NHibernateProvider
 {
-    public class Repository : IRepository, IMetaDataProvider
+    public class Repository : IRepository, IMetaDataProvider, ILazyLoader
     {
         private IDataContext<ISession> _context;
         protected readonly string _contextKey;
@@ -183,6 +183,18 @@ namespace Yarn.Data.NHibernateProvider
         public long Count<T>(Expression<Func<T, bool>> criteria) where T : class
         {
             return FindAll<T>(criteria).LongCount();
+        }
+
+        public IQueryable<TRoot> Include<TRoot, TRelated>(params Expression<Func<TRoot, TRelated>>[] selectors)
+            where TRoot : class
+            where TRelated : class
+        {
+            var query = this.All<TRoot>();
+            foreach (var selector in selectors)
+            {
+                query = query.Fetch<TRoot, TRelated>(selector);
+            }
+            return query;
         }
 
         private IDataContext<ISession> PrivateContext

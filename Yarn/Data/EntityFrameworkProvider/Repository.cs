@@ -9,7 +9,7 @@ using Yarn.Reflection;
 
 namespace Yarn.Data.EntityFrameworkProvider
 {
-    public class Repository : IRepository, IMetaDataProvider
+    public class Repository : IRepository, IMetaDataProvider, ILazyLoader
     {
         private IDataContext<DbContext> _context;
         protected readonly string _contextKey;
@@ -170,6 +170,18 @@ namespace Yarn.Data.EntityFrameworkProvider
         public long Count<T>(Expression<Func<T, bool>> criteria) where T : class
         {
             return FindAll<T>(criteria).LongCount();
+        }
+
+        public IQueryable<TRoot> Include<TRoot, TRelated>(params Expression<Func<TRoot, TRelated>>[] selectors)
+            where TRoot : class
+            where TRelated : class
+        {
+            var query = this.All<TRoot>();
+            foreach (var selector in selectors)
+            {
+                query = query.Include<TRoot, TRelated>(selector);
+            }
+            return query;
         }
 
         public DbSet<T> Table<T>() where T : class

@@ -129,6 +129,7 @@
     <Compile Include="IDataContextCache.cs" />
     <Compile Include="IFullTextProvider.cs" />
     <Compile Include="IFullTextRepository.cs" />
+    <Compile Include="ILazyLoader.cs" />
     <Compile Include="IMetaDataProvider.cs" />
     <Compile Include="IMigration.cs" />
     <Compile Include="IRepository.cs" />
