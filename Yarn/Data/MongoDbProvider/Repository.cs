@@ -40,7 +40,7 @@ namespace Yarn.Data.MongoDbProvider
         public IEnumerable<T> GetByIdList<T, ID>(IList<ID> ids) where T : class
         {
             var primaryKey = ((IMetaDataProvider)this).GetPrimaryKey<T>().First();
-            var query = Query.In(primaryKey, BsonArray.Create(ids));
+            var query = Query.In(primaryKey, new BsonArray(ids));
             return GetCollection<T>().FindAs<T>(query);
         }
 
@@ -182,7 +182,7 @@ namespace Yarn.Data.MongoDbProvider
 
                     if (map is string)
                     {
-                        commandDoc.Add("map", BsonJavaScript.Create((string)map));
+                        commandDoc.Add("map", new BsonJavaScript((string)map));
                     }
                     else
                     {
@@ -191,7 +191,7 @@ namespace Yarn.Data.MongoDbProvider
 
                     if (reduce is string)
                     {
-                        commandDoc.Add("reduce", BsonJavaScript.Create((string)reduce));
+                        commandDoc.Add("reduce", new BsonJavaScript((string)reduce));
                     }
                     else
                     {

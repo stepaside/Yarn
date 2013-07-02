@@ -103,18 +103,7 @@ namespace Yarn.Data.NHibernateProvider
 
         public IList<T> Execute<T>(string command, params System.Tuple<string, object>[] parameters) where T : class
         {
-            var text = new StringBuilder();
-            text.AppendFormat("exec {0}", command);
-            if (parameters.Length > 0)
-            {
-                text.Append(" ");
-                foreach (var tuple in parameters)
-                {
-                    text.AppendFormat(":{0}", tuple.Item1);
-                }
-            }
-
-            var query = this.PrivateContext.Session.CreateSQLQuery(text.ToString());
+            var query = this.PrivateContext.Session.CreateSQLQuery(command);
             foreach (var parameter in parameters)
             {
                 query.SetParameter(parameter.Item1, parameter.Item2);

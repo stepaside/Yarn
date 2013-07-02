@@ -72,42 +72,7 @@ namespace Yarn.Data.EntityFrameworkProvider
         public IList<T> Execute<T>(string command, params System.Tuple<string, object>[] parameters) where T : class
         {
             var connection = this.PrivateContext.Session.Database.Connection;
-
-            var procedureName = command;
-            var qualifier = string.Empty;
-
-            // If the procedure is multipart
-            if (procedureName.Contains('.'))
-            {
-                // separate qualified portion from the actual stored procedure name
-                var parts = procedureName.Split('.');
-                qualifier = string.Concat(string.Join(".", parts.Take(parts.Length - 1)), ".");
-                procedureName = parts.Last();
-            }
-
-            // Check if the stored procedure name is escaped
-            char? first = procedureName.First();
-            char? last = procedureName.Last();
-            if ((first == '`' && last == '`') || (first == '[' && last == ']') || (first == '\"' && last == '\"'))
-            {
-                procedureName = procedureName.Substring(1, command.Length - 1);
-            }
-            else
-            {
-                first = null;
-                last = null;
-            }
-
-            var isEscaped = first != char.MinValue && last != char.MinValue;
-
-            // If procedure name is not escaped make sure it is a valid name
-            if (!isEscaped && (!char.IsLetter(command.First()) || procedureName.Any(c => !char.IsLetterOrDigit(c) && c != '_')))
-            {
-                throw new ArgumentException("procedure");
-            }
-
-            var commandText = string.Format("EXEC {0}{1}{2}{3}", qualifier, first, procedureName, last);
-            var items = this.PrivateContext.Session.Database.SqlQuery<T>(commandText, parameters.Select(p => DbFactory.CreateParameter(connection, p.Item1, p.Item2)).ToArray());
+            var items = this.PrivateContext.Session.Database.SqlQuery<T>(command, parameters.Select(p => DbFactory.CreateParameter(connection, p.Item1, p.Item2)).ToArray());
             return items.ToArray();
         }
 
