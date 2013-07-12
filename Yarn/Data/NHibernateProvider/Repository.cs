@@ -101,12 +101,15 @@ namespace Yarn.Data.NHibernateProvider
             return results;
         }
 
-        public IList<T> Execute<T>(string command, params System.Tuple<string, object>[] parameters) where T : class
+        public IList<T> Execute<T>(string command, ParamList parameters) where T : class
         {
             var query = this.PrivateContext.Session.CreateSQLQuery(command);
-            foreach (var parameter in parameters)
+            if (parameters != null)
             {
-                query.SetParameter(parameter.Item1, parameter.Item2);
+                foreach (var parameter in parameters)
+                {
+                    query.SetParameter(parameter.Key, parameter.Value);
+                }
             }
             query.SetResultTransformer(Transformers.AliasToBean<T>());
             return query.List<T>();

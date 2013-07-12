@@ -30,8 +30,10 @@ namespace YarnTest
             {
                 var session = ((IDataContext<DbContext>)dctx).Session;
             }
-            
+
             var customer = repo.GetById<Customer, string>("ALFKI");
+
+            var customers = repo.Execute<Customer>("EXEC spDTO_Customer_Retrieve @CustomerID", new ParamList { { "CustomerID", "ALFKI" } });
         }
     }
 }

@@ -92,9 +92,9 @@ namespace Yarn.Cache
             return items;
         }
 
-        public IList<T> Execute<T>(string command, params Tuple<string, object>[] parameters) where T : class
+        public IList<T> Execute<T>(string command, ParamList parameters) where T : class
         {
-            var key = typeof(T).FullName + ".Execute(command:" + command + "," + string.Join(",", parameters.OrderBy(p => p.Item1).Select(p => p.Item1 + ":" + p.Item2)) + ")";
+            var key = typeof(T).FullName + ".Execute(command:" + command + (parameters != null ? "," + string.Join(",", parameters.OrderBy(p => p.Key).Select(p => p.Key + ":" + p.Value)) : "") + ")";
             var items = _cache.Get<IList<T>>(key);
             if (items == null)
             {

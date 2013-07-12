@@ -152,10 +152,10 @@ namespace Yarn.Data.MongoDbProvider
             return FindAll<T>(criteria).LongCount();
         }
 
-        public IList<T> Execute<T>(string command, params System.Tuple<string, object>[] parameters) where T : class
+        public IList<T> Execute<T>(string command, ParamList parameters) where T : class
         {
             IList<T> items = new T[] { };
-            var args = parameters.GroupBy(p => p.Item1).ToDictionary(g => g.Key, g => g.First().Item2, StringComparer.OrdinalIgnoreCase);
+            var args = parameters != null ? (Dictionary<string, object>)parameters : new Dictionary<string, object>();
 
             if (command == "aggregate")
             {

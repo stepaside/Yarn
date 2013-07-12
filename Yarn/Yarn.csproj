@@ -150,6 +150,7 @@
     <Compile Include="Data\NHibernateProvider\MySqlClient\MySqlDataContext.cs" />
     <Compile Include="Data\NHibernateProvider\DataContext.cs" />
     <Compile Include="Data\NHibernateProvider\NHibernateExtensions.cs" />
+    <Compile Include="ParamList.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Data\RavenDbProvider\DataContext.cs" />
     <Compile Include="Data\RavenDbProvider\Repository.cs" />

@@ -145,14 +145,14 @@ namespace Yarn.Data.RavenDbProvider
             return stats.TotalResults;
         }
 
-        public IList<T> Execute<T>(string command, params System.Tuple<string, object>[] parameters) where T : class
+        public IList<T> Execute<T>(string command, ParamList parameters) where T : class
         {
             // Execute is used to query RavenDB index
             var indexQuery = _context.Session.Query<T>(command);
-            if (parameters.Length > 0)
+            if (parameters != null && parameters.Count > 0)
             {
                 // De-duplicate parameters and oraganize them into a dictionary
-                var args = parameters.GroupBy(p => p.Item1).ToDictionary(g => g.Key, g => g.First().Item2, StringComparer.OrdinalIgnoreCase);
+                var args = (Dictionary<string, object>)parameters;
 
                 object criteria, offset, limit;
 

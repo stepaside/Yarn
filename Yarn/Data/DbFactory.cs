@@ -24,6 +24,22 @@ namespace Yarn.Data
                 {
                     return config.ProviderName;
                 }
+                else if (config.ConnectionString.IndexOf(connectionString, StringComparison.OrdinalIgnoreCase) > -1)
+                {
+                    var pos1 = config.ConnectionString.IndexOf("provider=", StringComparison.OrdinalIgnoreCase);
+                    if (pos1 > -1)
+                    {
+                        var pos2 = config.ConnectionString.IndexOf(";", pos1);
+                        if (pos2 > -1)
+                        {
+                            return config.ConnectionString.Substring(pos1 + 9, pos2 - pos1 - 9);
+                        }
+                        else
+                        {
+                            return config.ConnectionString.Substring(pos1 + 9);
+                        }
+                    }
+                }
             }
             return null;
         }

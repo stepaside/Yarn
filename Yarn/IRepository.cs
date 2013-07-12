@@ -18,7 +18,7 @@ namespace Yarn
         IEnumerable<T> FindAll<T>(Expression<Func<T, bool>> criteria, int offset = 0, int limit = 0) where T : class;
 
         // Execute methods
-        IList<T> Execute<T>(string command, params System.Tuple<string, object>[] parameters) where T : class;
+        IList<T> Execute<T>(string command, ParamList parameters) where T : class;
 
         // DML methods
         T Add<T>(T entity) where T : class;

@@ -69,10 +69,12 @@ namespace Yarn.Data.EntityFrameworkProvider
             return results;
         }
 
-        public IList<T> Execute<T>(string command, params System.Tuple<string, object>[] parameters) where T : class
+        public IList<T> Execute<T>(string command, ParamList parameters) where T : class
         {
             var connection = this.PrivateContext.Session.Database.Connection;
-            var items = this.PrivateContext.Session.Database.SqlQuery<T>(command, parameters.Select(p => DbFactory.CreateParameter(connection, p.Item1, p.Item2)).ToArray());
+            var items = parameters != null 
+                ? this.PrivateContext.Session.Database.SqlQuery<T>(command, parameters.Select(p => DbFactory.CreateParameter(connection, p.Key, p.Value)).ToArray())
+                : this.PrivateContext.Session.Database.SqlQuery<T>(command);
             return items.ToArray();
         }
 
