@@ -29,7 +29,14 @@ namespace Yarn.Cache
         public T GetById<T, ID>(ID id) where T : class
         {
             var key = typeof(T).FullName + ".GetById(id:" + id.ToString() + ")";
-            var item = _cache.Get<T>(key);
+            T item = null;
+            
+            HashSet<string> queries;
+            if (_queries.TryGetValue(typeof(T), out queries) && queries.Contains(key))
+            {
+                item = _cache.Get<T>(key);
+            }
+
             if (item == null)
             {
                 item = _repository.GetById<T, ID>(id);
@@ -42,7 +49,14 @@ namespace Yarn.Cache
         public IEnumerable<T> GetByIdList<T, ID>(IList<ID> ids) where T : class
         {
             var key = typeof(T).FullName + ".GetByIdList(ids:[" + string.Join(",", ids.OrderBy(_=>_)) + "])";
-            var items = _cache.Get<IList<T>>(key);
+            IList<T> items = null;
+
+            HashSet<string> queries;
+            if (_queries.TryGetValue(typeof(T), out queries) && queries.Contains(key))
+            {
+                items = _cache.Get<IList<T>>(key);
+            }
+            
             if (items == null)
             {
                 items = _repository.GetByIdList<T, ID>(ids).ToArray();
@@ -60,7 +74,14 @@ namespace Yarn.Cache
         public T Find<T>(System.Linq.Expressions.Expression<Func<T, bool>> criteria) where T : class
         {
             var key = typeof(T).FullName + ".Find(criteria:" + criteria.ToString() + ")";
-            var item = _cache.Get<T>(key);
+            T item = null;
+
+            HashSet<string> queries;
+            if (_queries.TryGetValue(typeof(T), out queries) && queries.Contains(key))
+            {
+                item = _cache.Get<T>(key);
+            }
+            
             if (item == null)
             {
                 item = _repository.Find<T>(criteria);
@@ -82,7 +103,14 @@ namespace Yarn.Cache
             if (limit < 0) limit = 0;
 
             var key = typeof(T).FullName + ".FindAll(criteria:" + criteria.ToString() + ",offset:" + offset + ",limit:" + limit + ")";
-            var items = _cache.Get<IList<T>>(key);
+            IList<T> items = null;
+
+            HashSet<string> queries;
+            if (_queries.TryGetValue(typeof(T), out queries) && queries.Contains(key))
+            {
+                items = _cache.Get<IList<T>>(key);
+            }
+
             if (items == null)
             {
                 items = _repository.FindAll<T>(criteria, offset, limit).ToArray();
@@ -95,7 +123,14 @@ namespace Yarn.Cache
         public IList<T> Execute<T>(string command, ParamList parameters) where T : class
         {
             var key = typeof(T).FullName + ".Execute(command:" + command + (parameters != null ? "," + string.Join(",", parameters.OrderBy(p => p.Key).Select(p => p.Key + ":" + p.Value)) : "") + ")";
-            var items = _cache.Get<IList<T>>(key);
+            IList<T> items = null;
+
+            HashSet<string> queries;
+            if (_queries.TryGetValue(typeof(T), out queries) && queries.Contains(key))
+            {
+                items = _cache.Get<IList<T>>(key);
+            }
+
             if (items == null)
             {
                 items = _repository.Execute<T>(command, parameters);
@@ -164,8 +199,9 @@ namespace Yarn.Cache
             _repository.SaveChanges();
             foreach (var type in _types)
             {
-                EvictQueries(type);
+                EvictKeys(type);
             }
+            _types.Clear();
         }
 
         public IDataContext DataContext
@@ -197,7 +233,7 @@ namespace Yarn.Cache
             }
         }
 
-        public bool EvictQueries(Type type)
+        public bool EvictKeys(Type type)
         {
             HashSet<string> queries;
             if (_queries.TryRemove(type, out queries))
@@ -210,8 +246,7 @@ namespace Yarn.Cache
 
         private void RecordQuery<T>(string query) where T : class
         {
-            var queries = _queries.GetOrAdd(typeof(T), t => new HashSet<string>());
-            queries.Add(query);
+            _queries.AddOrUpdate(typeof(T), t => new HashSet<string>(new[] { query }), (t, v) => { v.Add(query); return v; });
         }
     }
 }
