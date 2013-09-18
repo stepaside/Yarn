@@ -96,9 +96,6 @@
     <Compile Include="Models\EF\Supplier.cs">
       <DependentUpon>Model1.tt</DependentUpon>
     </Compile>
-    <Compile Include="Models\EF\sysdiagram.cs">
-      <DependentUpon>Model1.tt</DependentUpon>
-    </Compile>
     <Compile Include="Models\EF\Territory.cs">
       <DependentUpon>Model1.tt</DependentUpon>
     </Compile>

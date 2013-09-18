@@ -35,7 +35,6 @@ namespace YarnTest.Models.EF
         public DbSet<Region> Regions { get; set; }
         public DbSet<Shipper> Shippers { get; set; }
         public DbSet<Supplier> Suppliers { get; set; }
-        public DbSet<sysdiagram> sysdiagrams { get; set; }
         public DbSet<Territory> Territories { get; set; }
     }
 }

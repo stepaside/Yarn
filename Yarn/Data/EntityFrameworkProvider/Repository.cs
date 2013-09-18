@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Data.Entity;
 using System.Data.Entity.Infrastructure;
@@ -13,12 +14,14 @@ namespace Yarn.Data.EntityFrameworkProvider
     {
         private IDataContext<DbContext> _context;
         protected readonly string _contextKey;
+        private ConcurrentDictionary<Type, DbSet> _dbSets;
 
         public Repository() : this(null) { }
 
         public Repository(string contextKey = null) 
         {
             _contextKey = contextKey;
+            _dbSets = new ConcurrentDictionary<Type, DbSet>();
         }
 
         public T GetById<T, ID>(ID id) where T : class
@@ -153,7 +156,8 @@ namespace Yarn.Data.EntityFrameworkProvider
 
         public DbSet<T> Table<T>() where T : class
         {
-            return this.PrivateContext.Session.Set<T>();
+            var dbSet = _dbSets.GetOrAdd(typeof(T), t => this.PrivateContext.Session.Set<T>());
+            return dbSet.Cast<T>();
         }
 
         private IDataContext<DbContext> PrivateContext

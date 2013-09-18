@@ -18,7 +18,6 @@
           <EntitySet Name="Region" EntityType="NorthwindModel.Store.Region" store:Type="Tables" Schema="dbo" />
           <EntitySet Name="Shippers" EntityType="NorthwindModel.Store.Shippers" store:Type="Tables" Schema="dbo" />
           <EntitySet Name="Suppliers" EntityType="NorthwindModel.Store.Suppliers" store:Type="Tables" Schema="dbo" />
-          <EntitySet Name="sysdiagrams" EntityType="NorthwindModel.Store.sysdiagrams" store:Type="Tables" Schema="dbo" />
           <EntitySet Name="Territories" EntityType="NorthwindModel.Store.Territories" store:Type="Tables" Schema="dbo" />
           <AssociationSet Name="FK_CustomerCustomerDemo" Association="NorthwindModel.Store.FK_CustomerCustomerDemo">
             <End Role="CustomerDemographics" EntitySet="CustomerDemographics" />
@@ -221,16 +220,6 @@
           <Property Name="Fax" Type="nvarchar" MaxLength="24" />
           <Property Name="HomePage" Type="ntext" />
         </EntityType>
-        <EntityType Name="sysdiagrams">
-          <Key>
-            <PropertyRef Name="diagram_id" />
-          </Key>
-          <Property Name="name" Type="nvarchar" Nullable="false" MaxLength="128" />
-          <Property Name="principal_id" Type="int" Nullable="false" />
-          <Property Name="diagram_id" Type="int" Nullable="false" StoreGeneratedPattern="Identity" />
-          <Property Name="version" Type="int" />
-          <Property Name="definition" Type="varbinary(max)" />
-        </EntityType>
         <EntityType Name="Territories">
           <Key>
             <PropertyRef Name="TerritoryID" />
@@ -411,7 +400,6 @@
           <EntitySet Name="Regions" EntityType="NorthwindModel.Region" />
           <EntitySet Name="Shippers" EntityType="NorthwindModel.Shipper" />
           <EntitySet Name="Suppliers" EntityType="NorthwindModel.Supplier" />
-          <EntitySet Name="sysdiagrams" EntityType="NorthwindModel.sysdiagram" />
           <EntitySet Name="Territories" EntityType="NorthwindModel.Territory" />
           <AssociationSet Name="FK_Products_Categories" Association="NorthwindModel.FK_Products_Categories">
             <End Role="Categories" EntitySet="Categories" />
@@ -609,16 +597,6 @@
           <Property Name="Fax" Type="String" MaxLength="24" Unicode="true" FixedLength="false" />
           <Property Name="HomePage" Type="String" MaxLength="Max" Unicode="true" FixedLength="false" />
           <NavigationProperty Name="Products" Relationship="NorthwindModel.FK_Products_Suppliers" FromRole="Suppliers" ToRole="Products" />
-        </EntityType>
-        <EntityType Name="sysdiagram">
-          <Key>
-            <PropertyRef Name="diagram_id" />
-          </Key>
-          <Property Name="name" Type="String" Nullable="false" MaxLength="128" Unicode="true" FixedLength="false" />
-          <Property Name="principal_id" Type="Int32" Nullable="false" />
-          <Property Name="diagram_id" Type="Int32" Nullable="false" p1:StoreGeneratedPattern="Identity" />
-          <Property Name="version" Type="Int32" />
-          <Property Name="definition" Type="Binary" MaxLength="Max" FixedLength="false" />
         </EntityType>
         <EntityType Name="Territory">
           <Key>
@@ -890,17 +868,6 @@
                 <ScalarProperty Name="Phone" ColumnName="Phone" />
                 <ScalarProperty Name="Fax" ColumnName="Fax" />
                 <ScalarProperty Name="HomePage" ColumnName="HomePage" />
-              </MappingFragment>
-            </EntityTypeMapping>
-          </EntitySetMapping>
-          <EntitySetMapping Name="sysdiagrams">
-            <EntityTypeMapping TypeName="NorthwindModel.sysdiagram">
-              <MappingFragment StoreEntitySet="sysdiagrams">
-                <ScalarProperty Name="name" ColumnName="name" />
-                <ScalarProperty Name="principal_id" ColumnName="principal_id" />
-                <ScalarProperty Name="diagram_id" ColumnName="diagram_id" />
-                <ScalarProperty Name="version" ColumnName="version" />
-                <ScalarProperty Name="definition" ColumnName="definition" />
               </MappingFragment>
             </EntityTypeMapping>
           </EntitySetMapping>
