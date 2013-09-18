@@ -9,10 +9,11 @@
     <projectUrl>https://github.com/stepaside/Yarn</projectUrl>
     <requireLicenseAcceptance>false</requireLicenseAcceptance>
     <description>$description$</description>
-    <copyright>Copyright © Max Stepanskiy 2012</copyright>
+    <copyright>Copyright Â© Max Stepanskiy 2012-2013</copyright>
     <tags>Repository Repository-Pattern NHibernate-Repository EntityFramework-Repository EFR-epository RavenDB-Repository MongoDB-Repository</tags>
 	<releaseNotes>
-	* Fixed issues with resolving EF data context
+	  * Fixed EF-related issues
+    * Optimized cached repository implementation
 	</releaseNotes>
   </metadata>
 </package>
