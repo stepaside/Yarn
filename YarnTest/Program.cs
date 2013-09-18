@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Newtonsoft.Json;
+using System;
 using System.Collections.Generic;
 using System.Data.Entity;
 using System.Linq;
@@ -7,6 +8,7 @@ using System.Threading.Tasks;
 using Yarn;
 using Yarn.Data.EntityFrameworkProvider;
 using YarnTest.Models.EF;
+
 namespace YarnTest
 {
     class Program
@@ -32,7 +34,7 @@ namespace YarnTest
             }
 
             var customer = repo.GetById<Customer, string>("ALFKI");
-
+            
             var customers = repo.Execute<Customer>("EXEC spDTO_Customer_Retrieve @CustomerID", new ParamList { { "CustomerID", "ALFKI" } });
         }
     }
