@@ -29,5 +29,31 @@ namespace Yarn.Extensions
         {
             return first.Compose(second, Expression.Or);
         }
+
+        internal static Expression<Func<T, bool>> BuildOrExpression<T, ID>(this Expression<Func<T, ID>> valueSelector, IEnumerable<ID> values)
+            where T : class
+        {
+
+            if (null == valueSelector)
+            {
+                throw new ArgumentNullException("valueSelector");
+            }
+
+            if (null == values)
+            {
+                throw new ArgumentNullException("values");
+            }
+
+            var p = valueSelector.Parameters.Single();
+
+            if (!values.Any())
+            {
+                return e => false;
+            }
+
+            var equals = values.Select(value => (Expression)Expression.Equal(valueSelector.Body, Expression.Constant(value, typeof(ID))));
+            var body = equals.Aggregate<Expression>((accumulate, equal) => Expression.Or(accumulate, equal));
+            return Expression.Lambda<Func<T, bool>>(body, p);
+        } 
     }
 }

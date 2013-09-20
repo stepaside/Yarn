@@ -20,7 +20,7 @@ namespace Yarn.Data.NHibernateProvider
             {
                 if (_fullTextProvider == null)
                 {
-                    _fullTextProvider = ObjectFactory.Resolve<IFullTextProvider>(_contextKey);
+                    _fullTextProvider = ObjectFactory.Resolve<IFullTextProvider>(_dataContextKey);
                     _fullTextProvider.DataContext = this.DataContext;
                 }
                 return _fullTextProvider;

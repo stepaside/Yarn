@@ -29,7 +29,7 @@ namespace Yarn.Data.NHibernateProvider.SqliteClient
             return Tuple.Create(sessionFactory, config);
         }
 
-        protected override string DefaultFactoryKey
+        protected override string DefaultPrefix
         {
             get
             {

@@ -14,31 +14,31 @@ namespace Yarn.Data.MongoDbProvider
 {
     public class DataContext : IDataContext<MongoDatabase>
     {
-        private string _contextKey = null;
+        private string _prefix = null;
         private MongoDatabase _database = null;
         private MongoUrl _url = null;
 
         public DataContext() : this(null) { }
 
-        public DataContext(string contextKey = null)
+        public DataContext(string prefix = null)
         {
-            _contextKey = contextKey;
+            _prefix = prefix;
         }
 
-        protected MongoDatabase GetMongoDatabase(string storeKey)
+        protected MongoDatabase GetMongoDatabase(string prefix)
         {
-            _url = new MongoUrl(ConfigurationManager.AppSettings.Get(storeKey));
+            _url = new MongoUrl(ConfigurationManager.AppSettings.Get(prefix));
             var dbName = _url.DatabaseName;
             if (string.IsNullOrEmpty(dbName))
             {
-                dbName = ConfigurationManager.AppSettings.Get(storeKey + ".Database");
+                dbName = ConfigurationManager.AppSettings.Get(prefix + ".Database");
             }
             var client = new MongoClient(_url);
             var server = client.GetServer();
             return server.GetDatabase(dbName);
         }
 
-        protected virtual string DefaultStoreKey
+        protected virtual string DefaultPrefix
         {
             get
             {
@@ -48,7 +48,7 @@ namespace Yarn.Data.MongoDbProvider
 
         protected MongoDatabase GetDefaultMongoDatabase()
         {
-            return GetMongoDatabase(DefaultStoreKey);
+            return GetMongoDatabase(DefaultPrefix);
         }
 
         public void SaveChanges()
@@ -96,7 +96,7 @@ namespace Yarn.Data.MongoDbProvider
             {
                 if (_database == null)
                 {
-                    _database = _contextKey == null ? GetDefaultMongoDatabase() : GetMongoDatabase(_contextKey);
+                    _database = _prefix == null ? GetDefaultMongoDatabase() : GetMongoDatabase(_prefix);
                     _database.Server.Connect();
                 }
                 return _database;

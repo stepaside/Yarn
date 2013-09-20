@@ -80,6 +80,10 @@
       <SpecificVersion>False</SpecificVersion>
       <HintPath>..\packages\mongocsharpdriver.1.8.2\lib\net35\MongoDB.Driver.dll</HintPath>
     </Reference>
+    <Reference Include="NDatabase3, Version=3.8.0.13, Culture=neutral, PublicKeyToken=31d8e3cda240c056, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\packages\NDatabase.3.8.0\lib\net45\NDatabase3.dll</HintPath>
+    </Reference>
     <Reference Include="NHibernate, Version=3.3.1.4000, Culture=neutral, PublicKeyToken=aa95f207798dfdb4, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
       <HintPath>..\packages\NHibernate.3.3.3.4001\lib\Net35\NHibernate.dll</HintPath>
@@ -120,6 +124,9 @@
     <Compile Include="Data\EntityFrameworkProvider\ContextExtensions.cs" />
     <Compile Include="Data\EntityFrameworkProvider\FullTextRepository.cs" />
     <Compile Include="Data\EntityFrameworkProvider\SqlClient\SqlFullTextProvider.cs" />
+    <Compile Include="Data\InMemoryProvider\DataContext.cs" />
+    <Compile Include="Data\InMemoryProvider\OdbCache.cs" />
+    <Compile Include="Data\InMemoryProvider\Repository.cs" />
     <Compile Include="Data\NHibernateProvider\OracleClient\OracleDataContext.cs" />
     <Compile Include="Data\NHibernateProvider\PostgresClient\PostgresDataContext.cs" />
     <Compile Include="Data\NHibernateProvider\SqliteClient\FileDataContext.cs" />
@@ -137,7 +144,6 @@
     <Compile Include="IRepository.cs" />
     <Compile Include="ISpecification.cs" />
     <Compile Include="Data\MongoDbProvider\DataContext.cs" />
-    <Compile Include="Data\MongoDbProvider\IMongoEntity.cs" />
     <Compile Include="Data\MongoDbProvider\MongoTransaction.cs" />
     <Compile Include="Data\MongoDbProvider\Repository.cs" />
     <Compile Include="ObjectFactory.cs" />

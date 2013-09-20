@@ -16,17 +16,17 @@ namespace Yarn.Data.RavenDbProvider
     public class DataContext : IDataContext<IDocumentSession>
     {
         private static ConcurrentDictionary<string, IDocumentStore> _documentStores = new ConcurrentDictionary<string, IDocumentStore>();
-        private string _contextKey = null;
+        private string _prefix = null;
         private IDocumentSession _session = DocumentSessionCache.CurrentSession;
 
-        public DataContext(string contextKey = null)
+        public DataContext(string prefix = null)
         {
-            _contextKey = contextKey;
+            _prefix = prefix;
         }
 
-        protected IDocumentStore CreateDocumentStore(string storeKey)
+        protected IDocumentStore CreateDocumentStore(string prefix)
         {
-            var documentStore = _documentStores.GetOrAdd(storeKey, key =>
+            var documentStore = _documentStores.GetOrAdd(prefix, key =>
             {
                 IDocumentStore ds = null;
                 var shardCountValue = ConfigurationManager.AppSettings.Get(key + ".ShardCount");
@@ -91,7 +91,7 @@ namespace Yarn.Data.RavenDbProvider
             return documentStore;
         }
 
-        protected virtual string DefaultStoreKey
+        protected virtual string DefaultPrefix
         {
             get
             {
@@ -101,7 +101,7 @@ namespace Yarn.Data.RavenDbProvider
 
         protected IDocumentStore GetDefaultDocumentStore()
         {
-            return CreateDocumentStore(DefaultStoreKey);
+            return CreateDocumentStore(DefaultPrefix);
         }
 
         public void CreateIndex<T>(string indexName, Expression<Func<IEnumerable<T>, IEnumerable>> map, Expression<Func<IEnumerable<T>, IEnumerable>> reduce, IDictionary<Expression<Func<T, object>>, SortOptions> sortOptions)
@@ -142,7 +142,7 @@ namespace Yarn.Data.RavenDbProvider
             {
                 if (_session == null)
                 {
-                    _session = _contextKey == null ? GetDefaultDocumentStore().OpenSession() : CreateDocumentStore(_contextKey).OpenSession();
+                    _session = _prefix == null ? GetDefaultDocumentStore().OpenSession() : CreateDocumentStore(_prefix).OpenSession();
                     DocumentSessionCache.CurrentSession = _session;
                 }
                 return _session;

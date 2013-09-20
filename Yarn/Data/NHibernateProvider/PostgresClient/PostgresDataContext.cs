@@ -15,7 +15,7 @@ namespace Yarn.Data.NHibernateProvider.OracleClient
             : base(PostgreSQLConfiguration.Standard, contextKey)
         { }
 
-        protected override string DefaultFactoryKey
+        protected override string DefaultPrefix
         {
             get
             {

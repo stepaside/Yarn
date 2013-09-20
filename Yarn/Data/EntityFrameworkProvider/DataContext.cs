@@ -18,23 +18,23 @@ namespace Yarn.Data.EntityFrameworkProvider
 
         private bool _enableLazyLoading = true;
         private bool _recreateDatabaseIfExists = false;
-        private string _contextKey = null;
+        private string _prefix = null;
         private DbContext _context = DbContextCache.CurrentContext;
 
         public DataContext() : this(true, false, null) { }
 
-        public DataContext(string contextKey = null) : this(true, false, contextKey) { }
+        public DataContext(string prefix = null) : this(true, false, prefix) { }
 
-        public DataContext(bool enableLazyLoading = true, bool recreateDatabaseIfExists = false, string contextKey = null)
+        public DataContext(bool enableLazyLoading = true, bool recreateDatabaseIfExists = false, string prefix = null)
         {
             _enableLazyLoading = enableLazyLoading;
             _recreateDatabaseIfExists = recreateDatabaseIfExists;
-            _contextKey = contextKey;
+            _prefix = prefix;
         }
 
-        protected DbContext CreateDbContext(string contextKey)
+        protected DbContext CreateDbContext(string prefix)
         {
-            var tuple = _dbModelBuilders.GetOrAdd(contextKey, key => ConfigureDbModel(key));
+            var tuple = _dbModelBuilders.GetOrAdd(prefix, key => ConfigureDbModel(key));
 
             if (tuple.Item2 != null)
             {
@@ -42,7 +42,7 @@ namespace Yarn.Data.EntityFrameworkProvider
             }
             else
             {
-                var connectionKey = contextKey + ".Connection";
+                var connectionKey = prefix + ".Connection";
                 var builder = tuple.Item1;
                 var connection = DbFactory.CreateConnection(connectionKey);
                 var dbModel = builder.Build(connection);
@@ -63,9 +63,9 @@ namespace Yarn.Data.EntityFrameworkProvider
             }
         }
 
-        protected Tuple<DbModelBuilder, Type> ConfigureDbModel(string contextKey)
+        protected Tuple<DbModelBuilder, Type> ConfigureDbModel(string prefix)
         {
-            var assemblyKey = contextKey + ".Model";
+            var assemblyKey = prefix + ".Model";
 
             Assembly assembly = null;
             var assemblyLocationOrName = ConfigurationManager.AppSettings.Get(assemblyKey);
@@ -115,7 +115,7 @@ namespace Yarn.Data.EntityFrameworkProvider
             return Tuple.Create(builder, dbContextType);
         }
 
-        protected virtual string DefaultContextKey
+        protected virtual string DefaultPrefix
         {
             get
             {
@@ -125,7 +125,7 @@ namespace Yarn.Data.EntityFrameworkProvider
 
         protected DbContext GetDefaultDbContext()
         {
-            return CreateDbContext(DefaultContextKey);
+            return CreateDbContext(DefaultPrefix);
         }
 
         public void SaveChanges()
@@ -139,7 +139,7 @@ namespace Yarn.Data.EntityFrameworkProvider
             {
                 if (_context == null)
                 {
-                    _context = _contextKey == null ? GetDefaultDbContext() : CreateDbContext(_contextKey);
+                    _context = _prefix == null ? GetDefaultDbContext() : CreateDbContext(_prefix);
                     DbContextCache.CurrentContext = _context;
                 }
                 return _context;

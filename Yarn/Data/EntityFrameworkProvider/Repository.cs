@@ -6,6 +6,7 @@ using System.Data.Entity.Infrastructure;
 using System.Data.Entity.Migrations;
 using System.Linq;
 using System.Linq.Expressions;
+using Yarn.Extensions;
 using Yarn.Reflection;
 
 namespace Yarn.Data.EntityFrameworkProvider
@@ -13,14 +14,14 @@ namespace Yarn.Data.EntityFrameworkProvider
     public class Repository : IRepository, IMetaDataProvider, ILazyLoader
     {
         private IDataContext<DbContext> _context;
-        protected readonly string _contextKey;
+        protected readonly string _prefix;
         private ConcurrentDictionary<Type, DbSet> _dbSets;
 
         public Repository() : this(null) { }
 
-        public Repository(string contextKey = null) 
+        public Repository(string prefix = null) 
         {
-            _contextKey = contextKey;
+            _prefix = prefix;
             _dbSets = new ConcurrentDictionary<Type, DbSet>();
         }
 
@@ -36,8 +37,8 @@ namespace Yarn.Data.EntityFrameworkProvider
             var parameter = Expression.Parameter(typeof(T));
             var body = Expression.Convert(Expression.PropertyOrField(parameter, primaryKey), typeof(ID));
             var idSelector = Expression.Lambda<Func<T, ID>>(body, parameter);
-            
-            var predicate = BuildOrExpression<T, ID>(idSelector, ids);
+
+            var predicate = idSelector.BuildOrExpression<T, ID>(ids);
 
             return this.Table<T>().Where(predicate);
         }
@@ -174,11 +175,7 @@ namespace Yarn.Data.EntityFrameworkProvider
             {
                 if (_context == null)
                 {
-                    _context = ObjectFactory.Resolve<IDataContext<DbContext>>(_contextKey);
-                    if (_context == null)
-                    {
-                        _context = new DataContext(_contextKey);
-                    }
+                    _context = new DataContext(_prefix);
                 }
                 return _context;
             }
@@ -224,31 +221,5 @@ namespace Yarn.Data.EntityFrameworkProvider
         }
 
         #endregion
-
-        private static Expression<Func<T, bool>> BuildOrExpression<T, ID>(Expression<Func<T, ID>> valueSelector, IEnumerable<ID> values)
-            where T : class
-        {
-
-            if (null == valueSelector) 
-            { 
-                throw new ArgumentNullException("valueSelector"); 
-            }
-
-            if (null == values) 
-            { 
-                throw new ArgumentNullException("values"); 
-            }
-
-            var p = valueSelector.Parameters.Single();
-
-            if (!values.Any())
-            {
-                return e => false;
-            }
-
-            var equals = values.Select(value => (Expression)Expression.Equal(valueSelector.Body, Expression.Constant(value, typeof(ID))));
-            var body = equals.Aggregate<Expression>((accumulate, equal) => Expression.Or(accumulate, equal));
-            return Expression.Lambda<Func<T, bool>>(body, p);
-        } 
     }
 }

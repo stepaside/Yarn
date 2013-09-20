@@ -16,13 +16,13 @@ namespace Yarn.Data.NHibernateProvider
     public class Repository : IRepository, IMetaDataProvider, ILazyLoader
     {
         private IDataContext<ISession> _context;
-        protected readonly string _contextKey;
+        protected readonly string _dataContextKey;
 
         public Repository() : this(null) { }
 
-        public Repository(string contextKey = null)
+        public Repository(string dataContextKey = null)
         {
-            _contextKey = contextKey;
+            _dataContextKey = dataContextKey;
         }
 
         public T GetById<T, ID>(ID id) where T : class
@@ -203,7 +203,7 @@ namespace Yarn.Data.NHibernateProvider
             {
                 if (_context == null)
                 {
-                    _context = ObjectFactory.Resolve<IDataContext<ISession>>(_contextKey);
+                    _context = ObjectFactory.Resolve<IDataContext<ISession>>(_dataContextKey);
                 }
                 return _context;
             }

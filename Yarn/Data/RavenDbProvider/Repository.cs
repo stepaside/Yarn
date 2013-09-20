@@ -17,10 +17,10 @@ namespace Yarn.Data.RavenDbProvider
 
         public Repository() : this(false, null) { }
 
-        public Repository(bool waitForNonStaleResults = false, string contextKey = null)
+        public Repository(bool waitForNonStaleResults = false, string prefix = null)
         {
             _waitForNonStaleResults = waitForNonStaleResults;
-            _contextKey = contextKey;
+            _contextKey = prefix;
         }
 
         public T GetById<T, ID>(ID id) where T : class

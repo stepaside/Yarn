@@ -13,7 +13,7 @@ namespace Yarn.Data.NHibernateProvider.SqlClient
             : base(MsSqlConfiguration.MsSql2008, contextKey)
         { }
 
-        protected override string DefaultFactoryKey
+        protected override string DefaultPrefix
         {
             get
             {

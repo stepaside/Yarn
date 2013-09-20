@@ -23,13 +23,13 @@ namespace Yarn.Data.MongoDbProvider
         private PluralizationService _pluralizer = PluralizationService.CreateService(CultureInfo.CurrentCulture);
         private ConcurrentDictionary<Type, MongoCollection> _collections = new ConcurrentDictionary<Type,MongoCollection>();
         private IDataContext<MongoDatabase> _context;
-        private string _contextKey;
+        private string _prefix;
 
         public Repository() : this(null) { }
 
-        public Repository(string contextKey = null)
+        public Repository(string prefix = null)
         {
-            _contextKey = contextKey;
+            _prefix = prefix;
         }
         
         public T GetById<T, ID>(ID id) where T : class
@@ -260,7 +260,7 @@ namespace Yarn.Data.MongoDbProvider
             {
                 if (_context == null)
                 {
-                    _context = new DataContext(_contextKey);
+                    _context = new DataContext(_prefix);
                 }
                 return _context;
             }

@@ -11,7 +11,7 @@ namespace Yarn.Data.NHibernateProvider.MySqlClient
             : base(MySQLConfiguration.Standard, contextKey)
         { }
 
-        protected override string DefaultFactoryKey
+        protected override string DefaultPrefix
         {
             get
             {

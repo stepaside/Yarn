@@ -15,9 +15,8 @@ namespace YarnTest
     {
         static void Main(string[] args)
         {
-            ObjectFactory.Bind<IRepository, Repository>(new Repository("Yarn.EF"), "EF");
-            ObjectFactory.Bind<IDataContext<DbContext>, DataContext>(new DataContext("Yarn.EF2"), "Yarn.EF");
-
+            ObjectFactory.Bind<IRepository, Repository>(new Repository("Yarn.EF2"), "EF");
+            
             var repo = ObjectFactory.Resolve<IRepository>("EF");
             if (repo == null)
             {

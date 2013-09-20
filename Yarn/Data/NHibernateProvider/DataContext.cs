@@ -38,18 +38,18 @@ namespace Yarn.Data.NHibernateProvider
     {
         private static ConcurrentDictionary<string, Tuple<ISessionFactory, NHibernate.Cfg.Configuration>> _sessionFactories = new ConcurrentDictionary<string, Tuple<ISessionFactory, NHibernate.Cfg.Configuration>>();
         protected PersistenceConfiguration<TThisConfiguration, TConnectionString> _configuration = null;
-        private string _contextKey = null;
+        private string _prefix = null;
         private ISession _session = SessionCache.CurrentSession;
 
-        protected NHibernateDataContext(PersistenceConfiguration<TThisConfiguration, TConnectionString> configuration, string contextKey = null)
+        protected NHibernateDataContext(PersistenceConfiguration<TThisConfiguration, TConnectionString> configuration, string prefix = null)
         {
             _configuration = configuration;
-            _contextKey = contextKey;
+            _prefix = prefix;
         }
 
-        protected Tuple<ISessionFactory, NHibernate.Cfg.Configuration> CreateSessionFactory(string factoryKey)
+        protected Tuple<ISessionFactory, NHibernate.Cfg.Configuration> CreateSessionFactory(string prefix)
         {
-            var tuple = _sessionFactories.GetOrAdd(factoryKey, key =>
+            var tuple = _sessionFactories.GetOrAdd(prefix, key =>
             {
                 var factory = ConfigureSessionFactory(key);
                 return factory;
@@ -57,10 +57,10 @@ namespace Yarn.Data.NHibernateProvider
             return tuple;
         }
 
-        protected virtual Tuple<ISessionFactory, NHibernate.Cfg.Configuration> ConfigureSessionFactory(string factoryKey)
+        protected virtual Tuple<ISessionFactory, NHibernate.Cfg.Configuration> ConfigureSessionFactory(string prefix)
         {
-            var assemblyKey = factoryKey + ".Model";
-            var connectionKey = factoryKey + ".Connection";
+            var assemblyKey = prefix + ".Model";
+            var connectionKey = prefix + ".Connection";
 
             Assembly assembly = null;
             var assemblyLocation = ConfigurationManager.AppSettings.Get(assemblyKey);
@@ -87,7 +87,7 @@ namespace Yarn.Data.NHibernateProvider
             return Tuple.Create(sessionFactory, config);
         }
 
-        protected virtual string DefaultFactoryKey
+        protected virtual string DefaultPrefix
         {
             get
             {
@@ -97,7 +97,7 @@ namespace Yarn.Data.NHibernateProvider
 
         protected ISessionFactory GetDefaultSessionFactory()
         {
-            return CreateSessionFactory(DefaultFactoryKey).Item1;
+            return CreateSessionFactory(DefaultPrefix).Item1;
         }
 
         public override ISession Session
@@ -106,7 +106,7 @@ namespace Yarn.Data.NHibernateProvider
             {
                 if (_session == null)
                 {
-                    var factory = _contextKey == null ? GetDefaultSessionFactory() : CreateSessionFactory(_contextKey).Item1;
+                    var factory = _prefix == null ? GetDefaultSessionFactory() : CreateSessionFactory(_prefix).Item1;
                     _session = factory.OpenSession();
                     SessionCache.CurrentSession = _session;
                 }
@@ -127,7 +127,7 @@ namespace Yarn.Data.NHibernateProvider
             var session = this.Session;
             if (session != null)
             {
-                var export = new SchemaExport(CreateSessionFactory(DefaultFactoryKey).Item2);
+                var export = new SchemaExport(CreateSessionFactory(DefaultPrefix).Item2);
                 export.Execute(true, true, false, session.Connection, null);
             }
         }
@@ -137,7 +137,7 @@ namespace Yarn.Data.NHibernateProvider
             var session = this.Session;
             if (session != null)
             {
-                var update = new SchemaUpdate(CreateSessionFactory(DefaultFactoryKey).Item2);
+                var update = new SchemaUpdate(CreateSessionFactory(DefaultPrefix).Item2);
                 update.Execute(false, true);
             }
         }
