@@ -3,21 +3,23 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
+using System.Reflection;
 using System.Text;
 using System.Threading.Tasks;
 using Yarn.Extensions;
+using Yarn.Reflection;
 using Yarn.Specification;
 
 namespace Yarn.Data.InMemoryProvider
 {
-    public class Repository : IRepository
+    public class Repository : IRepository, IMetaDataProvider
     {
         private DataContext _context = null;
         private IMetaDataProvider _metaDataProvider = null;
 
-        public Repository(IMetaDataProvider metaDataProvider)
+        public Repository(IMetaDataProvider metaDataProvider = null)
         {
-            _metaDataProvider = metaDataProvider;
+            _metaDataProvider = metaDataProvider ?? this;
         }
 
         public T GetById<T, ID>(ID id) where T : class
@@ -133,10 +135,14 @@ namespace Yarn.Data.InMemoryProvider
         }
 
         public void Detach<T>(T entity) where T : class
-        { }
+        {
+            Remove<T>(entity);
+        }
 
         public void Attach<T>(T entity) where T : class
-        { }
+        {
+            Merge<T>(entity); 
+        }
 
         public void SaveChanges()
         {
@@ -167,5 +173,43 @@ namespace Yarn.Data.InMemoryProvider
         {
             _context = null;
         }
+
+        protected OID GetId<T>(T entity) where T : class
+        {
+            return this.PrivateContext.Session.GetObjectId<T>(entity);
+        }
+
+        #region IMetaDataProvider Members
+
+        private static bool IsPrimaryKey(PropertyInfo p)
+        {
+            var attr = p.GetCustomAttributes(false).OfType<OIDAttribute>().ToList();
+            if (attr.Count == 0)
+            {
+                return typeof(OID).IsAssignableFrom(p.PropertyType) || string.Equals(p.Name, "id", StringComparison.OrdinalIgnoreCase);
+            }
+            else
+            {
+                return true;
+            }
+        }
+
+        IEnumerable<string> IMetaDataProvider.GetPrimaryKey<T>()
+        {
+            return typeof(T).GetProperties().Where(p => IsPrimaryKey(p)).Select(p => p.Name);
+        }
+
+        IDictionary<string, object> IMetaDataProvider.GetPrimaryKeyValue<T>(T entity)
+        {
+            var values = new Dictionary<string, object>();
+            var primaryKey = ((IMetaDataProvider)this).GetPrimaryKey<T>();
+            foreach (var key in primaryKey)
+            {
+                values[key] = PropertyAccessor.Get(entity, key);
+            }
+            return values;
+        }
+
+        #endregion
     }
 }
