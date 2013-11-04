@@ -5,8 +5,6 @@ namespace Yarn.Data.NHibernateProvider.SqlClient
 {
     public class SqlDataContext : NHibernateDataContext<MsSqlConfiguration, MsSqlConnectionStringBuilder, MsSql2008DialectWithFullTextSupport>
     {
-        private static NHibernate.Cfg.Configuration _config = null;
-
         public SqlDataContext() : this(null) { }
 
         public SqlDataContext(string contextKey = null)
