@@ -6,7 +6,6 @@ using System.Runtime.Remoting.Messaging;
 using System.Text;
 using System.Web;
 using Yarn;
-using NHibernate;
 
 namespace Yarn.Data.EntityFrameworkProvider
 {

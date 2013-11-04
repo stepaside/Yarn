@@ -34,21 +34,27 @@
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <ItemGroup>
-    <Reference Include="EntityFramework, Version=5.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089, processorArchitecture=MSIL">
+    <Reference Include="EntityFramework, Version=6.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\packages\EntityFramework.5.0.0\lib\net45\EntityFramework.dll</HintPath>
+      <HintPath>..\packages\EntityFramework.6.0.1\lib\net45\EntityFramework.dll</HintPath>
+    </Reference>
+    <Reference Include="EntityFramework.SqlServer">
+      <HintPath>..\packages\EntityFramework.6.0.1\lib\net45\EntityFramework.SqlServer.dll</HintPath>
+    </Reference>
+    <Reference Include="Inflector">
+      <HintPath>..\packages\Inflector.1.0.0.0\lib\net45\Inflector.dll</HintPath>
     </Reference>
     <Reference Include="NDatabase3, Version=3.8.0.13, Culture=neutral, PublicKeyToken=31d8e3cda240c056, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
       <HintPath>..\packages\NDatabase.3.8.0\lib\net45\NDatabase3.dll</HintPath>
     </Reference>
-    <Reference Include="Newtonsoft.Json">
-      <HintPath>..\packages\Newtonsoft.Json.5.0.6\lib\net45\Newtonsoft.Json.dll</HintPath>
+    <Reference Include="Newtonsoft.Json, Version=4.5.0.0, Culture=neutral, PublicKeyToken=30ad4fe6b2a6aeed, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\packages\Newtonsoft.Json.5.0.8\lib\net45\Newtonsoft.Json.dll</HintPath>
     </Reference>
     <Reference Include="System" />
     <Reference Include="System.ComponentModel.DataAnnotations" />
     <Reference Include="System.Core" />
-    <Reference Include="System.Data.Entity" />
     <Reference Include="System.Runtime.Serialization" />
     <Reference Include="System.Security" />
     <Reference Include="System.Xml.Linq" />
@@ -131,6 +137,14 @@
     <None Include="packages.config" />
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\Yarn.EF\Yarn.EF.csproj">
+      <Project>{0bf28caa-446d-42d6-bd2f-e1a1e341b6e1}</Project>
+      <Name>Yarn.EF</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\Yarn.InMemory\Yarn.InMemory.csproj">
+      <Project>{5f67579d-b26e-47f8-aea9-60df9f415f17}</Project>
+      <Name>Yarn.InMemory</Name>
+    </ProjectReference>
     <ProjectReference Include="..\Yarn\Yarn.csproj">
       <Project>{1456f6c6-1df4-496b-ae91-286483c63e4d}</Project>
       <Name>Yarn</Name>

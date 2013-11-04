@@ -7,15 +7,15 @@ using System.Configuration;
 
 namespace Yarn.Data
 {
-    internal static class DbFactory
+    public static class DbFactory
     {
-        internal static string GetProviderInvariantName(string connectionName)
+        public static string GetProviderInvariantName(string connectionName)
         {
             var config = ConfigurationManager.ConnectionStrings[connectionName];
             return config.ProviderName;
         }
 
-        internal static string GetProviderInvariantNameByConnectionString(string connectionString)
+        public static string GetProviderInvariantNameByConnectionString(string connectionString)
         {
             for (int i = 0; i < ConfigurationManager.ConnectionStrings.Count; i++)
             {
@@ -44,7 +44,7 @@ namespace Yarn.Data
             return null;
         }
 
-        internal static DbConnection CreateConnection(string connectionString, string providerName)
+        public static DbConnection CreateConnection(string connectionString, string providerName)
         {
             var factory = DbProviderFactories.GetFactory(providerName);
             var connection = factory.CreateConnection();
@@ -52,7 +52,7 @@ namespace Yarn.Data
             return connection;
         }
 
-        internal static DbConnection CreateConnection(string connectionName)
+        public static DbConnection CreateConnection(string connectionName)
         {
             var config = ConfigurationManager.ConnectionStrings[connectionName];
             var factory = DbProviderFactories.GetFactory(config.ProviderName);
@@ -61,7 +61,7 @@ namespace Yarn.Data
             return connection;
         }
 
-        internal static DbDataAdapter CreateDataAdapter(DbConnection connection)
+        public static DbDataAdapter CreateDataAdapter(DbConnection connection)
         {
             var providerName = GetProviderInvariantNameByConnectionString(connection.ConnectionString);
             if (providerName != null)
@@ -71,7 +71,7 @@ namespace Yarn.Data
             return null;
         }
 
-        internal static DbParameter CreateParameter(DbConnection connection, string name, object value)
+        public static DbParameter CreateParameter(DbConnection connection, string name, object value)
         {
             var providerName = GetProviderInvariantNameByConnectionString(connection.ConnectionString);
             if (providerName != null)

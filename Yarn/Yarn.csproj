@@ -55,57 +55,11 @@
       <SpecificVersion>False</SpecificVersion>
       <HintPath>..\packages\Dynamo.Ioc.3.0.2.0\lib\net45\Dynamo.Ioc.dll</HintPath>
     </Reference>
-    <Reference Include="EntityFramework, Version=5.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089, processorArchitecture=MSIL">
-      <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\packages\EntityFramework.5.0.0\lib\net45\EntityFramework.dll</HintPath>
-    </Reference>
-    <Reference Include="FluentNHibernate">
-      <HintPath>..\packages\FluentNHibernate.1.3.0.733\lib\FluentNHibernate.dll</HintPath>
-    </Reference>
-    <Reference Include="ICSharpCode.SharpZipLib">
-      <HintPath>..\packages\SharpZipLib.0.86.0\lib\20\ICSharpCode.SharpZipLib.dll</HintPath>
-    </Reference>
-    <Reference Include="Iesi.Collections, Version=1.0.1.0, Culture=neutral, PublicKeyToken=aa95f207798dfdb4, processorArchitecture=MSIL">
-      <HintPath>..\packages\Iesi.Collections.3.3.1.4000\lib\Net35\Iesi.Collections.dll</HintPath>
-    </Reference>
-    <Reference Include="Lucene.Net, Version=3.0.3.0, Culture=neutral, PublicKeyToken=85089178b9ac3181, processorArchitecture=MSIL">
-      <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\packages\Lucene.Net.3.0.3\lib\NET40\Lucene.Net.dll</HintPath>
-    </Reference>
-    <Reference Include="MongoDB.Bson, Version=1.8.2.34, Culture=neutral, PublicKeyToken=f686731cfb9cc103, processorArchitecture=MSIL">
-      <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\packages\mongocsharpdriver.1.8.2\lib\net35\MongoDB.Bson.dll</HintPath>
-    </Reference>
-    <Reference Include="MongoDB.Driver, Version=1.8.2.34, Culture=neutral, PublicKeyToken=f686731cfb9cc103, processorArchitecture=MSIL">
-      <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\packages\mongocsharpdriver.1.8.2\lib\net35\MongoDB.Driver.dll</HintPath>
-    </Reference>
-    <Reference Include="NDatabase3, Version=3.8.0.13, Culture=neutral, PublicKeyToken=31d8e3cda240c056, processorArchitecture=MSIL">
-      <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\packages\NDatabase.3.8.0\lib\net45\NDatabase3.dll</HintPath>
-    </Reference>
-    <Reference Include="NHibernate, Version=3.3.1.4000, Culture=neutral, PublicKeyToken=aa95f207798dfdb4, processorArchitecture=MSIL">
-      <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\packages\NHibernate.3.3.3.4001\lib\Net35\NHibernate.dll</HintPath>
-    </Reference>
-    <Reference Include="NHibernate.Search">
-      <HintPath>..\packages\NHibernate.Search.2.0.2.4000\lib\Net35\NHibernate.Search.dll</HintPath>
-    </Reference>
-    <Reference Include="Raven.Abstractions, Version=2.5.0.0, Culture=neutral, PublicKeyToken=37f41c7f99471593, processorArchitecture=MSIL">
-      <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\packages\RavenDB.Client.2.5.2700\lib\net45\Raven.Abstractions.dll</HintPath>
-    </Reference>
-    <Reference Include="Raven.Client.Lightweight, Version=2.5.0.0, Culture=neutral, PublicKeyToken=37f41c7f99471593, processorArchitecture=MSIL">
-      <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\packages\RavenDB.Client.2.5.2700\lib\net45\Raven.Client.Lightweight.dll</HintPath>
-    </Reference>
     <Reference Include="System" />
     <Reference Include="System.ComponentModel.Composition" />
     <Reference Include="System.ComponentModel.DataAnnotations" />
     <Reference Include="System.configuration" />
     <Reference Include="System.Core" />
-    <Reference Include="System.Data.Entity" />
-    <Reference Include="System.Data.Entity.Design" />
     <Reference Include="System.Runtime.Caching" />
     <Reference Include="System.Transactions" />
     <Reference Include="System.Web" />
@@ -120,17 +74,6 @@
     <Compile Include="Cache\CacheExtensions.cs" />
     <Compile Include="Cache\ICachedResultProvider.cs" />
     <Compile Include="Data\DbFactory.cs" />
-    <Compile Include="Data\EntityFrameworkProvider\DbContextCache.cs" />
-    <Compile Include="Data\EntityFrameworkProvider\ContextExtensions.cs" />
-    <Compile Include="Data\EntityFrameworkProvider\FullTextRepository.cs" />
-    <Compile Include="Data\EntityFrameworkProvider\SqlClient\SqlFullTextProvider.cs" />
-    <Compile Include="Data\InMemoryProvider\DataContext.cs" />
-    <Compile Include="Data\InMemoryProvider\OdbCache.cs" />
-    <Compile Include="Data\InMemoryProvider\Repository.cs" />
-    <Compile Include="Data\NHibernateProvider\OracleClient\OracleDataContext.cs" />
-    <Compile Include="Data\NHibernateProvider\PostgresClient\PostgresDataContext.cs" />
-    <Compile Include="Data\NHibernateProvider\SqliteClient\FileDataContext.cs" />
-    <Compile Include="Data\NHibernateProvider\SqliteClient\InMemoryDataContext.cs" />
     <Compile Include="Extensions\ExpressionExtensions.cs" />
     <Compile Include="Extensions\ExpressionVisitor.cs" />
     <Compile Include="Extensions\ParameterRebinder.cs" />
@@ -143,31 +86,10 @@
     <Compile Include="IMigration.cs" />
     <Compile Include="IRepository.cs" />
     <Compile Include="ISpecification.cs" />
-    <Compile Include="Data\MongoDbProvider\DataContext.cs" />
-    <Compile Include="Data\MongoDbProvider\MongoTransaction.cs" />
-    <Compile Include="Data\MongoDbProvider\Repository.cs" />
     <Compile Include="ObjectFactory.cs" />
-    <Compile Include="Data\RavenDbProvider\DocumentSessionCache.cs" />
-    <Compile Include="Data\EntityFrameworkProvider\DataContext.cs" />
     <Compile Include="Data\FullTextProvider.cs" />
-    <Compile Include="Data\EntityFrameworkProvider\Repository.cs" />
-    <Compile Include="Data\NHibernateProvider\FullTextRepository.cs" />
-    <Compile Include="Data\NHibernateProvider\LuceneClient\LuceneFullTextProvider.cs" />
-    <Compile Include="Data\NHibernateProvider\MySqlClient\MySqlDataContext.cs" />
-    <Compile Include="Data\NHibernateProvider\DataContext.cs" />
-    <Compile Include="Data\NHibernateProvider\NHibernateExtensions.cs" />
     <Compile Include="ParamList.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="Data\RavenDbProvider\DataContext.cs" />
-    <Compile Include="Data\RavenDbProvider\Repository.cs" />
-    <Compile Include="Data\NHibernateProvider\Repository.cs" />
-    <Compile Include="Data\NHibernateProvider\SessionCache.cs" />
-    <Compile Include="Data\NHibernateProvider\SqlClient\Dialects\ContainsFunction.cs" />
-    <Compile Include="Data\NHibernateProvider\SqlClient\Dialects\FreeTextFunction.cs" />
-    <Compile Include="Data\NHibernateProvider\SqlClient\Dialects\MsSql2008DialectWithFullTextSupport.cs" />
-    <Compile Include="Data\NHibernateProvider\SqlClient\SqlDataContext.cs" />
-    <Compile Include="Data\NHibernateProvider\SqlClient\SqlFullTextProvider.cs" />
-    <Compile Include="Data\NHibernateProvider\SqliteClient\SQLiteDataContext.cs" />
     <Compile Include="Reflection\Activator.cs" />
     <Compile Include="Reflection\PropertyAccessor.cs" />
     <Compile Include="Reflection\ReflectionEmitExtensions.cs" />

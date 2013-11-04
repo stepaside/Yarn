@@ -1,14 +1,10 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Data.Entity;
-using System.Linq;
-using System.Text;
-using Yarn;
 using System.Collections.Concurrent;
 using System.Configuration;
-using System.Reflection;
+using System.Data.Entity;
+using System.Data.Entity.Core.Objects;
 using System.Data.Entity.ModelConfiguration;
-using System.Data.Objects;
+using System.Reflection;
 
 namespace Yarn.Data.EntityFrameworkProvider
 {

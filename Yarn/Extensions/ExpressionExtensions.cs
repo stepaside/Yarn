@@ -30,7 +30,7 @@ namespace Yarn.Extensions
             return first.Compose(second, Expression.Or);
         }
 
-        internal static Expression<Func<T, bool>> BuildOrExpression<T, ID>(this Expression<Func<T, ID>> valueSelector, IEnumerable<ID> values)
+        public static Expression<Func<T, bool>> BuildOrExpression<T, ID>(this Expression<Func<T, ID>> valueSelector, IEnumerable<ID> values)
             where T : class
         {
 
