@@ -70,9 +70,6 @@
     <Compile Include="Data\NHibernateProvider\PostgresClient\PostgresDataContext.cs" />
     <Compile Include="Data\NHibernateProvider\Repository.cs" />
     <Compile Include="Data\NHibernateProvider\SessionCache.cs" />
-    <Compile Include="Data\NHibernateProvider\SqlClient\Dialects\ContainsFunction.cs" />
-    <Compile Include="Data\NHibernateProvider\SqlClient\Dialects\FreeTextFunction.cs" />
-    <Compile Include="Data\NHibernateProvider\SqlClient\Dialects\MsSql2008DialectWithFullTextSupport.cs" />
     <Compile Include="Data\NHibernateProvider\SqlClient\SqlDataContext.cs" />
     <Compile Include="Data\NHibernateProvider\SqlClient\SqlFullTextProvider.cs" />
     <Compile Include="Data\NHibernateProvider\SqliteClient\FileDataContext.cs" />
