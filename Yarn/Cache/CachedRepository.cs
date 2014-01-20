@@ -40,7 +40,7 @@ namespace Yarn.Cache
             if (item == null)
             {
                 item = _repository.GetById<T, ID>(id);
-                _cache.Set<T>(key, item);
+                _cache.Put<T>(key, item);
                 RecordQuery<T>(key);
             }
             return item;
@@ -60,7 +60,7 @@ namespace Yarn.Cache
             if (items == null)
             {
                 items = _repository.GetByIdList<T, ID>(ids).ToArray();
-                _cache.Set<IList<T>>(key, items);
+                _cache.Put<IList<T>>(key, items);
                 RecordQuery<T>(key);
             }
             return items;
@@ -85,7 +85,7 @@ namespace Yarn.Cache
             if (item == null)
             {
                 item = _repository.Find<T>(criteria);
-                _cache.Set<T>(key, item);
+                _cache.Put<T>(key, item);
                 RecordQuery<T>(key);
             }
             return item;
@@ -114,7 +114,7 @@ namespace Yarn.Cache
             if (items == null)
             {
                 items = _repository.FindAll<T>(criteria, offset, limit).ToArray();
-                _cache.Set<IList<T>>(key, items);
+                _cache.Put<IList<T>>(key, items);
                 RecordQuery<T>(key);
             }
             return items;
@@ -134,7 +134,7 @@ namespace Yarn.Cache
             if (items == null)
             {
                 items = _repository.Execute<T>(command, parameters);
-                _cache.Set<IList<T>>(key, items);
+                _cache.Put<IList<T>>(key, items);
                 RecordQuery<T>(key);
             }
             return items;
@@ -238,7 +238,7 @@ namespace Yarn.Cache
             HashSet<string> queries;
             if (_queries.TryRemove(type, out queries))
             {
-                _cache.Clear(queries.ToArray());
+                _cache.Evict(queries.ToArray());
                 return true;
             }
             return false;

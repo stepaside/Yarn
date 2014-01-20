@@ -6,11 +6,11 @@ using Dynamo.Ioc;
 
 namespace Yarn
 {
-    public static class ObjectFactory
+    public static class ObjectContainer
     {
         private static IocContainer _container = new IocContainer(() => new ContainerLifetime());
 
-        public static void Bind<I, T>(object key = null)
+        public static void Register<I, T>(object key = null)
             where I : class
             where T : class, I, new()
         {
@@ -18,7 +18,7 @@ namespace Yarn
             _container.Compile();
         }
 
-        public static void Bind<I, T>(T instance, object key = null)
+        public static void Register<I, T>(T instance, object key = null)
             where I : class
             where T : class, I
         {

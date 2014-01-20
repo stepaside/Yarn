@@ -74,6 +74,7 @@
     <Compile Include="Cache\CacheExtensions.cs" />
     <Compile Include="Cache\ICachedResultProvider.cs" />
     <Compile Include="Data\DbFactory.cs" />
+    <Compile Include="Data\FullTextProvider.cs" />
     <Compile Include="Extensions\ExpressionExtensions.cs" />
     <Compile Include="Extensions\ExpressionVisitor.cs" />
     <Compile Include="Extensions\ParameterRebinder.cs" />
@@ -86,8 +87,7 @@
     <Compile Include="IMigration.cs" />
     <Compile Include="IRepository.cs" />
     <Compile Include="ISpecification.cs" />
-    <Compile Include="ObjectFactory.cs" />
-    <Compile Include="Data\FullTextProvider.cs" />
+    <Compile Include="ObjectContainer.cs" />
     <Compile Include="ParamList.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Reflection\Activator.cs" />

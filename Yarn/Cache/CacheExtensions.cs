@@ -1,16 +1,17 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Runtime.Caching;
 using System.Text;
 
 namespace Yarn.Cache
 {
     public static class CacheExtensions
     {
-        public static CachedRepository<TCache> UseCache<TCache>(this IRepository repository)
+        public static CachedRepository<TCache> UseCache<TCache>(this IRepository repository, TCache cache = null)
             where TCache : class, ICachedResultProvider, new()
         {
-            return new CachedRepository<TCache>(repository);
+            return new CachedRepository<TCache>(repository, cache);
         }
     }
 }
