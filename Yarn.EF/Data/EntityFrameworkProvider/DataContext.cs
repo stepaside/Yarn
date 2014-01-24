@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Concurrent;
 using System.Configuration;
+using System.Data;
 using System.Data.Entity;
 using System.Data.Entity.Core.Objects;
 using System.Data.Entity.ModelConfiguration;
@@ -133,8 +134,13 @@ namespace Yarn.Data.EntityFrameworkProvider
         {
             get 
             {
-                if (_context == null)
+                if (_context == null || _context.Database.Connection.State == ConnectionState.Broken || _context.Database.Connection.State == ConnectionState.Closed)
                 {
+                    if (_context != null)
+                    {
+                        _context.Dispose();
+                    }
+
                     _context = _prefix == null ? GetDefaultDbContext() : CreateDbContext(_prefix);
                     DbContextCache.CurrentContext = _context;
                 }
