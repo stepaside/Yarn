@@ -104,8 +104,13 @@ namespace Yarn.Data.NHibernateProvider
         {
             get
             {
-                if (_session == null)
+                if (_session == null || !_session.IsOpen)
                 {
+                    if (_session != null)
+                    {
+                        _session.Dispose();
+                    }
+
                     var factory = _prefix == null ? GetDefaultSessionFactory() : CreateSessionFactory(_prefix).Item1;
                     _session = factory.OpenSession();
                     SessionCache.CurrentSession = _session;

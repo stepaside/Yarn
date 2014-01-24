@@ -134,7 +134,7 @@ namespace Yarn.Data.EntityFrameworkProvider
         {
             get 
             {
-                if (_context == null || _context.Database.Connection.State == ConnectionState.Broken || _context.Database.Connection.State == ConnectionState.Closed)
+                if (_context == null || _context.Database.Connection.State == ConnectionState.Broken)
                 {
                     if (_context != null)
                     {
