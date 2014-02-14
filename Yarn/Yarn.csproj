@@ -82,6 +82,7 @@
     <Compile Include="IContainerProvider.cs" />
     <Compile Include="IDataContext.cs" />
     <Compile Include="IDataContextCache.cs" />
+    <Compile Include="IService.cs" />
     <Compile Include="IFullTextProvider.cs" />
     <Compile Include="IFullTextRepository.cs" />
     <Compile Include="ILazyLoader.cs" />
