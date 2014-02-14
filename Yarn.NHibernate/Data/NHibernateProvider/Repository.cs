@@ -203,7 +203,7 @@ namespace Yarn.Data.NHibernateProvider
             {
                 if (_context == null)
                 {
-                    _context = ObjectContainer.Resolve<IDataContext<ISession>>(_dataContextKey);
+                    _context = ObjectContainer.Current.Resolve<IDataContext<ISession>>(_dataContextKey);
                 }
                 return _context;
             }

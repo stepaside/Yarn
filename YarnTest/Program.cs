@@ -16,9 +16,9 @@ namespace YarnTest
     {
         static void Main(string[] args)
         {
-            ObjectContainer.Register<IRepository, Repository>(new Repository("Yarn.EF2"), "EF");
+            ObjectContainer.Current.Register<IRepository, Repository>(new Repository("Yarn.EF2"), "EF");
             
-            var repo = ObjectContainer.Resolve<IRepository>("EF");
+            var repo = ObjectContainer.Current.Resolve<IRepository>("EF");
             if (repo == null)
             {
                 Console.WriteLine("RepoNull");
