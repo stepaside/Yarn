@@ -8,43 +8,31 @@ namespace Yarn
 {
     public static class ObjectContainer
     {
-        private static IocContainer _container = new IocContainer(() => new ContainerLifetime());
+        private static Lazy<IContainerProvider> _container = new Lazy<IContainerProvider>(() => new DefaultContainerProvider(), true);
+
+        public static void Initialize(Func<IContainerProvider> containerFactory)
+        {
+            _container = new Lazy<IContainerProvider>(containerFactory, true);
+        }
 
         public static void Register<I, T>(object key = null)
             where I : class
             where T : class, I, new()
         {
-            _container.RegisterInstance<I>(new T(), key);
-            _container.Compile();
+            _container.Value.Register<I, T>(key);
         }
 
         public static void Register<I, T>(T instance, object key = null)
             where I : class
             where T : class, I
         {
-            _container.RegisterInstance<I>(instance, key);
-            _container.Compile();
+            _container.Value.Register<I, T>(instance, key);
         }
 
         public static T Resolve<T>(object key = null)
             where T : class
         {
-            T instance;
-            if (key == null)
-            {
-                if (!_container.TryResolve<T>(out instance))
-                {
-                    instance = null;
-                }
-            }
-            else
-            {
-                if (!_container.TryResolve<T>(key, out instance))
-                {
-                    instance = null;
-                }
-            }
-            return instance;
+            return _container.Value.Resolve<T>(key);
         }
     }
 }

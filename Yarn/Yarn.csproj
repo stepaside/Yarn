@@ -75,9 +75,11 @@
     <Compile Include="Cache\ICachedResultProvider.cs" />
     <Compile Include="Data\DbFactory.cs" />
     <Compile Include="Data\FullTextProvider.cs" />
+    <Compile Include="DefaultContainerProvider.cs" />
     <Compile Include="Extensions\ExpressionExtensions.cs" />
     <Compile Include="Extensions\ExpressionVisitor.cs" />
     <Compile Include="Extensions\ParameterRebinder.cs" />
+    <Compile Include="IContainerProvider.cs" />
     <Compile Include="IDataContext.cs" />
     <Compile Include="IDataContextCache.cs" />
     <Compile Include="IFullTextProvider.cs" />
