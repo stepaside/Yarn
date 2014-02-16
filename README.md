@@ -15,6 +15,7 @@ Here is what it currently supports:
   - Postgres
 - RavenDB
 - MongoDB
+- In-memory object storage
 
 ###Quick example of the pattern usage###
 
