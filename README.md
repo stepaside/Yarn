@@ -20,11 +20,11 @@ Here is what it currently supports:
 
 ```c#
 // Bind IRepository to specific implementation (this should happen during application startup)
-ObjectContainer.Register<IRepository, Yarn.Data.MongoDbProvider.Repository>();
+ObjectContainer.Current.Register<IRepository, Yarn.Data.MongoDbProvider.Repository>();
 
 // Resolve IRepository (this may happen anywhere within application)
 // Let's assume we have defined entity Category
-var repo = ObjectContainer.Resolve<IRepository>();
+var repo = ObjectContainer.Current.Resolve<IRepository>();
 var category = repo.GetById<Category, int>(1000);
 var categories = repo.GetByIdList<Category, int>(new[] { 1000, 1100 });
 ```
@@ -35,13 +35,13 @@ var categories = repo.GetByIdList<Category, int>(new[] { 1000, 1100 });
 // Bind IRepository to specific implementation (this should happen during application startup)
 // For this example one must provide "EF.Default.Model" application setting and "EF.Default.Connection" connection string setting
 // ("EF.Default.Model" points to an assembly which contains model class definition)
-ObjectContainer.Register<IRepository, Yarn.Data.MongoDbProvider.Repository>("mongo");
-ObjectContainer.Register<IRepository, Yarn.Data.EntityFrameworkProvider.Repository>("ef");
+ObjectContainer.Current.Register<IRepository, Yarn.Data.MongoDbProvider.Repository>("mongo");
+ObjectContainer.Current.Register<IRepository, Yarn.Data.EntityFrameworkProvider.Repository>("ef");
 
 // Resolve IRepository (this may happen anywhere within application)
 // "mongo" will resolve to MongoDB implementation, while "ef" will resolve to EF implementation
-var repo = ObjectContainer.Resolve<IRepository>("ef");
-//var repo = ObjectContainer.Resolve<IRepository>("mongo");
+var repo = ObjectContainer.Current.Resolve<IRepository>("ef");
+//var repo = ObjectContainer.Current.Resolve<IRepository>("mongo");
 var category = repo.GetById<Category, int>(1000);
 ```
 
@@ -50,15 +50,15 @@ var category = repo.GetById<Category, int>(1000);
 ```c#
 // With NHibernate one must specify implementation of the data context to be used with repository
 // For this example one must provide "NHibernate.MySqlClient.Model" application setting and "NHibernate.MySqlClient.Connection" connection string setting
-ObjectContainer.Register<IRepository, Yarn.Data.NHibernateProvider.Repository>(
+ObjectContainer.Current.Register<IRepository, Yarn.Data.NHibernateProvider.Repository>(
                                           new Yarn.Data.NHibernateProvider.Repository("nh_uow"), "nh");
-ObjectContainer.Register<IDataContext, Yarn.Data.NHibernateProvider.MySqlClient.MySqlDataContext>("nh_uow");
+ObjectContainer.Current.Register<IDataContext, Yarn.Data.NHibernateProvider.MySqlClient.MySqlDataContext>("nh_uow");
 
 // In order to use NHibernate with SQL Server one has to bind IDataContext to the SQL Server implementation
 // Similarly to the MySQL example "NHibernate.SqlClient.Model" application setting and "NHibernate.SqlClient.Connection" connection string setting should be defined
-// ObjectContainer.Register<IDataContext, Yarn.Data.NHibernateProvider.SqlClient.SqlDataContext>("nh_uow");
+// ObjectContainer.Current.Register<IDataContext, Yarn.Data.NHibernateProvider.SqlClient.SqlDataContext>("nh_uow");
 
-var repo = ObjectContainer.Resolve<IRepository>("nh");
+var repo = ObjectContainer.Current.Resolve<IRepository>("nh");
 var categories = repo.FindAll<Category>(c => c.Name.Contains("cat"), offset: 50, limit: 10);
 ```
 
@@ -68,22 +68,22 @@ var categories = repo.FindAll<Category>(c => c.Name.Contains("cat"), offset: 50,
 
   ```c#
   // Currently works only with SQL Server provider for EF
-  ObjectContainer.Register<IRepository, Yarn.Data.EntityFrameworkProvider.FullTextRepository>();
-  ObjectContainer.Register<IFullTextProvider, Yarn.Data.EntityFrameworkProvider.SqlClient.SqlFullTextProvider>();
+  ObjectContainer.Current.Register<IRepository, Yarn.Data.EntityFrameworkProvider.FullTextRepository>();
+  ObjectContainer.Current.Register<IFullTextProvider, Yarn.Data.EntityFrameworkProvider.SqlClient.SqlFullTextProvider>();
   
-  var repo = ObjectFactory.Resolve<IRepository>();
+  var repo = ObjectContainer.Current.Resolve<IRepository>();
   var categories = ((IFullTextRepository)repo).FullText.Seach<Category>("hello world");
   ```
 
 - NHibernate
 
   ```c#
-  ObjectContainer.Register<IRepository, Yarn.Data.NHibernateProvider.FullTextRepository>();
-  ObjectContainer.Register<IFullTextProvider, Yarn.Data.NHibernateProvider.LuceneClient.LuceneFullTextProvider>();
+  ObjectContainer.Current.Register<IRepository, Yarn.Data.NHibernateProvider.FullTextRepository>();
+  ObjectContainer.Current.Register<IFullTextProvider, Yarn.Data.NHibernateProvider.LuceneClient.LuceneFullTextProvider>();
   // One can resort to use of SQL Server full text as well
-  // ObjectContainer.Register<IFullTextProvider, Yarn.Data.NHibernateProvider.SqlClient.SqlFullTextProvider>();
+  // ObjectContainer.Current.Register<IFullTextProvider, Yarn.Data.NHibernateProvider.SqlClient.SqlFullTextProvider>();
   
-  var repo = ObjectFactory.Resolve<IRepository>();
+  var repo = ObjectContainer.Current.Resolve<IRepository>();
   var categories = ((IFullTextRepository)repo).FullText.Seach<Category>("hello world");
   ```
   
@@ -91,10 +91,10 @@ var categories = repo.FindAll<Category>(c => c.Name.Contains("cat"), offset: 50,
 
 ```c#
 // Bind IRepository to specific implementation (this should happen during application startup)
-ObjectContainer.Register<IRepository, Yarn.Data.EntityFrameworkProvider.Repository>();
+ObjectContainer.Current.Register<IRepository, Yarn.Data.EntityFrameworkProvider.Repository>();
 
 // Resolve IRepository (this may happen anywhere within application)
-var repo = ObjectFactory.Resolve<IRepository>();
+var repo = ObjectContainer.Current.Resolve<IRepository>();
 
 // Create a specification to abstract search criteria
 var spec = new Specification<Category>(c => c.Name.Contains("hello")).Or(c => c.Name.Contains("world"));
@@ -111,10 +111,10 @@ public class SimpleCache : ICachedResultProvider
 }
 
 // Bind IRepository to specific implementation (this should happen during application startup)
-ObjectContainer.Register<IRepository, Yarn.Data.EntityFrameworkProvider.Repository>();
+ObjectContainer.Current.Register<IRepository, Yarn.Data.EntityFrameworkProvider.Repository>();
 
 // Resolve IRepository (this may happen anywhere within application)
-var repo = ObjectFactory.Resolve<IRepository>();
+var repo = ObjectContainer.Current.Resolve<IRepository>();
 
 // Create a repository decorator to support caching
 var cachedRepo = repo.UseCache<SimpleCache>();
