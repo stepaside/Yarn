@@ -5,3 +5,4 @@ obj
 /Yarn.suo
 /Yarn.sln.docstates.suo
 packages
+*.nupkg
