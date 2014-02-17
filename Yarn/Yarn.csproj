@@ -87,7 +87,7 @@
     <Compile Include="IFullTextRepository.cs" />
     <Compile Include="ILazyLoader.cs" />
     <Compile Include="IMetaDataProvider.cs" />
-    <Compile Include="IMigration.cs" />
+    <Compile Include="IMigrationProvider.cs" />
     <Compile Include="IRepository.cs" />
     <Compile Include="ISpecification.cs" />
     <Compile Include="ObjectContainer.cs" />

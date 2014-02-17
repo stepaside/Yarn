@@ -67,6 +67,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="LocalCache.cs" />
+    <Compile Include="Migrations\Configuration.cs" />
     <Compile Include="Models\EF\Category.cs">
       <DependentUpon>Model1.tt</DependentUpon>
     </Compile>

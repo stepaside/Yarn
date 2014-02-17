@@ -4,38 +4,66 @@ using System.Configuration;
 using System.Data;
 using System.Data.Entity;
 using System.Data.Entity.Core.Objects;
+using System.Data.Entity.Infrastructure;
+using System.Data.Entity.Migrations;
+using System.Data.Entity.Migrations.Infrastructure;
 using System.Data.Entity.ModelConfiguration;
+using System.IO;
+using System.Linq;
 using System.Reflection;
+using System.Text;
+using Yarn.Data.EntityFrameworkProvider.Migrations;
 
 namespace Yarn.Data.EntityFrameworkProvider
 {
-    public class DataContext : IDataContext<DbContext>
+    public class DataContext : IDataContext<DbContext>, IMigrationProvider
     {
         private static ConcurrentDictionary<string, Tuple<DbModelBuilder, Type>> _dbModelBuilders = new ConcurrentDictionary<string, Tuple<DbModelBuilder, Type>>();
 
-        private bool _enableLazyLoading = true;
-        private bool _recreateDatabaseIfExists = false;
+        private static ScriptGeneratorMigrationInitializer<DbContext> _dbInitializer = new ScriptGeneratorMigrationInitializer<DbContext>();
+
         private string _prefix = null;
+        private bool _lazyLoadingEnabled = true;
+        private bool _proxyCreationEnabled = false;
+        private bool _autoDetectChangesEnabled = false;
+        private bool _validateOnSaveEnabled = true;
+        private bool _migrationEnabled = true;
+        private bool? _codeFirst = null;
+        
         private DbContext _context = DbContextCache.CurrentContext;
 
-        public DataContext() : this(true, false, null) { }
+        public DataContext() : this(prefix: null) { }
 
-        public DataContext(string prefix = null) : this(true, false, prefix) { }
-
-        public DataContext(bool enableLazyLoading = true, bool recreateDatabaseIfExists = false, string prefix = null)
+        public DataContext(string prefix = null, 
+                            bool lazyLoadingEnabled = true, 
+                            bool proxyCreationEnabled = false, 
+                            bool autoDetectChangesEnabled = false,
+                            bool validateOnSaveEnabled = true,
+                            bool migrationEnabled = false)
         {
-            _enableLazyLoading = enableLazyLoading;
-            _recreateDatabaseIfExists = recreateDatabaseIfExists;
             _prefix = prefix;
+            _lazyLoadingEnabled = lazyLoadingEnabled;
+            _proxyCreationEnabled = proxyCreationEnabled;
+            _autoDetectChangesEnabled = autoDetectChangesEnabled;
+            _validateOnSaveEnabled = validateOnSaveEnabled;
+            _migrationEnabled = migrationEnabled;
         }
 
         protected DbContext CreateDbContext(string prefix)
         {
             var tuple = _dbModelBuilders.GetOrAdd(prefix, key => ConfigureDbModel(key));
-
+            
             if (tuple.Item2 != null)
             {
-                return (DbContext)Activator.CreateInstance(tuple.Item2);
+                var dbContext = (DbContext)Activator.CreateInstance(tuple.Item2);
+                dbContext.Configuration.LazyLoadingEnabled = _lazyLoadingEnabled;
+                dbContext.Configuration.ProxyCreationEnabled = _proxyCreationEnabled;
+                dbContext.Configuration.AutoDetectChangesEnabled = _autoDetectChangesEnabled;
+                dbContext.Configuration.ValidateOnSaveEnabled = _validateOnSaveEnabled;
+
+                _codeFirst = false;
+
+                return dbContext;
             }
             else
             {
@@ -44,19 +72,26 @@ namespace Yarn.Data.EntityFrameworkProvider
                 var connection = DbFactory.CreateConnection(connectionKey);
                 var dbModel = builder.Build(connection);
                 var objectContext = dbModel.Compile().CreateObjectContext<ObjectContext>(connection);
-                objectContext.ContextOptions.LazyLoadingEnabled = _enableLazyLoading;
+                objectContext.ContextOptions.LazyLoadingEnabled = _lazyLoadingEnabled;
+                objectContext.ContextOptions.ProxyCreationEnabled = _proxyCreationEnabled;
 
                 if (!objectContext.DatabaseExists())
                 {
                     objectContext.CreateDatabase();
                 }
-                else if (_recreateDatabaseIfExists)
+                
+                var dbContext = new DbContext(objectContext, true);
+                dbContext.Configuration.AutoDetectChangesEnabled = _autoDetectChangesEnabled;
+                dbContext.Configuration.ValidateOnSaveEnabled = _validateOnSaveEnabled;
+
+                _codeFirst = true;
+
+                if (_migrationEnabled)
                 {
-                    objectContext.DeleteDatabase();
-                    objectContext.CreateDatabase();
+                    Database.SetInitializer(_dbInitializer);
                 }
 
-                return new DbContext(objectContext, true);
+                return dbContext;
             }
         }
 
@@ -171,13 +206,41 @@ namespace Yarn.Data.EntityFrameworkProvider
             {
                 return true;
             }
-            if ((mappingType.BaseType != null) &&
-                !mappingType.BaseType.IsAbstract &&
-                mappingType.BaseType.IsGenericType)
+            if ((mappingType.BaseType != null) && !mappingType.BaseType.IsAbstract && mappingType.BaseType.IsGenericType)
             {
                 return IsMappingClass(mappingType.BaseType);
             }
             return false;
+        }
+
+        public Stream BuildSchema()
+        {
+            if (this.Session != null && _codeFirst.HasValue && _codeFirst.Value)
+            {
+                _dbInitializer.Enabled = true;
+                this.Session.Database.Initialize(true);
+                _dbInitializer.Enabled = false;
+                if (_dbInitializer.CreateSql != null)
+                {
+                    return new MemoryStream(Encoding.UTF8.GetBytes(_dbInitializer.CreateSql));
+                }
+            }
+            return new MemoryStream();
+        }
+
+        public Stream UpdateSchema()
+        {
+            if (this.Session != null && _codeFirst.HasValue && _codeFirst.Value)
+            {
+                _dbInitializer.Enabled = true;
+                this.Session.Database.Initialize(true);
+                _dbInitializer.Enabled = false;
+                if (_dbInitializer.UpdateSql != null)
+                {
+                    return new MemoryStream(Encoding.UTF8.GetBytes(_dbInitializer.UpdateSql));
+                }
+            }
+            return new MemoryStream();
         }
     }
 }

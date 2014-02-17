@@ -8,6 +8,8 @@ using FluentNHibernate.Cfg.Db;
 using NHibernate;
 using NHibernate.Dialect;
 using NHibernate.Tool.hbm2ddl;
+using System.IO;
+using System.Text;
 
 namespace Yarn.Data.NHibernateProvider
 {
@@ -31,7 +33,7 @@ namespace Yarn.Data.NHibernateProvider
         }
     }
 
-    public abstract class NHibernateDataContext<TThisConfiguration, TConnectionString, TDialect> : DataContext, IMigration
+    public abstract class NHibernateDataContext<TThisConfiguration, TConnectionString, TDialect> : DataContext, IMigrationProvider
         where TThisConfiguration : PersistenceConfiguration<TThisConfiguration, TConnectionString>
         where TConnectionString : ConnectionStringBuilder, new()
         where TDialect : Dialect
@@ -127,24 +129,28 @@ namespace Yarn.Data.NHibernateProvider
             }
         }
 
-        public void BuildSchema()
+        public Stream BuildSchema()
         {
+            var output = new MemoryStream();
             var session = this.Session;
             if (session != null)
             {
                 var export = new SchemaExport(CreateSessionFactory(DefaultPrefix).Item2);
-                export.Execute(true, true, false, session.Connection, null);
+                export.Execute(sql => output = new MemoryStream(Encoding.UTF8.GetBytes(sql)), false, false);
             }
+            return output;
         }
 
-        public void UpdateSchema()
+        public Stream UpdateSchema()
         {
+            var output = new MemoryStream();
             var session = this.Session;
             if (session != null)
             {
                 var update = new SchemaUpdate(CreateSessionFactory(DefaultPrefix).Item2);
-                update.Execute(false, true);
+                update.Execute(sql => output = new MemoryStream(Encoding.UTF8.GetBytes(sql)), false);
             }
+            return output;
         }
     }
 }

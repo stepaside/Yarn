@@ -1,13 +1,14 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Text;
 
 namespace Yarn
 {
-    public interface IMigration
+    public interface IMigrationProvider
     {
-        void BuildSchema();
-        void UpdateSchema();
+        Stream BuildSchema();
+        Stream UpdateSchema();
     }
 }
