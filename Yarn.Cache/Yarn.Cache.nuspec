@@ -1,22 +1,21 @@
 <?xml version="1.0"?>
 <package >
   <metadata>
-    <id>Yarn.EF</id>
+    <id>Yarn.Cache</id>
     <version>0.5.0</version>
-    <title>Yarn.EF</title>
+    <title>Yarn.Cache</title>
     <authors>Max Stepanskiy</authors>
     <owners>Stepaside, Inc.</owners>
     <projectUrl>https://github.com/stepaside/Yarn</projectUrl>
     <requireLicenseAcceptance>false</requireLicenseAcceptance>
-    <description>Yarn Entity Framework Provider</description>
+    <description>Yarn Repository Cache Decorator</description>
     <copyright>Copyright © Max Stepanskiy 2012-2014</copyright>
-    <tags>Entity Framework EntityFramework EF Repository</tags>
+    <tags>Cache Repository</tags>
     <dependencies>
       <dependency id="Yarn" version="[0.5.0]" />
-      <dependency id="EntityFramework" version="6.0.2" />
     </dependencies>
   </metadata>
   <files>
-    <file src="Yarn.EF.dll" target="lib\net40" />
+    <file src="Yarn.Cache.dll" target="lib\net40" />
   </files>
 </package>

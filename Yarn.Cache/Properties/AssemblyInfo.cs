@@ -5,11 +5,11 @@ using System.Runtime.InteropServices;
 // General Information about an assembly is controlled through the following 
 // set of attributes. Change these attribute values to modify the information
 // associated with an assembly.
-[assembly: AssemblyTitle("Yarn.InMemory")]
+[assembly: AssemblyTitle("Yarn.Cache")]
 [assembly: AssemblyDescription("")]
 [assembly: AssemblyConfiguration("")]
 [assembly: AssemblyCompany("Stepaside, Inc.")]
-[assembly: AssemblyProduct("Yarn.InMemory")]
+[assembly: AssemblyProduct("Yarn.Cache")]
 [assembly: AssemblyCopyright("Copyright © Max Stepanskiy 2014")]
 [assembly: AssemblyTrademark("")]
 [assembly: AssemblyCulture("")]
@@ -20,7 +20,7 @@ using System.Runtime.InteropServices;
 [assembly: ComVisible(false)]
 
 // The following GUID is for the ID of the typelib if this project is exposed to COM
-[assembly: Guid("a775f367-3e16-4ba4-baec-b5048aa2cb02")]
+[assembly: Guid("e48aa6ee-1ce9-4270-9457-fb19006e8fe8")]
 
 // Version information for an assembly consists of the following four values:
 //

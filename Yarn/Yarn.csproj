@@ -60,7 +60,6 @@
     <Reference Include="System.ComponentModel.DataAnnotations" />
     <Reference Include="System.configuration" />
     <Reference Include="System.Core" />
-    <Reference Include="System.Runtime.Caching" />
     <Reference Include="System.Transactions" />
     <Reference Include="System.Web" />
     <Reference Include="System.Xml.Linq" />
@@ -70,9 +69,6 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Cache\CachedRepository.cs" />
-    <Compile Include="Cache\CacheExtensions.cs" />
-    <Compile Include="Cache\ICachedResultProvider.cs" />
     <Compile Include="Data\DbFactory.cs" />
     <Compile Include="Data\FullTextProvider.cs" />
     <Compile Include="DefaultContainerProvider.cs" />

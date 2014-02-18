@@ -141,6 +141,10 @@
     <None Include="packages.config" />
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\Yarn.Cache\Yarn.Cache.csproj">
+      <Project>{db50f4b1-18e7-446d-bf12-b97db499781c}</Project>
+      <Name>Yarn.Cache</Name>
+    </ProjectReference>
     <ProjectReference Include="..\Yarn.EF\Yarn.EF.csproj">
       <Project>{0bf28caa-446d-42d6-bd2f-e1a1e341b6e1}</Project>
       <Name>Yarn.EF</Name>
