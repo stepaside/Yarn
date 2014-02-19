@@ -24,7 +24,7 @@ namespace Yarn
         T Add<T>(T entity) where T : class;
         T Remove<T>(T entity) where T : class;
         T Remove<T, ID>(ID id) where T : class;
-        T Merge<T>(T entity) where T : class;
+        T Update<T>(T entity) where T : class;
                 
         // Count methods
         long Count<T>() where T : class;
@@ -37,7 +37,6 @@ namespace Yarn
         // Unit of work methods
         void Detach<T>(T entity) where T : class;
         void Attach<T>(T entity) where T : class;
-        void SaveChanges();
 
         IDataContext DataContext { get; }
     }

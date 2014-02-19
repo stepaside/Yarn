@@ -7,19 +7,26 @@ using System.Collections.Concurrent;
 
 namespace Yarn.Cache
 {
-    public class CachedRepository<TCache> : IRepository
+    public class Repository<TCache> : IRepository
         where TCache : class, ICachedResultProvider, new()
     {
         private static ConcurrentDictionary<Type, HashSet<string>> _queries = new ConcurrentDictionary<Type, HashSet<string>>();
 
         private IRepository _repository;
+        private IDataContext _context;
+
         private TCache _cache;
         HashSet<Type> _types;
 
-        public CachedRepository(IRepository repository, TCache cache = null)
+        public Repository(IRepository repository, TCache cache = null)
         {
-            if (repository == null) throw new ArgumentNullException("repository");
+            if (repository == null)
+            {
+                throw new ArgumentNullException("repository");
+            }
+
             _repository = repository;
+            _context = new DataContext(_repository.DataContext, OnAfterCommit);
             _cache = cache ?? new TCache();
             _types = new HashSet<Type>();
         }
@@ -158,10 +165,10 @@ namespace Yarn.Cache
             return _repository.Remove<T, ID>(id);
         }
 
-        public T Merge<T>(T entity) where T : class
+        public T Update<T>(T entity) where T : class
         {
             _types.Add(typeof(T));
-            return _repository.Merge(entity);
+            return _repository.Update(entity);
         }
 
         public long Count<T>() where T : class
@@ -193,22 +200,12 @@ namespace Yarn.Cache
         {
             _repository.Attach(entity);
         }
-
-        public void SaveChanges()
-        {
-            _repository.SaveChanges();
-            foreach (var type in _types)
-            {
-                EvictKeys(type);
-            }
-            _types.Clear();
-        }
-
+        
         public IDataContext DataContext
         {
             get 
             { 
-                return _repository.DataContext; 
+                return _context; 
             }
         }
 
@@ -242,6 +239,15 @@ namespace Yarn.Cache
                 return true;
             }
             return false;
+        }
+
+        private void OnAfterCommit()
+        {
+            foreach (var type in _types)
+            {
+                EvictKeys(type);
+            }
+            _types.Clear();
         }
 
         private void RecordQuery<T>(string query) where T : class

@@ -108,7 +108,7 @@ namespace Yarn.Data.InMemoryProvider
             }
         }
 
-        public T Merge<T>(T entity) where T : class
+        public T Update<T>(T entity) where T : class
         {
              _context.Session.Store<T>(entity);
              return entity;
@@ -141,12 +141,7 @@ namespace Yarn.Data.InMemoryProvider
 
         public void Attach<T>(T entity) where T : class
         {
-            Merge<T>(entity); 
-        }
-
-        public void SaveChanges()
-        {
-            _context.SaveChanges();
+            Update<T>(entity); 
         }
 
         public IDataContext<IOdb> PrivateContext

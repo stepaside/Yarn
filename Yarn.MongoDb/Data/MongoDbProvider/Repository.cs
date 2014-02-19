@@ -102,7 +102,7 @@ namespace Yarn.Data.MongoDbProvider
             return null;
         }
 
-        public T Merge<T>(T entity) where T : class
+        public T Update<T>(T entity) where T : class
         {
             var result = GetCollection<T>().Save<T>(entity);
             if (result.DocumentsAffected > 0)
@@ -112,14 +112,9 @@ namespace Yarn.Data.MongoDbProvider
             return null;
         }
 
-        public void SaveChanges()
-        {
-            _context.SaveChanges();
-        }
-
         public void Attach<T>(T entity) where T : class
         {
-            Merge<T>(entity); 
+            Update<T>(entity); 
         }
 
         public void Detach<T>(T entity) where T : class

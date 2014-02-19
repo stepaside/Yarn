@@ -98,15 +98,10 @@ namespace Yarn.Data.RavenDbProvider
             return entity;
         }
 
-        public T Merge<T>(T entity) where T : class
+        public T Update<T>(T entity) where T : class
         {
             _context.Session.Store(entity);
             return entity;
-        }
-
-        public void SaveChanges()
-        {
-            _context.SaveChanges();
         }
 
         public void Attach<T>(T entity) where T : class

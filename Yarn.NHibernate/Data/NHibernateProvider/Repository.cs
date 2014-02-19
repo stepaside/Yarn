@@ -136,15 +136,10 @@ namespace Yarn.Data.NHibernateProvider
             //return result;
         }
 
-        public T Merge<T>(T entity) where T : class
+        public T Update<T>(T entity) where T : class
         {
             this.PrivateContext.Session.Update(entity);
             return entity;
-        }
-
-        public void SaveChanges()
-        {
-            this.DataContext.SaveChanges();
         }
 
         public void Attach<T>(T entity) where T : class
