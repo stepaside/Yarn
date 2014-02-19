@@ -15,12 +15,12 @@ namespace Yarn.Reflection
 
         #region Exist Methods
 
-        public static bool Exits<T>(string propertyName)
+        public static bool Exists<T>(string propertyName)
         {
-            return Exits(typeof(T), propertyName);
+            return Exists(typeof(T), propertyName);
         }
 
-        public static bool Exits(Type targetType, string propertyName)
+        public static bool Exists(Type targetType, string propertyName)
         {
             var propertyKey = Tuple.Create(targetType, propertyName);
             var getMethod = _getters.GetOrAdd(propertyKey, key => GenerateGetter(key));
