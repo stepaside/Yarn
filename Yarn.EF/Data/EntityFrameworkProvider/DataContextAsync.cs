@@ -33,27 +33,9 @@ namespace Yarn.Data.EntityFrameworkProvider
 
         protected override void InitializeDbContext()
         {
-            _context = DbContextCache.CurrentContextAsync;
+            _context = DbContextCache.CurrentContext;
         }
-
-        public override DbContext Session
-        {
-            get
-            {
-                if (_context == null || _context.Database.Connection.State == ConnectionState.Broken)
-                {
-                    if (_context != null)
-                    {
-                        _context.Dispose();
-                    }
-
-                    _context = _prefix == null ? GetDefaultDbContext() : CreateDbContext(_prefix);
-                    DbContextCache.CurrentContextAsync = _context;
-                }
-                return _context;
-            }
-        }
-
+        
         public async Task SaveChangesAsync()
         {
             await this.Session.SaveChangesAsync();

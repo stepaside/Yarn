@@ -12,8 +12,7 @@ namespace Yarn.Data.RavenDbProvider
 
         private DocumentSessionCache() { }
 
-        void IDataContextCache.Initialize()
-        { }
+        void IDataContextCache.Initialize() { }
 
         object IDataContextCache.Get()
         {

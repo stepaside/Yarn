@@ -14,27 +14,9 @@ namespace Yarn.Data.EntityFrameworkProvider
         private const string CURRENT_DB_CONTEXT_KEY = "ef.dbcontext.current";
         private static IDataContextCache _instance;
         
-        private bool _canInitialize = true;
-
         private DbContextCache() { }
 
-        private void OnEndRequest(object sender, EventArgs args)
-        {
-            _instance.Cleanup();
-        }
-
-        void IDataContextCache.Initialize()
-        {
-            if (_canInitialize)
-            {
-                var context = HttpContext.Current;
-                if (context != null && context.ApplicationInstance != null)
-                {
-                    context.ApplicationInstance.EndRequest += OnEndRequest;
-                }
-                _canInitialize = false;
-            }
-        }
+        void IDataContextCache.Initialize() { }
 
         object IDataContextCache.Get()
         {
@@ -70,23 +52,10 @@ namespace Yarn.Data.EntityFrameworkProvider
                  var dbContext = (DbContext)context.Items[CURRENT_DB_CONTEXT_KEY];
                  if (dbContext != null)
                  {
-                     dbContext.Database.Connection.Close();
+                     dbContext.Dispose();
                      context.Items.Remove(CURRENT_DB_CONTEXT_KEY);
                  }
              }
-        }
-
-        public void Reset()
-        {
-            if (!_canInitialize)
-            {
-                var context = HttpContext.Current;
-                if (context != null && context.ApplicationInstance != null)
-                {
-                    context.ApplicationInstance.EndRequest -= OnEndRequest;
-                }
-                _canInitialize = true;
-            }
         }
 
         static DbContextCache()
@@ -111,20 +80,6 @@ namespace Yarn.Data.EntityFrameworkProvider
             }
             set
             {
-                _instance.Set(value);
-            }
-        }
-
-        public static DbContext CurrentContextAsync
-        {
-            get
-            {
-                ((DbContextCache)_instance).Reset();
-                return (DbContext)_instance.Get();
-            }
-            set
-            {
-                ((DbContextCache)_instance).Reset();
                 _instance.Set(value);
             }
         }

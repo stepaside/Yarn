@@ -16,17 +16,7 @@ namespace Yarn.Data.NHibernateProvider
 
         private SessionCache() { }
 
-        void IDataContextCache.Initialize()
-        {
-            var context = HttpContext.Current;
-            if (context != null && context.ApplicationInstance != null)
-            {
-                context.ApplicationInstance.EndRequest += (sender, args) =>
-                {
-                    _instance.Cleanup();
-                };
-            }
-        }
+        void IDataContextCache.Initialize() { }
 
         object IDataContextCache.Get()
         {
