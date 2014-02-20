@@ -37,7 +37,7 @@ namespace Yarn.Cache
         {
             var key = typeof(T).FullName + ".GetById(id:" + id.ToString() + ")";
             T item = null;
-            
+
             HashSet<string> queries;
             if (_queries.TryGetValue(typeof(T), out queries) && queries.Contains(key))
             {
@@ -47,15 +47,17 @@ namespace Yarn.Cache
             if (item == null)
             {
                 item = _repository.GetById<T, ID>(id);
-                _cache.Put<T>(key, item);
-                RecordQuery<T>(key);
+                if (_cache.Add<T>(key, item))
+                {
+                    RecordQuery<T>(key);
+                }
             }
             return item;
         }
 
         public IEnumerable<T> GetByIdList<T, ID>(IList<ID> ids) where T : class
         {
-            var key = typeof(T).FullName + ".GetByIdList(ids:[" + string.Join(",", ids.OrderBy(_=>_)) + "])";
+            var key = typeof(T).FullName + ".GetByIdList(ids:[" + string.Join(",", ids.OrderBy(_ => _)) + "])";
             IList<T> items = null;
 
             HashSet<string> queries;
@@ -63,12 +65,14 @@ namespace Yarn.Cache
             {
                 items = _cache.Get<IList<T>>(key);
             }
-            
+
             if (items == null)
             {
                 items = _repository.GetByIdList<T, ID>(ids).ToArray();
-                _cache.Put<IList<T>>(key, items);
-                RecordQuery<T>(key);
+                if (_cache.Add<IList<T>>(key, items))
+                {
+                    RecordQuery<T>(key);
+                }
             }
             return items;
         }
@@ -88,12 +92,14 @@ namespace Yarn.Cache
             {
                 item = _cache.Get<T>(key);
             }
-            
+
             if (item == null)
             {
                 item = _repository.Find<T>(criteria);
-                _cache.Put<T>(key, item);
-                RecordQuery<T>(key);
+                if (_cache.Add<T>(key, item))
+                {
+                    RecordQuery<T>(key);
+                }
             }
             return item;
         }
@@ -121,8 +127,10 @@ namespace Yarn.Cache
             if (items == null)
             {
                 items = _repository.FindAll<T>(criteria, offset, limit).ToArray();
-                _cache.Put<IList<T>>(key, items);
-                RecordQuery<T>(key);
+                if (_cache.Add<IList<T>>(key, items))
+                {
+                    RecordQuery<T>(key);
+                }
             }
             return items;
         }
@@ -141,8 +149,10 @@ namespace Yarn.Cache
             if (items == null)
             {
                 items = _repository.Execute<T>(command, parameters);
-                _cache.Put<IList<T>>(key, items);
-                RecordQuery<T>(key);
+                if (_cache.Add<IList<T>>(key, items))
+                {
+                    RecordQuery<T>(key);
+                }
             }
             return items;
         }
@@ -200,12 +210,12 @@ namespace Yarn.Cache
         {
             _repository.Attach(entity);
         }
-        
+
         public IDataContext DataContext
         {
-            get 
-            { 
-                return _context; 
+            get
+            {
+                return _context;
             }
         }
 

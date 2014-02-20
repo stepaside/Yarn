@@ -25,9 +25,14 @@ namespace YarnTest
             return (T)_cache.Get(key);
         }
 
-        public bool Put<T>(string key, T value) where T : class
+        public bool Add<T>(string key, T value) where T : class
         {
             return _cache.Add(key, value, _policy);
+        }
+
+        public void Set<T>(string key, T value) where T : class
+        {
+            _cache.Set(key, value, _policy);
         }
 
         public T Remove<T>(string key) where T : class
