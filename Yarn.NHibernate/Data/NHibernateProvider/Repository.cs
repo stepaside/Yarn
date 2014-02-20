@@ -32,7 +32,7 @@ namespace Yarn.Data.NHibernateProvider
 
         public T GetById<T, ID>(ID id, LockMode lockMode) where T : class
         {
-            var session = this.PrivateContext.Session;
+            var session = this.Session;
             if (lockMode != null)
             {
                 return session.Get<T>(id, lockMode);
@@ -45,7 +45,7 @@ namespace Yarn.Data.NHibernateProvider
 
         public IEnumerable<T> GetByIdList<T, ID>(IList<ID> ids) where T : class
         {
-            var session = this.PrivateContext.Session;
+            var session = this.Session;
             var criteria = session.CreateCriteria<T>();
             var idsRestriction = Restrictions.Disjunction();
             ids.ForEach(id => idsRestriction.Add(Restrictions.IdEq(id)));
@@ -60,7 +60,7 @@ namespace Yarn.Data.NHibernateProvider
 
         public T LoadById<T, ID>(ID id, LockMode lockMode) where T : class
         {
-            var session = this.PrivateContext.Session;
+            var session = this.Session;
             if (lockMode != null)
             {
                 return session.Load<T>(id, lockMode);
@@ -103,7 +103,7 @@ namespace Yarn.Data.NHibernateProvider
 
         public IList<T> Execute<T>(string command, ParamList parameters) where T : class
         {
-            var query = this.PrivateContext.Session.CreateSQLQuery(command);
+            var query = this.Session.CreateSQLQuery(command);
             if (parameters != null)
             {
                 foreach (var parameter in parameters)
@@ -117,44 +117,44 @@ namespace Yarn.Data.NHibernateProvider
 
         public T Add<T>(T entity) where T : class
         {
-            this.PrivateContext.Session.SaveOrUpdate(entity);
+            this.Session.SaveOrUpdate(entity);
             return entity;
         }
 
         public T Remove<T>(T entity) where T : class
         {
-            this.PrivateContext.Session.Delete(entity);
+            this.Session.Delete(entity);
             return entity;
         }
 
         public T Remove<T, ID>(ID id) where T : class
         {
             var entity = GetById<T, ID>(id);
-            this.PrivateContext.Session.Delete(entity);
+            this.Session.Delete(entity);
             return entity;
-            //var result = this.PrivateContext.Session.Delete<T, ID>(id);
+            //var result = this.Session.Delete<T, ID>(id);
             //return result;
         }
 
         public T Update<T>(T entity) where T : class
         {
-            this.PrivateContext.Session.Update(entity);
+            this.Session.Update(entity);
             return entity;
         }
 
         public void Attach<T>(T entity) where T : class
         {
-            this.PrivateContext.Session.Merge(entity);
+            this.Session.Merge(entity);
         }
 
         public void Detach<T>(T entity) where T : class
         {
-            this.PrivateContext.Session.Evict(entity);
+            this.Session.Evict(entity);
         }
 
         public IQueryable<T> All<T>() where T : class
         {
-            return this.PrivateContext.Session.Query<T>();
+            return this.Session.Query<T>();
         }
 
         public long Count<T>() where T : class
@@ -184,11 +184,11 @@ namespace Yarn.Data.NHibernateProvider
             return query;
         }
 
-        private IDataContext<ISession> PrivateContext
+        protected ISession Session
         {
             get
             {
-                return (IDataContext<ISession>)this.DataContext;
+                return ((IDataContext<ISession>)this.DataContext).Session;
             }
         }
 
@@ -226,7 +226,7 @@ namespace Yarn.Data.NHibernateProvider
 
         IEnumerable<string> IMetaDataProvider.GetPrimaryKey<T>()
         {
-            return new[] { this.PrivateContext.Session.SessionFactory.GetClassMetadata(typeof(T)).IdentifierPropertyName };
+            return new[] { this.Session.SessionFactory.GetClassMetadata(typeof(T)).IdentifierPropertyName };
         }
 
         IDictionary<string, object> IMetaDataProvider.GetPrimaryKeyValue<T>(T entity)

@@ -53,6 +53,8 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Data\EntityFrameworkProvider\ContextExtensions.cs" />
+    <Compile Include="Data\EntityFrameworkProvider\DataContextAsync.cs" />
+    <Compile Include="Data\EntityFrameworkProvider\RepositoryAsync.cs" />
     <Compile Include="Data\EntityFrameworkProvider\DataContext.cs" />
     <Compile Include="Data\EntityFrameworkProvider\DbContextCache.cs" />
     <Compile Include="Data\EntityFrameworkProvider\FullTextRepository.cs" />

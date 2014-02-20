@@ -144,11 +144,11 @@ namespace Yarn.Data.InMemoryProvider
             Update<T>(entity); 
         }
 
-        public IDataContext<IOdb> PrivateContext
+        protected IOdb Database
         {
             get
             {
-                return (IDataContext<IOdb>)this.DataContext;
+                return ((IDataContext<IOdb>)this.DataContext).Session;
             }
         }
 
@@ -171,7 +171,7 @@ namespace Yarn.Data.InMemoryProvider
 
         protected OID GetId<T>(T entity) where T : class
         {
-            return this.PrivateContext.Session.GetObjectId<T>(entity);
+            return this.Database.GetObjectId<T>(entity);
         }
 
         #region IMetaDataProvider Members

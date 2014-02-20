@@ -22,7 +22,7 @@ namespace Yarn.Data.EntityFrameworkProvider
 
         private static ScriptGeneratorMigrationInitializer<DbContext> _dbInitializer = new ScriptGeneratorMigrationInitializer<DbContext>();
 
-        private string _prefix = null;
+        protected readonly string _prefix = null;
         private bool _lazyLoadingEnabled = true;
         private bool _proxyCreationEnabled = false;
         private bool _autoDetectChangesEnabled = false;
@@ -30,7 +30,7 @@ namespace Yarn.Data.EntityFrameworkProvider
         private bool _migrationEnabled = true;
         private bool? _codeFirst = null;
         
-        private DbContext _context = DbContextCache.CurrentContext;
+        protected DbContext _context = null;
 
         public DataContext() : this(prefix: null) { }
 
@@ -47,6 +47,12 @@ namespace Yarn.Data.EntityFrameworkProvider
             _autoDetectChangesEnabled = autoDetectChangesEnabled;
             _validateOnSaveEnabled = validateOnSaveEnabled;
             _migrationEnabled = migrationEnabled;
+            InitializeDbContext();
+        }
+
+        protected virtual void InitializeDbContext()
+        {
+            _context = DbContextCache.CurrentContext;
         }
 
         protected DbContext CreateDbContext(string prefix)
@@ -165,7 +171,7 @@ namespace Yarn.Data.EntityFrameworkProvider
             this.Session.SaveChanges();
         }
 
-        public DbContext Session
+        public virtual DbContext Session
         {
             get 
             {

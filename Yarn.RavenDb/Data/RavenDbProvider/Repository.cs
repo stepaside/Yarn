@@ -177,11 +177,11 @@ namespace Yarn.Data.RavenDbProvider
             return indexQuery.ToArray();
         }
 
-        public IDataContext<IDocumentSession> PrivateContext
+        protected IDocumentSession DocumentSession
         {
             get
             {
-                return (IDataContext<IDocumentSession>)DataContext;
+                return ((IDataContext<IDocumentSession>)DataContext).Session;
             }
         }
 
@@ -227,13 +227,13 @@ namespace Yarn.Data.RavenDbProvider
 
         IEnumerable<string> IMetaDataProvider.GetPrimaryKey<T>()
         {
-            return new[] { this.PrivateContext.Session.Advanced.DocumentStore.Conventions.GetIdentityProperty(typeof(T)).Name };
+            return new[] { this.DocumentSession.Advanced.DocumentStore.Conventions.GetIdentityProperty(typeof(T)).Name };
         }
 
         IDictionary<string, object> IMetaDataProvider.GetPrimaryKeyValue<T>(T entity)
         {
             var key = ((IMetaDataProvider)this).GetPrimaryKey<T>().First();
-            var value = this.PrivateContext.Session.Advanced.GetDocumentId(entity);
+            var value = this.DocumentSession.Advanced.GetDocumentId(entity);
             return new Dictionary<string, object> { { key, value } };
         }
         

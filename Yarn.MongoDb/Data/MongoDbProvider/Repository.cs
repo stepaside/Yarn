@@ -236,11 +236,11 @@ namespace Yarn.Data.MongoDbProvider
             return items;
         }
 
-        public IDataContext<MongoDatabase> PrivateContext
+        protected MongoDatabase Database
         {
             get
             {
-                return (IDataContext<MongoDatabase>)DataContext;
+                return ((IDataContext<MongoDatabase>)DataContext).Session;
             }
         }
 
@@ -284,11 +284,12 @@ namespace Yarn.Data.MongoDbProvider
                 {
                     name = _pluralizer.Pluralize(name);
                 }
-                if (!PrivateContext.Session.CollectionExists(name))
+                var database = this.Database;
+                if (!database.CollectionExists(name))
                 {
-                    PrivateContext.Session.CreateCollection(name);
+                    database.CreateCollection(name);
                 }
-                return PrivateContext.Session.GetCollection<T>(name);
+                return database.GetCollection<T>(name);
             });
         }
 

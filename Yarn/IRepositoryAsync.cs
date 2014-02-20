@@ -19,16 +19,12 @@ namespace Yarn
 
         // Execute methods
         Task<IList<T>> ExecuteAsync<T>(string command, ParamList parameters) where T : class;
-
-        // DML methods
-        Task<T> AddAsync<T>(T entity) where T : class;
-        Task<T> RemoveAsync<T>(T entity) where T : class;
-        Task<T> RemoveAsync<T, ID>(ID id) where T : class;
-        Task<T> UpdateAsync<T>(T entity) where T : class;
-
+        
         // Count methods
         Task<long> CountAsync<T>() where T : class;
         Task<long> CountAsync<T>(ISpecification<T> criteria) where T : class;
         Task<long> CountAsync<T>(Expression<Func<T, bool>> criteria) where T : class;
+
+        new IDataContextAsync DataContext { get; }
     }
 }

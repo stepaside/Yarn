@@ -13,7 +13,7 @@ namespace Yarn.Data.EntityFrameworkProvider
 {
     public class Repository : IRepository, IMetaDataProvider, ILazyLoader
     {
-        private IDataContext<DbContext> _context;
+        protected IDataContext<DbContext> _context;
         protected readonly string _prefix;
         private ConcurrentDictionary<Type, DbSet> _dbSets;
 
@@ -75,11 +75,16 @@ namespace Yarn.Data.EntityFrameworkProvider
 
         public IList<T> Execute<T>(string command, ParamList parameters) where T : class
         {
-            var connection = this.PrivateContext.Session.Database.Connection;
-            var items = parameters != null 
-                ? this.PrivateContext.Session.Database.SqlQuery<T>(command, parameters.Select(p => DbFactory.CreateParameter(connection, p.Key, p.Value)).ToArray())
-                : this.PrivateContext.Session.Database.SqlQuery<T>(command);
-            return items.ToArray();
+            return PrepareSqlQuery<T>(command, parameters).ToArray();
+        }
+
+        protected DbRawSqlQuery<T> PrepareSqlQuery<T>(string command, ParamList parameters) where T : class
+        {
+            var connection = this.DbContext.Database.Connection;
+            var query = parameters != null
+                ? this.DbContext.Database.SqlQuery<T>(command, parameters.Select(p => DbFactory.CreateParameter(connection, p.Key, p.Value)).ToArray())
+                : this.DbContext.Database.SqlQuery<T>(command);
+            return query;
         }
 
         public T Add<T>(T entity) where T : class
@@ -115,7 +120,7 @@ namespace Yarn.Data.EntityFrameworkProvider
 
         public void Detach<T>(T entity) where T : class
         {
-            ((IObjectContextAdapter)this.PrivateContext.Session).ObjectContext.Detach(entity);
+            ((IObjectContextAdapter)this.DbContext).ObjectContext.Detach(entity);
         }
 
         public IQueryable<T> All<T>() where T : class
@@ -152,19 +157,19 @@ namespace Yarn.Data.EntityFrameworkProvider
 
         public DbSet<T> Table<T>() where T : class
         {
-            var dbSet = _dbSets.GetOrAdd(typeof(T), t => this.PrivateContext.Session.Set<T>());
+            var dbSet = _dbSets.GetOrAdd(typeof(T), t => this.DbContext.Set<T>());
             return dbSet.Cast<T>();
         }
 
-        private IDataContext<DbContext> PrivateContext
+        protected DbContext DbContext
         {
             get
             {
-                return (IDataContext<DbContext>)this.DataContext;
+                return ((IDataContext<DbContext>)this.DataContext).Session;
             }
         }
 
-        public IDataContext DataContext
+        public virtual IDataContext DataContext
         {
             get
             {
@@ -198,7 +203,7 @@ namespace Yarn.Data.EntityFrameworkProvider
 
         IEnumerable<string> IMetaDataProvider.GetPrimaryKey<T>()
         {
-            return ((IObjectContextAdapter)this.PrivateContext.Session)
+            return ((IObjectContextAdapter)this.DbContext)
                     .ObjectContext.CreateObjectSet<T>()
                     .EntitySet.ElementType.KeyMembers.Select(k => k.Name);
         
