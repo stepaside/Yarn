@@ -22,12 +22,13 @@ namespace Yarn.Data.EntityFrameworkProvider
 
         private static ScriptGeneratorMigrationInitializer<DbContext> _dbInitializer = new ScriptGeneratorMigrationInitializer<DbContext>();
 
-        protected readonly string _prefix = null;
-        private bool _lazyLoadingEnabled = true;
-        private bool _proxyCreationEnabled = false;
-        private bool _autoDetectChangesEnabled = false;
-        private bool _validateOnSaveEnabled = true;
-        private bool _migrationEnabled = true;
+        protected readonly string _prefix;
+        private readonly bool _lazyLoadingEnabled;
+        private readonly bool _proxyCreationEnabled;
+        private readonly bool _autoDetectChangesEnabled;
+        private readonly bool _validateOnSaveEnabled;
+        private readonly bool _migrationEnabled;
+
         private bool? _codeFirst = null;
         
         protected DbContext _context = null;

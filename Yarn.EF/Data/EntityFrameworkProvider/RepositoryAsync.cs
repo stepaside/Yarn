@@ -14,10 +14,15 @@ namespace Yarn.Data.EntityFrameworkProvider
 {
     public class RepositoryAsync : Repository, IRepositoryAsync
     {
-        public RepositoryAsync() : this(null) { }
+        public RepositoryAsync() : this(prefix: null) { }
 
-        public RepositoryAsync(string prefix = null)
-            : base(prefix)
+        public RepositoryAsync(string prefix = null,
+                            bool lazyLoadingEnabled = true,
+                            bool proxyCreationEnabled = false,
+                            bool autoDetectChangesEnabled = false,
+                            bool validateOnSaveEnabled = true,
+                            bool migrationEnabled = false)
+            : base(prefix, lazyLoadingEnabled, proxyCreationEnabled, autoDetectChangesEnabled, validateOnSaveEnabled, migrationEnabled)
         { }
 
         public async Task<T> GetByIdAsync<T, ID>(ID id) where T : class
@@ -86,7 +91,7 @@ namespace Yarn.Data.EntityFrameworkProvider
             {
                 if (_context == null)
                 {
-                    _context = new DataContextAsync(_prefix);
+                    _context = new DataContextAsync(_prefix, _lazyLoadingEnabled, _proxyCreationEnabled, _autoDetectChangesEnabled, _validateOnSaveEnabled, _migrationEnabled);
                 }
                 return (IDataContextAsync)_context;
                 

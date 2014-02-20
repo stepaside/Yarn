@@ -14,14 +14,31 @@ namespace Yarn.Data.EntityFrameworkProvider
     public class Repository : IRepository, IMetaDataProvider, ILazyLoader
     {
         protected IDataContext<DbContext> _context;
+
         protected readonly string _prefix;
+        protected readonly bool _lazyLoadingEnabled;
+        protected readonly bool _proxyCreationEnabled;
+        protected readonly bool _autoDetectChangesEnabled;
+        protected readonly bool _validateOnSaveEnabled;
+        protected readonly bool _migrationEnabled;
+
         private ConcurrentDictionary<Type, DbSet> _dbSets;
 
-        public Repository() : this(null) { }
+        public Repository() : this(prefix: null) { }
 
-        public Repository(string prefix = null) 
+        public Repository(string prefix = null, 
+                            bool lazyLoadingEnabled = true,
+                            bool proxyCreationEnabled = false,
+                            bool autoDetectChangesEnabled = false,
+                            bool validateOnSaveEnabled = true,
+                            bool migrationEnabled = false) 
         {
             _prefix = prefix;
+            _lazyLoadingEnabled = lazyLoadingEnabled;
+            _proxyCreationEnabled = proxyCreationEnabled;
+            _autoDetectChangesEnabled = autoDetectChangesEnabled;
+            _validateOnSaveEnabled = validateOnSaveEnabled;
+            _migrationEnabled = migrationEnabled;
             _dbSets = new ConcurrentDictionary<Type, DbSet>();
         }
 
@@ -175,7 +192,7 @@ namespace Yarn.Data.EntityFrameworkProvider
             {
                 if (_context == null)
                 {
-                    _context = new DataContext(_prefix);
+                    _context = new DataContext(_prefix, _lazyLoadingEnabled, _proxyCreationEnabled, _autoDetectChangesEnabled, _validateOnSaveEnabled, _migrationEnabled);
                 }
                 return _context;
             }
