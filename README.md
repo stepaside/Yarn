@@ -118,7 +118,7 @@ ObjectContainer.Current.Register<IRepository, Yarn.Data.EntityFrameworkProvider.
 var repo = ObjectContainer.Current.Resolve<IRepository>();
 
 // Create a repository decorator to support caching
-var cachedRepo = repo.UseCache<SimpleCache>();
+var cachedRepo = repo.WithCache<SimpleCache>();
 
 // Create a specification to abstract search criteria
 var spec = new Specification<Category>(c => c.Name.Contains("hello")).Or(c => c.Name.Contains("world"));
