@@ -11,7 +11,7 @@ namespace Yarn.Extensions
     /// This comes from Matt Warren's sample:
     /// http://blogs.msdn.com/mattwar/archive/2007/07/31/linq-building-an-iqueryable-provider-part-ii.aspx
     /// </summary>
-    public abstract class ExpressionVisitor
+    internal abstract class ExpressionVisitor
     {
         public virtual Expression Visit(Expression exp)
         {

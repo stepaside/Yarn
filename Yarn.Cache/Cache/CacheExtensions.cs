@@ -8,7 +8,7 @@ namespace Yarn.Cache
 {
     public static class CacheExtensions
     {
-        public static Repository<TCache> UseCache<TCache>(this IRepository repository, TCache cache = null)
+        public static Repository<TCache> WithCache<TCache>(this IRepository repository, TCache cache = null)
             where TCache : class, ICachedResultProvider, new()
         {
             return new Repository<TCache>(repository, cache);

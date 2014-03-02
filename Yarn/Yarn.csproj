@@ -69,6 +69,10 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Adapters\AuditableRepository.cs" />
+    <Compile Include="Adapters\SoftDeleteRepository.cs" />
+    <Compile Include="Extensions\RepositoryExtensions.cs" />
+    <Compile Include="IAuditable.cs" />
     <Compile Include="IDataContextAsync.cs" />
     <Compile Include="Data\DbFactory.cs" />
     <Compile Include="Data\FullTextProvider.cs" />
@@ -87,6 +91,7 @@
     <Compile Include="IMetaDataProvider.cs" />
     <Compile Include="IMigrationProvider.cs" />
     <Compile Include="IRepository.cs" />
+    <Compile Include="ISoftDelete.cs" />
     <Compile Include="ISpecification.cs" />
     <Compile Include="ObjectContainer.cs" />
     <Compile Include="ParamList.cs" />

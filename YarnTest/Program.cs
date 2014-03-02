@@ -37,7 +37,7 @@ namespace YarnTest
             
             var customers = repo.Execute<Customer>("EXEC spDTO_Customer_Retrieve @CustomerID", new ParamList { { "CustomerID", "ALFKI" } });
 
-            var cachedRepo = repo.UseCache<LocalCache>();
+            var cachedRepo = repo.WithCache<LocalCache>();
             var customer1 = cachedRepo.GetById<Customer, string>("ALFKI");
             var customer2 = cachedRepo.GetById<Customer, string>("ALFKI");
 

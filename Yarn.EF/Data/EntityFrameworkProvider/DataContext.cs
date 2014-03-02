@@ -106,34 +106,35 @@ namespace Yarn.Data.EntityFrameworkProvider
         {
             var assemblyKey = prefix + ".Model";
 
-            Assembly assembly = null;
-            var assemblyLocationOrName = ConfigurationManager.AppSettings.Get(assemblyKey);
-            if (Uri.IsWellFormedUriString(assemblyLocationOrName, UriKind.Absolute))
-            {
-                assembly = Assembly.LoadFrom(assemblyLocationOrName);
-            }
-            else
-            {
-                assembly = Assembly.Load(assemblyLocationOrName);
-            }
-
             DbModelBuilder builder = null;
             Type dbContextType = null;
             var hasMappingClass = false;
             var isCodeFirst = true;
-
-            foreach (var type in assembly.GetTypes())
+            
+            var assemblyLocationsOrNames = ConfigurationManager.AppSettings.Get(assemblyKey);
+            foreach (var locationOrName in assemblyLocationsOrNames.Split('|'))
             {
-                if (typeof(DbContext).IsAssignableFrom(type))
+                Assembly assembly = null;
+                if (Uri.IsWellFormedUriString(locationOrName, UriKind.Absolute))
                 {
-                    isCodeFirst = false;
-                    dbContextType = type;
-                    break;
+                    assembly = Assembly.LoadFrom(locationOrName);
+                }
+                else
+                {
+                    assembly = Assembly.Load(locationOrName);
                 }
 
-                if (!type.IsAbstract)
+                foreach (var type in assembly.GetTypes())
                 {
-                    if (type.BaseType.IsGenericType && IsMappingClass(type.BaseType))
+                    if (typeof (DbContext).IsAssignableFrom(type))
+                    {
+                        isCodeFirst = false;
+                        dbContextType = type;
+                        break;
+                    }
+
+                    if (!type.IsAbstract && !type.IsInterface && type.BaseType != null 
+                        && type.BaseType.IsGenericType && IsMappingClass(type.BaseType))
                     {
                         if (builder == null)
                         {
@@ -208,8 +209,8 @@ namespace Yarn.Data.EntityFrameworkProvider
 
         private bool IsMappingClass(Type mappingType)
         {
-            var baseType = typeof(EntityTypeConfiguration<>);
-            if (mappingType.GetGenericTypeDefinition() == baseType)
+            var baseMapType = typeof(EntityTypeConfiguration<>);
+            if (mappingType.GetGenericTypeDefinition() == baseMapType)
             {
                 return true;
             }

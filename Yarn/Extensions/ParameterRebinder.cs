@@ -6,7 +6,7 @@ using System.Text;
 
 namespace Yarn.Extensions
 {
-    public class ParameterRebinder : ExpressionVisitor
+    internal class ParameterRebinder : ExpressionVisitor
     {
         private readonly Dictionary<ParameterExpression, ParameterExpression> map;
 
