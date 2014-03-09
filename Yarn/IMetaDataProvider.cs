@@ -7,7 +7,7 @@ namespace Yarn
 {
     public interface IMetaDataProvider
     {
-        IEnumerable<string> GetPrimaryKey<T>() where T : class;
-        IDictionary<string, object> GetPrimaryKeyValue<T>(T entity) where T : class;
+        string[] GetPrimaryKey<T>() where T : class;
+        object[] GetPrimaryKeyValue<T>(T entity) where T : class;
     }
 }

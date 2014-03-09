@@ -40,10 +40,11 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Cache\Repository.cs" />
+    <Compile Include="Cache\GenerationalCachingRepository.cs" />
+    <Compile Include="Cache\CachingStrategy.cs" />
     <Compile Include="Cache\CacheExtensions.cs" />
     <Compile Include="Cache\DataContext.cs" />
-    <Compile Include="Cache\ICachedResultProvider.cs" />
+    <Compile Include="Cache\ICacheProvider.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>

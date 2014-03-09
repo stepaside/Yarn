@@ -9,12 +9,12 @@ namespace Yarn.Cache
     public class DataContext : IDataContext
     {
         private IDataContext _context;
-        private Action _evictKeys;
+        private Action _handleCache;
 
-        public DataContext(IDataContext context, Action evictKeys)
+        public DataContext(IDataContext context, Action handleCache)
         {
             _context = context;
-            _evictKeys = evictKeys;
+            _handleCache = handleCache;
         }
 
         public void SaveChanges()
@@ -22,9 +22,9 @@ namespace Yarn.Cache
             if (_context != null)
             {
                 _context.SaveChanges();
-                if (_evictKeys != null)
+                if (_handleCache != null)
                 {
-                    _evictKeys();
+                    _handleCache();
                 }
             }
         }

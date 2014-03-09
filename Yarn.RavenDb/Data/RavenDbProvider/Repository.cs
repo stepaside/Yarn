@@ -225,16 +225,14 @@ namespace Yarn.Data.RavenDbProvider
 
         #region IMetaDataProvider Members
 
-        IEnumerable<string> IMetaDataProvider.GetPrimaryKey<T>()
+        string[] IMetaDataProvider.GetPrimaryKey<T>()
         {
             return new[] { this.DocumentSession.Advanced.DocumentStore.Conventions.GetIdentityProperty(typeof(T)).Name };
         }
 
-        IDictionary<string, object> IMetaDataProvider.GetPrimaryKeyValue<T>(T entity)
+        object[] IMetaDataProvider.GetPrimaryKeyValue<T>(T entity)
         {
-            var key = ((IMetaDataProvider)this).GetPrimaryKey<T>().First();
-            var value = this.DocumentSession.Advanced.GetDocumentId(entity);
-            return new Dictionary<string, object> { { key, value } };
+            return new[] { this.DocumentSession.Advanced.GetDocumentId(entity) };
         }
         
         #endregion

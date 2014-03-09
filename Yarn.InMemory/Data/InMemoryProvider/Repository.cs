@@ -189,18 +189,18 @@ namespace Yarn.Data.InMemoryProvider
             }
         }
 
-        IEnumerable<string> IMetaDataProvider.GetPrimaryKey<T>()
+        string[] IMetaDataProvider.GetPrimaryKey<T>()
         {
-            return typeof(T).GetProperties().Where(p => IsPrimaryKey(p)).Select(p => p.Name);
+            return typeof(T).GetProperties().Where(p => IsPrimaryKey(p)).Select(p => p.Name).ToArray();
         }
 
-        IDictionary<string, object> IMetaDataProvider.GetPrimaryKeyValue<T>(T entity)
+        object[] IMetaDataProvider.GetPrimaryKeyValue<T>(T entity)
         {
-            var values = new Dictionary<string, object>();
             var primaryKey = ((IMetaDataProvider)this).GetPrimaryKey<T>();
-            foreach (var key in primaryKey)
+            var values = new object[primaryKey.Length];
+            for (var i = 0; i < primaryKey.Length; i++ )
             {
-                values[key] = PropertyAccessor.Get(entity, key);
+                values[i] = PropertyAccessor.Get(entity, primaryKey[i]);
             }
             return values;
         }

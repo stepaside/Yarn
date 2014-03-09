@@ -126,7 +126,8 @@ namespace Yarn.Data.EntityFrameworkProvider
 
         public T Update<T>(T entity) where T : class
         {
-            this.Table<T>().AddOrUpdate<T>(entity);
+            //this.Table<T>().AddOrUpdate(entity);
+            this.DbContext.Entry<T>(entity).State = EntityState.Modified;
             return entity;
         }
         
@@ -218,21 +219,21 @@ namespace Yarn.Data.EntityFrameworkProvider
 
         #region IMetaDataProvider Members
 
-        IEnumerable<string> IMetaDataProvider.GetPrimaryKey<T>()
+        string[] IMetaDataProvider.GetPrimaryKey<T>()
         {
             return ((IObjectContextAdapter)this.DbContext)
                     .ObjectContext.CreateObjectSet<T>()
-                    .EntitySet.ElementType.KeyMembers.Select(k => k.Name);
+                    .EntitySet.ElementType.KeyMembers.Select(k => k.Name).ToArray();
         
         }
 
-        IDictionary<string, object> IMetaDataProvider.GetPrimaryKeyValue<T>(T entity)
+        object[] IMetaDataProvider.GetPrimaryKeyValue<T>(T entity)
         {
-            var values = new Dictionary<string, object>();
             var primaryKey = ((IMetaDataProvider)this).GetPrimaryKey<T>();
-            foreach (var key in primaryKey)
+            var values = new object[primaryKey.Length];
+            for (var i = 0; i < primaryKey.Length; i++)
             {
-                values[key] = PropertyAccessor.Get(entity, key);
+                values[i] = PropertyAccessor.Get(entity, primaryKey[i]);
             }
             return values;
         }

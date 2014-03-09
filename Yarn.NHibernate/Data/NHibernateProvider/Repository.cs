@@ -224,15 +224,15 @@ namespace Yarn.Data.NHibernateProvider
 
         #region IMetaDataProvider Members
 
-        IEnumerable<string> IMetaDataProvider.GetPrimaryKey<T>()
+        string[] IMetaDataProvider.GetPrimaryKey<T>()
         {
             return new[] { this.Session.SessionFactory.GetClassMetadata(typeof(T)).IdentifierPropertyName };
         }
 
-        IDictionary<string, object> IMetaDataProvider.GetPrimaryKeyValue<T>(T entity)
+        object[] IMetaDataProvider.GetPrimaryKeyValue<T>(T entity)
         {
             var key = ((IMetaDataProvider)this).GetPrimaryKey<T>().First();
-            return new Dictionary<string, object> { { key, PropertyAccessor.Get(entity, key) } };
+            return new [] { PropertyAccessor.Get(entity, key) };
         }
 
         #endregion

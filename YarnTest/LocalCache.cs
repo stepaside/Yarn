@@ -8,10 +8,11 @@ using Yarn.Cache;
 
 namespace YarnTest
 {
-    public class LocalCache : ICachedResultProvider
+    public class LocalCache : ICacheProvider
     {
         private MemoryCache _cache = new MemoryCache("LocalCache");
         private CacheItemPolicy _policy;
+        private static readonly object _locker = new object();
 
         public LocalCache() : this(10) { }
 
@@ -20,42 +21,63 @@ namespace YarnTest
             _policy = new CacheItemPolicy { AbsoluteExpiration = DateTimeOffset.Now.AddMinutes(expiration) };
         }
 
-        public T Get<T>(string key) where T : class
+        public bool Get<T>(string key, out T item)
         {
-            return (T)_cache.Get(key);
+            item = default(T);
+            try
+            {
+                if (!Exists(key))
+                {
+                    return false;
+                }
+                item = (T)_cache.Get(key);
+            }
+            catch (Exception)
+            {
+                return false;
+            }
+            return true;
         }
 
-        public bool Add<T>(string key, T value) where T : class
+        public bool Add<T>(string key, T value)
         {
             return _cache.Add(key, value, _policy);
         }
 
-        public void Set<T>(string key, T value) where T : class
+        public void Set<T>(string key, T value)
         {
             _cache.Set(key, value, _policy);
         }
 
-        public T Remove<T>(string key) where T : class
+        public bool Remove(string key)
         {
-            return (T)_cache.Remove(key);
+            return _cache.Remove(key) != null;
         }
-
-        public int Evict(params string[] keys)
-        {
-            var count = 0;
-            foreach (var key in keys)
-            {
-                if (_cache.Remove(key) != null)
-                {
-                    count++;
-                }
-            }
-            return count;
-        }
-
+        
         public void Reset()
         {
             _cache.Trim(100);
+        }
+
+        public bool Exists(string key)
+        {
+            return _cache.Contains(key);
+        }
+
+        public uint Increment(string key, uint initial = 1, uint delta = 1)
+        {
+            lock (_locker)
+            {
+                uint current;
+                if (!Get(key, out current))
+                {
+                    current = initial;
+                }
+
+                var newValue = current + delta;
+                Set(key, newValue);
+                return newValue;
+            }
         }
 
         public CacheItemPolicy CachePolicy

@@ -300,14 +300,14 @@ namespace Yarn.Data.MongoDbProvider
 
         #region IMetaDataProvider Members
 
-        IEnumerable<string> IMetaDataProvider.GetPrimaryKey<T>()
+        string[] IMetaDataProvider.GetPrimaryKey<T>()
         {
             return new[] { BsonClassMap.LookupClassMap(typeof(T)).IdMemberMap.MemberName };
         }
 
-        IDictionary<string, object> IMetaDataProvider.GetPrimaryKeyValue<T>(T entity)
+        object[] IMetaDataProvider.GetPrimaryKeyValue<T>(T entity)
         {
-            return new Dictionary<string, object> { { ((IMetaDataProvider)this).GetPrimaryKey<T>().First(), GetId<T>(entity) } };
+            return new[] { GetId<T>(entity) };
         }
 
         #endregion

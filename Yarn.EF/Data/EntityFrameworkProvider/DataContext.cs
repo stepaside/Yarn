@@ -40,7 +40,8 @@ namespace Yarn.Data.EntityFrameworkProvider
                             bool proxyCreationEnabled = false, 
                             bool autoDetectChangesEnabled = false,
                             bool validateOnSaveEnabled = true,
-                            bool migrationEnabled = false)
+                            bool migrationEnabled = false,
+                            bool transactionAware = true)
         {
             _prefix = prefix;
             _lazyLoadingEnabled = lazyLoadingEnabled;
