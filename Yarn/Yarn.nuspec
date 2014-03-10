@@ -2,7 +2,7 @@
 <package >
   <metadata>
     <id>Yarn</id>
-    <version>0.6.0</version>
+    <version>0.6.1</version>
     <title>Yarn</title>
     <authors>Max Stepanskiy</authors>
     <owners>Stepaside, Inc.</owners>
@@ -12,13 +12,8 @@
     <copyright>Copyright © Max Stepanskiy 2012-2014</copyright>
     <tags>Repository Repository-Pattern</tags>
 	  <releaseNotes>
-      * Simplified IMetaDataProvider interface
-      * Renamed ICachedResultProvider to ICacheProvider
-      * Modified default caching strategy to use combination of write-through caching and generational caching
+      * Removed dependency on Dynamo.IoC
     </releaseNotes>
-    <dependencies>
-      <dependency id="Dynamo.Ioc" version="[3.0.2.0]" />
-    </dependencies>
   </metadata>
   <files>
     <file src="Yarn.dll" target="lib\net40" />
