@@ -126,9 +126,32 @@ namespace Yarn.Data.EntityFrameworkProvider
 
         public T Update<T>(T entity) where T : class
         {
-            //this.Table<T>().AddOrUpdate(entity);
-            this.DbContext.Entry<T>(entity).State = EntityState.Modified;
-            return entity;
+            var entry = this.DbContext.Entry(entity);
+            if (entry != null)
+            {
+                var dbSet = this.Table<T>();
+                if (entry.State == EntityState.Detached)
+                {
+                    var key = ((IMetaDataProvider)this).GetPrimaryKeyValue(entity);
+                    var currentEntry = dbSet.Find(key);
+                    if (currentEntry != null)
+                    {
+                        entry = this.DbContext.Entry(currentEntry);
+                        entry.CurrentValues.SetValues(entity);
+                    }
+                    else
+                    {
+                        dbSet.Attach(entity);
+                        entry.State = EntityState.Modified;
+                    }
+                }
+                else
+                {
+                    entry.State = EntityState.Modified;
+                }
+            }
+
+            return entry.Entity;
         }
         
         public void Attach<T>(T entity) where T : class
