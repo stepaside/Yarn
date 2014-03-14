@@ -1,13 +1,15 @@
 ﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Security.Principal;
 using System.Text;
 using System.Threading.Tasks;
+using Yarn.Extensions;
 
 namespace Yarn.Adapters
 {
-    public class AuditableRepository : IRepository
+    public class AuditableRepository : IRepository, ILazyLoader, IMetaDataProvider
     {
          private IRepository _repository;
         private IPrincipal _principal;
@@ -67,6 +69,12 @@ namespace Yarn.Adapters
                 {
                     ((IAuditable)entity).CreatedBy = _principal.Identity.Name;
                 }
+                
+                ((IAuditable)entity).Cascade((root, item) =>
+                {
+                    item.CreateDate = root.CreateDate;
+                    item.CreatedBy = root.CreatedBy;
+                });
             }
             return _repository.Add(entity);
         }
@@ -90,6 +98,12 @@ namespace Yarn.Adapters
                 {
                     ((IAuditable)entity).UpdatedBy = _principal.Identity.Name;
                 }
+
+                ((IAuditable)entity).Cascade((root, item) =>
+                {
+                    item.UpdateDate = root.UpdateDate;
+                    item.UpdatedBy = root.UpdatedBy;
+                });
             }
             return _repository.Update(entity);
         }
@@ -132,6 +146,42 @@ namespace Yarn.Adapters
         public void Dispose()
         {
             _repository.Dispose();
+        }
+
+        IQueryable<TRoot> ILazyLoader.Include<TRoot, TRelated>(params System.Linq.Expressions.Expression<Func<TRoot, TRelated>>[] selectors)
+        {
+            if (_repository is ILazyLoader)
+            {
+                return ((ILazyLoader)_repository).Include<TRoot, TRelated>(selectors);
+            }
+            else
+            {
+                throw new InvalidOperationException();
+            }
+        }
+
+        string[] IMetaDataProvider.GetPrimaryKey<T>()
+        {
+            if (_repository is IMetaDataProvider)
+            {
+                return ((IMetaDataProvider)_repository).GetPrimaryKey<T>();
+            }
+            else
+            {
+                throw new InvalidOperationException();
+            }
+        }
+
+        object[] IMetaDataProvider.GetPrimaryKeyValue<T>(T entity)
+        {
+            if (_repository is IMetaDataProvider)
+            {
+                return ((IMetaDataProvider)_repository).GetPrimaryKeyValue<T>(entity);
+            }
+            else
+            {
+                throw new InvalidOperationException();
+            }
         }
     }
 }

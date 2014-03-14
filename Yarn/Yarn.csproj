@@ -67,6 +67,7 @@
   <ItemGroup>
     <Compile Include="Adapters\AuditableRepository.cs" />
     <Compile Include="Adapters\SoftDeleteRepository.cs" />
+    <Compile Include="Extensions\CascadeExtensions.cs" />
     <Compile Include="Extensions\RepositoryExtensions.cs" />
     <Compile Include="IAuditable.cs" />
     <Compile Include="IDataContextAsync.cs" />

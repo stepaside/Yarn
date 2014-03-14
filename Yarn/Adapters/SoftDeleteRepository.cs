@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 
 namespace Yarn.Adapters
 {
-    public class SoftDeleteRepository : IRepository
+    public class SoftDeleteRepository : IRepository, ILazyLoader, IMetaDataProvider
     {
         private IRepository _repository;
         private IPrincipal _principal;
@@ -150,6 +150,42 @@ namespace Yarn.Adapters
         public void Dispose()
         {
             _repository.Dispose();
+        }
+
+        IQueryable<TRoot> ILazyLoader.Include<TRoot, TRelated>(params System.Linq.Expressions.Expression<Func<TRoot, TRelated>>[] selectors)
+        {
+            if (_repository is ILazyLoader)
+            {
+                return ((ILazyLoader)_repository).Include<TRoot, TRelated>(selectors);
+            }
+            else
+            {
+                throw new InvalidOperationException();
+            }
+        }
+
+        string[] IMetaDataProvider.GetPrimaryKey<T>()
+        {
+            if (_repository is IMetaDataProvider)
+            {
+                return ((IMetaDataProvider)_repository).GetPrimaryKey<T>();
+            }
+            else
+            {
+                throw new InvalidOperationException();
+            }
+        }
+
+        object[] IMetaDataProvider.GetPrimaryKeyValue<T>(T entity)
+        {
+            if (_repository is IMetaDataProvider)
+            {
+                return ((IMetaDataProvider)_repository).GetPrimaryKeyValue<T>(entity);
+            }
+            else
+            {
+                throw new InvalidOperationException();
+            }
         }
     }
 }

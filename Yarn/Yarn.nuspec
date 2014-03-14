@@ -2,7 +2,7 @@
 <package >
   <metadata>
     <id>Yarn</id>
-    <version>0.6.3</version>
+    <version>0.6.4</version>
     <title>Yarn</title>
     <authors>Max Stepanskiy</authors>
     <owners>Stepaside, Inc.</owners>
@@ -12,7 +12,8 @@
     <copyright>Copyright © Max Stepanskiy 2012-2014</copyright>
     <tags>Repository Repository-Pattern</tags>
 	  <releaseNotes>
-      * Removed dependency on Dynamo.IoC
+      * Repository adapters understand IMetaDataProviders and ILazyLoader
+      * Added Cascade extension method to allow for easy propagation of data to child properties
     </releaseNotes>
   </metadata>
   <files>
