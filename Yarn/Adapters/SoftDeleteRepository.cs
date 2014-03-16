@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 
 namespace Yarn.Adapters
 {
-    public class SoftDeleteRepository : IRepository, ILazyLoader, IMetaDataProvider
+    public class SoftDeleteRepository : IRepository, IRelationNavigator, IMetaDataProvider
     {
         private IRepository _repository;
         private IPrincipal _principal;
@@ -152,11 +152,11 @@ namespace Yarn.Adapters
             _repository.Dispose();
         }
 
-        IQueryable<TRoot> ILazyLoader.Include<TRoot, TRelated>(params System.Linq.Expressions.Expression<Func<TRoot, TRelated>>[] selectors)
+        IFetchPath<T> IRelationNavigator.Relations<T>()
         {
-            if (_repository is ILazyLoader)
+            if (_repository is IRelationNavigator)
             {
-                return ((ILazyLoader)_repository).Include<TRoot, TRelated>(selectors);
+                return ((IRelationNavigator)_repository).Relations<T>();
             }
             else
             {

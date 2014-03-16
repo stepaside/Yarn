@@ -11,7 +11,7 @@ using Yarn.Reflection;
 
 namespace Yarn.Data.EntityFrameworkProvider
 {
-    public class Repository : IRepository, IMetaDataProvider, ILazyLoader
+    public class Repository : IRepository, IMetaDataProvider, IRelationNavigator
     {
         protected IDataContext<DbContext> _context;
 
@@ -21,6 +21,7 @@ namespace Yarn.Data.EntityFrameworkProvider
         protected readonly bool _autoDetectChangesEnabled;
         protected readonly bool _validateOnSaveEnabled;
         protected readonly bool _migrationEnabled;
+        private readonly string _nameOrConnectionString;
 
         private ConcurrentDictionary<Type, DbSet> _dbSets;
 
@@ -31,7 +32,8 @@ namespace Yarn.Data.EntityFrameworkProvider
                             bool proxyCreationEnabled = false,
                             bool autoDetectChangesEnabled = false,
                             bool validateOnSaveEnabled = true,
-                            bool migrationEnabled = false) 
+                            bool migrationEnabled = false,
+                            string nameOrConnectionString = null) 
         {
             _prefix = prefix;
             _lazyLoadingEnabled = lazyLoadingEnabled;
@@ -39,6 +41,7 @@ namespace Yarn.Data.EntityFrameworkProvider
             _autoDetectChangesEnabled = autoDetectChangesEnabled;
             _validateOnSaveEnabled = validateOnSaveEnabled;
             _migrationEnabled = migrationEnabled;
+            _nameOrConnectionString = nameOrConnectionString;
             _dbSets = new ConcurrentDictionary<Type, DbSet>();
         }
 
@@ -184,18 +187,6 @@ namespace Yarn.Data.EntityFrameworkProvider
             return FindAll<T>(criteria).LongCount();
         }
 
-        public IQueryable<TRoot> Include<TRoot, TRelated>(params Expression<Func<TRoot, TRelated>>[] selectors)
-            where TRoot : class
-            where TRelated : class
-        {
-            var query = this.All<TRoot>();
-            foreach (var selector in selectors)
-            {
-                query = query.Include<TRoot, TRelated>(selector);
-            }
-            return query;
-        }
-
         public DbSet<T> Table<T>() where T : class
         {
             var dbSet = _dbSets.GetOrAdd(typeof(T), t => this.DbContext.Set<T>());
@@ -216,7 +207,7 @@ namespace Yarn.Data.EntityFrameworkProvider
             {
                 if (_context == null)
                 {
-                    _context = new DataContext(_prefix, _lazyLoadingEnabled, _proxyCreationEnabled, _autoDetectChangesEnabled, _validateOnSaveEnabled, _migrationEnabled);
+                    _context = new DataContext(_prefix, _lazyLoadingEnabled, _proxyCreationEnabled, _autoDetectChangesEnabled, _validateOnSaveEnabled, _migrationEnabled, _nameOrConnectionString);
                 }
                 return _context;
             }
@@ -259,6 +250,38 @@ namespace Yarn.Data.EntityFrameworkProvider
                 values[i] = PropertyAccessor.Get(entity, primaryKey[i]);
             }
             return values;
+        }
+
+        #endregion
+
+        #region IRelationNavigator Members
+
+        IFetchPath<T> IRelationNavigator.Relations<T>()
+        {
+            return new FetchPath<T>(this.All<T>());
+        }
+
+        private class FetchPath<T> : IFetchPath<T>
+            where T : class
+        {
+            IQueryable<T> _query;
+
+            public FetchPath(IQueryable<T> query)
+            {
+                _query = query;
+            }
+
+            public IFetchPath<T> Include<TProperty>(Expression<Func<T, TProperty>> path) 
+                where TProperty : class
+            {
+                _query = _query.Include(path);
+                return this;
+            }
+
+            public IQueryable<T> Compile()
+            {
+                return _query;
+            }
         }
 
         #endregion

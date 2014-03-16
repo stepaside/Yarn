@@ -8,10 +8,12 @@ namespace Yarn.Data.NHibernateProvider.SqliteClient
 {
     public class InMemoryDataContext : SQLiteDataContext
     {
-        public InMemoryDataContext() : this(null) { }
+        public InMemoryDataContext() : this(null, null) { }
 
-        public InMemoryDataContext(string contextKey = null) :
-            base(SQLiteConfiguration.Standard.InMemory().ShowSql(), contextKey)
+        public InMemoryDataContext(string nameOrConnectionString = null) : this(null, nameOrConnectionString) { }
+
+        public InMemoryDataContext(string prefix = null, string nameOrConnectionString = null) :
+            base(SQLiteConfiguration.Standard.InMemory().ShowSql(), prefix, nameOrConnectionString)
         { }
     }
 }

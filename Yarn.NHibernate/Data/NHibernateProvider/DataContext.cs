@@ -41,12 +41,14 @@ namespace Yarn.Data.NHibernateProvider
         private static ConcurrentDictionary<string, Tuple<ISessionFactory, NHibernate.Cfg.Configuration>> _sessionFactories = new ConcurrentDictionary<string, Tuple<ISessionFactory, NHibernate.Cfg.Configuration>>();
         protected PersistenceConfiguration<TThisConfiguration, TConnectionString> _configuration = null;
         private string _prefix = null;
+        private string _nameOrConnectionString = null;
         private ISession _session = SessionCache.CurrentSession;
 
-        protected NHibernateDataContext(PersistenceConfiguration<TThisConfiguration, TConnectionString> configuration, string prefix = null)
+        protected NHibernateDataContext(PersistenceConfiguration<TThisConfiguration, TConnectionString> configuration, string prefix = null, string nameOrConnectionString = null)
         {
             _configuration = configuration;
             _prefix = prefix;
+            _nameOrConnectionString = nameOrConnectionString;
         }
 
         protected Tuple<ISessionFactory, NHibernate.Cfg.Configuration> CreateSessionFactory(string prefix)
@@ -62,7 +64,7 @@ namespace Yarn.Data.NHibernateProvider
         protected virtual Tuple<ISessionFactory, NHibernate.Cfg.Configuration> ConfigureSessionFactory(string prefix)
         {
             var assemblyKey = prefix + ".Model";
-            var connectionKey = prefix + ".Connection";
+            var nameOrConnectionString = _nameOrConnectionString ?? prefix + ".Connection";
 
             Assembly assembly = null;
             var assemblyLocation = ConfigurationManager.AppSettings.Get(assemblyKey);
@@ -75,7 +77,11 @@ namespace Yarn.Data.NHibernateProvider
                 assembly = Assembly.Load(assemblyLocation);
             }
 
-            var connectionString = ConfigurationManager.ConnectionStrings[connectionKey].ConnectionString;
+            var connectionString = nameOrConnectionString;
+            if (ConfigurationManager.ConnectionStrings[nameOrConnectionString] != null)
+            {
+                connectionString = ConfigurationManager.ConnectionStrings[nameOrConnectionString].ConnectionString;
+            }
 
             NHibernate.Cfg.Configuration config = null;
 

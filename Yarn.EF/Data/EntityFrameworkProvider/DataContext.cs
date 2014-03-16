@@ -1,7 +1,9 @@
 ﻿using System;
 using System.Collections.Concurrent;
+using System.Collections.Generic;
 using System.Configuration;
 using System.Data;
+using System.Data.Common;
 using System.Data.Entity;
 using System.Data.Entity.Core.Objects;
 using System.Data.Entity.Infrastructure;
@@ -18,7 +20,14 @@ namespace Yarn.Data.EntityFrameworkProvider
 {
     public class DataContext : IDataContext<DbContext>, IMigrationProvider
     {
-        private static ConcurrentDictionary<string, Tuple<DbModelBuilder, Type>> _dbModelBuilders = new ConcurrentDictionary<string, Tuple<DbModelBuilder, Type>>();
+        protected class ModelInfo
+        {
+            public DbModelBuilder ModelBuilder { get; set; }
+            public Type DbContextType { get; set; }
+            public bool AcceptsNameOrConnectionString { get; set; }
+        }
+
+        private static ConcurrentDictionary<string, ModelInfo> _dbModelBuilders = new ConcurrentDictionary<string, ModelInfo>();
 
         private static ScriptGeneratorMigrationInitializer<DbContext> _dbInitializer = new ScriptGeneratorMigrationInitializer<DbContext>();
 
@@ -28,6 +37,7 @@ namespace Yarn.Data.EntityFrameworkProvider
         private readonly bool _autoDetectChangesEnabled;
         private readonly bool _validateOnSaveEnabled;
         private readonly bool _migrationEnabled;
+        private readonly string _nameOrConnectionString;
 
         private bool? _codeFirst = null;
         
@@ -41,7 +51,7 @@ namespace Yarn.Data.EntityFrameworkProvider
                             bool autoDetectChangesEnabled = false,
                             bool validateOnSaveEnabled = true,
                             bool migrationEnabled = false,
-                            bool transactionAware = true)
+                            string nameOrConnectionString = null)
         {
             _prefix = prefix;
             _lazyLoadingEnabled = lazyLoadingEnabled;
@@ -49,6 +59,7 @@ namespace Yarn.Data.EntityFrameworkProvider
             _autoDetectChangesEnabled = autoDetectChangesEnabled;
             _validateOnSaveEnabled = validateOnSaveEnabled;
             _migrationEnabled = migrationEnabled;
+            _nameOrConnectionString = nameOrConnectionString;
             InitializeDbContext();
         }
 
@@ -59,11 +70,12 @@ namespace Yarn.Data.EntityFrameworkProvider
 
         protected DbContext CreateDbContext(string prefix)
         {
-            var tuple = _dbModelBuilders.GetOrAdd(prefix, key => ConfigureDbModel(key));
-            
-            if (tuple.Item2 != null)
+            var modelInfo = _dbModelBuilders.GetOrAdd(prefix, key => ConfigureDbModel(key));
+            var nameOrConnectionString = _nameOrConnectionString ?? prefix + ".Connection";
+
+            if (modelInfo.DbContextType != null)
             {
-                var dbContext = (DbContext)Activator.CreateInstance(tuple.Item2);
+                var dbContext = modelInfo.AcceptsNameOrConnectionString ? (DbContext)Activator.CreateInstance(modelInfo.DbContextType, nameOrConnectionString) : (DbContext)Activator.CreateInstance(modelInfo.DbContextType);
                 dbContext.Configuration.LazyLoadingEnabled = _lazyLoadingEnabled;
                 dbContext.Configuration.ProxyCreationEnabled = _proxyCreationEnabled;
                 dbContext.Configuration.AutoDetectChangesEnabled = _autoDetectChangesEnabled;
@@ -75,9 +87,17 @@ namespace Yarn.Data.EntityFrameworkProvider
             }
             else
             {
-                var connectionKey = prefix + ".Connection";
-                var builder = tuple.Item1;
-                var connection = DbFactory.CreateConnection(connectionKey);
+                DbConnection connection = null;
+                var builder = modelInfo.ModelBuilder;
+                var providerName = DbFactory.GetProviderInvariantNameByConnectionString(nameOrConnectionString);
+                if (providerName == null)
+                {
+                    connection = DbFactory.CreateConnection(nameOrConnectionString);
+                }
+                else
+                {
+                    connection = DbFactory.CreateConnection(nameOrConnectionString, providerName);
+                }
                 var dbModel = builder.Build(connection);
                 var objectContext = dbModel.Compile().CreateObjectContext<ObjectContext>(connection);
                 objectContext.ContextOptions.LazyLoadingEnabled = _lazyLoadingEnabled;
@@ -85,7 +105,11 @@ namespace Yarn.Data.EntityFrameworkProvider
 
                 if (!objectContext.DatabaseExists())
                 {
-                    objectContext.CreateDatabase();
+                    try
+                    {
+                        objectContext.CreateDatabase();
+                    }
+                    catch { }
                 }
                 
                 var dbContext = new DbContext(objectContext, true);
@@ -102,16 +126,16 @@ namespace Yarn.Data.EntityFrameworkProvider
                 return dbContext;
             }
         }
-
-        protected Tuple<DbModelBuilder, Type> ConfigureDbModel(string prefix)
+        
+        protected ModelInfo ConfigureDbModel(string prefix)
         {
             var assemblyKey = prefix + ".Model";
 
             DbModelBuilder builder = null;
             Type dbContextType = null;
-            var hasMappingClass = false;
-            var isCodeFirst = true;
+            var acceptsNameOrConnectionString = false;
             
+            var assemblies = new List<Assembly>();
             var assemblyLocationsOrNames = ConfigurationManager.AppSettings.Get(assemblyKey);
             foreach (var locationOrName in assemblyLocationsOrNames.Split('|'))
             {
@@ -124,36 +148,24 @@ namespace Yarn.Data.EntityFrameworkProvider
                 {
                     assembly = Assembly.Load(locationOrName);
                 }
+                assemblies.Add(assembly);
+            }
 
-                foreach (var type in assembly.GetTypes())
+            dbContextType = assemblies.SelectMany(a => a.GetTypes()).FirstOrDefault(t => typeof(DbContext).IsAssignableFrom(t));
+            if (dbContextType == null)
+            {
+                builder = new DbModelBuilder();
+                foreach (var assembly in assemblies)
                 {
-                    if (typeof (DbContext).IsAssignableFrom(type))
-                    {
-                        isCodeFirst = false;
-                        dbContextType = type;
-                        break;
-                    }
-
-                    if (!type.IsAbstract && !type.IsInterface && type.BaseType != null 
-                        && type.BaseType.IsGenericType && IsMappingClass(type.BaseType))
-                    {
-                        if (builder == null)
-                        {
-                            builder = new DbModelBuilder();
-                        }
-                        hasMappingClass = true;
-                        dynamic configurationInstance = Activator.CreateInstance(type);
-                        builder.Configurations.Add(configurationInstance);
-                    }
+                    builder.Configurations.AddFromAssembly(assembly);
                 }
             }
-
-            if (isCodeFirst && !hasMappingClass)
+            else
             {
-                throw new ConfigurationErrorsException("No mapping class found in the model assembly!");
+               acceptsNameOrConnectionString = dbContextType.GetConstructor(new[] { typeof(string) }) != null;
             }
 
-            return Tuple.Create(builder, dbContextType);
+            return new ModelInfo { ModelBuilder = builder, DbContextType = dbContextType, AcceptsNameOrConnectionString = acceptsNameOrConnectionString };
         }
 
         protected virtual string DefaultPrefix
@@ -207,21 +219,7 @@ namespace Yarn.Data.EntityFrameworkProvider
                 return DbContextCache.Instance;
             }
         }
-
-        private bool IsMappingClass(Type mappingType)
-        {
-            var baseMapType = typeof(EntityTypeConfiguration<>);
-            if (mappingType.GetGenericTypeDefinition() == baseMapType)
-            {
-                return true;
-            }
-            if ((mappingType.BaseType != null) && !mappingType.BaseType.IsAbstract && mappingType.BaseType.IsGenericType)
-            {
-                return IsMappingClass(mappingType.BaseType);
-            }
-            return false;
-        }
-
+               
         public Stream BuildSchema()
         {
             if (this.Session != null && _codeFirst.HasValue && _codeFirst.Value)

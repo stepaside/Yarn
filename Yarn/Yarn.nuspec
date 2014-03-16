@@ -2,7 +2,7 @@
 <package >
   <metadata>
     <id>Yarn</id>
-    <version>0.6.4</version>
+    <version>0.7.0</version>
     <title>Yarn</title>
     <authors>Max Stepanskiy</authors>
     <owners>Stepaside, Inc.</owners>
@@ -12,8 +12,9 @@
     <copyright>Copyright © Max Stepanskiy 2012-2014</copyright>
     <tags>Repository Repository-Pattern</tags>
 	  <releaseNotes>
-      * Repository adapters understand IMetaDataProviders and ILazyLoader
-      * Added Cascade extension method to allow for easy propagation of data to child properties
+      * BREAKING CHANGE: Removed ILazyLoader and introduced IRelationNavigator interface
+      * Made name/connection string available in Yarn.EF and Yarn.NHibernate repository and data context constructors
+      * Refactored model compilation in Yarn.EF
     </releaseNotes>
   </metadata>
   <files>

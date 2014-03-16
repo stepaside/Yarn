@@ -8,15 +8,17 @@ namespace Yarn.Data.NHibernateProvider.SqliteClient
 {
     public class FileDataContext : SQLiteDataContext
     {
-        public FileDataContext() : this(null) { }
-        
-        public FileDataContext(string contextKey = null) :
-            base(SQLiteConfiguration.Standard.UsingFile(GetFileName(contextKey)).ShowSql(), contextKey)
-        { }
+        public FileDataContext() : this(null, null) { }
 
-        private static string GetFileName(string contextKey)
+        public FileDataContext(string nameOrConnectionString = null) : this(null, nameOrConnectionString) { }
+
+        public FileDataContext(string prefix = null, string nameOrConnectionString = null) :
+            base(SQLiteConfiguration.Standard.UsingFile(GetFileName(prefix)).ShowSql(), prefix, nameOrConnectionString)
+        { }
+        
+        private static string GetFileName(string prefix)
         {
-            return (contextKey ?? "NHibernate.SqliteClient") + ".db";
+            return (prefix ?? "NHibernate.SqliteClient") + ".db";
         }
     }
 }

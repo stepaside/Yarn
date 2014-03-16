@@ -7,8 +7,8 @@ using System.Threading.Tasks;
 
 namespace Yarn
 {
-    public interface ILazyLoader
+    public interface IRelationNavigator
     {
-        IQueryable<TRoot> Include<TRoot, TRelated>(params Expression<Func<TRoot, TRelated>>[] selectors) where TRoot : class where TRelated : class;
+        IFetchPath<T> Relations<T>() where T : class;
     }
 }

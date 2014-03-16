@@ -13,16 +13,16 @@ using NHibernate.Criterion;
 
 namespace Yarn.Data.NHibernateProvider
 {
-    public class Repository : IRepository, IMetaDataProvider, ILazyLoader
+    public class Repository : IRepository, IMetaDataProvider, IRelationNavigator
     {
         private IDataContext<ISession> _context;
-        protected readonly string _dataContextKey;
+        protected readonly string _dataContextInstanceName;
 
         public Repository() : this(null) { }
 
-        public Repository(string dataContextKey = null)
+        public Repository(string dataContextInstanceName = null)
         {
-            _dataContextKey = dataContextKey;
+            _dataContextInstanceName = dataContextInstanceName;
         }
 
         public T GetById<T, ID>(ID id) where T : class
@@ -172,18 +172,6 @@ namespace Yarn.Data.NHibernateProvider
             return FindAll<T>(criteria).LongCount();
         }
 
-        public IQueryable<TRoot> Include<TRoot, TRelated>(params Expression<Func<TRoot, TRelated>>[] selectors)
-            where TRoot : class
-            where TRelated : class
-        {
-            var query = this.All<TRoot>();
-            foreach (var selector in selectors)
-            {
-                query = query.Fetch<TRoot, TRelated>(selector);
-            }
-            return query;
-        }
-
         protected ISession Session
         {
             get
@@ -198,7 +186,7 @@ namespace Yarn.Data.NHibernateProvider
             {
                 if (_context == null)
                 {
-                    _context = ObjectContainer.Current.Resolve<IDataContext<ISession>>(_dataContextKey);
+                    _context = ObjectContainer.Current.Resolve<IDataContext<ISession>>(_dataContextInstanceName);
                 }
                 return _context;
             }
@@ -233,6 +221,38 @@ namespace Yarn.Data.NHibernateProvider
         {
             var key = ((IMetaDataProvider)this).GetPrimaryKey<T>().First();
             return new [] { PropertyAccessor.Get(entity, key) };
+        }
+
+        #endregion
+
+        #region IRelationNavigator Members
+
+        IFetchPath<T> IRelationNavigator.Relations<T>()
+        {
+            return new FetchPath<T>(this.All<T>());
+        }
+
+        private class FetchPath<T> : IFetchPath<T>
+            where T : class
+        {
+            IQueryable<T> _query;
+
+            public FetchPath(IQueryable<T> query)
+            {
+                _query = query;
+            }
+
+            public IFetchPath<T> Include<TProperty>(Expression<Func<T, TProperty>> path)
+                where TProperty : class
+            {
+                _query = _query.Fetch(path);
+                return this;
+            }
+
+            public IQueryable<T> Compile()
+            {
+                return _query;
+            }
         }
 
         #endregion

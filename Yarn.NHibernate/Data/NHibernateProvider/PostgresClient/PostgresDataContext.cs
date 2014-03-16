@@ -9,10 +9,12 @@ namespace Yarn.Data.NHibernateProvider.OracleClient
 {
     public class PostgresDataContext : NHibernateDataContext<PostgreSQLConfiguration, PostgreSQLConnectionStringBuilder, PostgreSQLDialect>
     {
-        public PostgresDataContext() : this(null) { }
+        public PostgresDataContext() : this(null, null) { }
 
-        public PostgresDataContext(string contextKey = null)
-            : base(PostgreSQLConfiguration.Standard, contextKey)
+        public PostgresDataContext(string nameOrConnectionString = null) : this(null, nameOrConnectionString) { }
+
+        public PostgresDataContext(string prefix = null, string nameOrConnectionString = null)
+            : base(PostgreSQLConfiguration.Standard, prefix, nameOrConnectionString)
         { }
 
         protected override string DefaultPrefix
