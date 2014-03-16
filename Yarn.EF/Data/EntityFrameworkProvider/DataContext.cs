@@ -249,5 +249,24 @@ namespace Yarn.Data.EntityFrameworkProvider
             }
             return new MemoryStream();
         }
+
+        public void Dispose()
+        {
+            Dispose(true);
+            GC.SuppressFinalize(this);
+        }
+
+        protected virtual void Dispose(bool disposing)
+        {
+            if (disposing)
+            {
+                if (_context != null)
+                {
+                    DbContextCache.Instance.Cleanup();
+                    _context.Dispose();
+                    _context = null;
+                }
+            }
+        }
     }
 }

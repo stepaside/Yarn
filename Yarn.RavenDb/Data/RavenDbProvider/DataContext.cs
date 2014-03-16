@@ -164,5 +164,24 @@ namespace Yarn.Data.RavenDbProvider
                 return DocumentSessionCache.Instance;
             }
         }
+
+        public void Dispose()
+        {
+            Dispose(true);
+            GC.SuppressFinalize(this);
+        }
+
+        protected virtual void Dispose(bool disposing)
+        {
+            if (disposing)
+            {
+                if (_session != null)
+                {
+                    DocumentSessionCache.Instance.Cleanup();
+                    _session.Dispose();
+                    _session = null;
+                }
+            }
+        }
     }
 }

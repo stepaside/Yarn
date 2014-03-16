@@ -118,5 +118,10 @@ namespace Yarn.Data.MongoDbProvider
                 return null;
             }
         }
+
+        public void Dispose()
+        {
+           
+        }
     }
 }

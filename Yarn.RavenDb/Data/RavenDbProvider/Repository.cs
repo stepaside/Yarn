@@ -13,14 +13,14 @@ namespace Yarn.Data.RavenDbProvider
     {
         private IDataContext<IDocumentSession> _context;
         private bool _waitForNonStaleResults;
-        private string _contextKey;
+        private string _prefix;
 
         public Repository() : this(false, null) { }
 
         public Repository(bool waitForNonStaleResults = false, string prefix = null)
         {
             _waitForNonStaleResults = waitForNonStaleResults;
-            _contextKey = prefix;
+            _prefix = prefix;
         }
 
         public T GetById<T, ID>(ID id) where T : class
@@ -191,7 +191,7 @@ namespace Yarn.Data.RavenDbProvider
             {
                 if (_context == null)
                 {
-                    _context = new DataContext(_contextKey);
+                    _context = new DataContext(_prefix);
                 }
                 return _context;
             }
@@ -209,7 +209,7 @@ namespace Yarn.Data.RavenDbProvider
             {
                 if (_context != null)
                 {
-                    _context.Session.Dispose();
+                    _context.Dispose();
                     _context = null;
                 }
             }

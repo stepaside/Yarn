@@ -38,5 +38,23 @@ namespace Yarn.Cache
         {
             get { return _context.DataContextCache; }
         }
+
+        public void Dispose()
+        {
+            Dispose(true);
+            GC.SuppressFinalize(this);
+        }
+
+        protected virtual void Dispose(bool disposing)
+        {
+            if (disposing)
+            {
+                if (_context != null)
+                {
+                    _context.Dispose();
+                    _context = null;
+                }
+            }
+        }
     }
 }

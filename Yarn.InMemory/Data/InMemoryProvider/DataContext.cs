@@ -45,5 +45,24 @@ namespace Yarn.Data.InMemoryProvider
         {
             get { return OdbCache.Instance; }
         }
+
+        public void Dispose()
+        {
+            Dispose(true);
+            GC.SuppressFinalize(this);
+        }
+
+        protected virtual void Dispose(bool disposing)
+        {
+            if (disposing)
+            {
+                if (_context != null)
+                {
+                    OdbCache.Instance.Cleanup();
+                    _context.Dispose();
+                    _context = null;
+                }
+            }
+        }
     }
 }

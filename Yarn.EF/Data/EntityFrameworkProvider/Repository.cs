@@ -223,9 +223,10 @@ namespace Yarn.Data.EntityFrameworkProvider
         {
             if (disposing)
             {
+                _dbSets.Clear();
                 if (_context != null)
                 {
-                    _context.Session.Dispose();
+                    _context.Dispose();
                     _context = null;
                 }
             }

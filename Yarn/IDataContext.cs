@@ -5,7 +5,7 @@ using System.Text;
 
 namespace Yarn
 {
-    public interface IDataContext
+    public interface IDataContext : IDisposable
     {
         void SaveChanges();
         string Source { get; }

@@ -166,7 +166,17 @@ namespace Yarn.Data.InMemoryProvider
 
         public void Dispose()
         {
-            _context = null;
+            Dispose(true);
+            GC.SuppressFinalize(this);
+        }
+
+        protected virtual void Dispose(bool disposing)
+        {
+            if (disposing)
+            {
+                _context.Dispose();
+                _context = null;
+            }
         }
 
         protected OID GetId<T>(T entity) where T : class

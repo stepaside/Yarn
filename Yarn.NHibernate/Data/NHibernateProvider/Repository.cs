@@ -204,7 +204,7 @@ namespace Yarn.Data.NHibernateProvider
             {
                 if (_context != null)
                 {
-                    _context.Session.Dispose();
+                    _context.Dispose();
                     _context = null;
                 }
             }

@@ -31,6 +31,8 @@ namespace Yarn.Data.NHibernateProvider
         {
             this.Session.Flush();
         }
+
+        public abstract void Dispose();
     }
 
     public abstract class NHibernateDataContext<TThisConfiguration, TConnectionString, TDialect> : DataContext, IMigrationProvider
@@ -157,6 +159,25 @@ namespace Yarn.Data.NHibernateProvider
                 update.Execute(sql => output = new MemoryStream(Encoding.UTF8.GetBytes(sql)), false);
             }
             return output;
+        }
+
+        public override void Dispose()
+        {
+            Dispose(true);
+            GC.SuppressFinalize(this);
+        }
+
+        protected virtual void Dispose(bool disposing)
+        {
+            if (disposing)
+            {
+                if (_session != null)
+                {
+                    SessionCache.Instance.Cleanup();
+                    _session.Dispose();
+                    _session = null;
+                }
+            }
         }
     }
 }
