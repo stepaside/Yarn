@@ -145,8 +145,8 @@ ObjectContainer.Current.Register<IRepository, Yarn.Data.EntityFrameworkProvider.
 // Here is the example based on NHiberante repository implementation using SQL Server database backend
 ObjectContainer.Current.Register<IRepository, Yarn.Data.NHibernate.Repository>();
 ObjectContainer.Current.Register<IDataContext, Yarn.Data.NHibernate.SqlClient.Sql2012DataContext>(
-  () => new Sql2012DataContext(nameOrConnectionString: "NorthwindConnection", 
-                              configurationAssembly: typeof(Customer).Assembly));
+  new Sql2012DataContext(nameOrConnectionString: "NorthwindConnection", 
+                  configurationAssembly: typeof(Customer).Assembly);
 ```
 
 ###Example of using eager loading
