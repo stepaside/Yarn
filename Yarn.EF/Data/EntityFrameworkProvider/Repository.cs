@@ -27,8 +27,6 @@ namespace Yarn.Data.EntityFrameworkProvider
         private readonly string _assemblyNameOrLocation;
         private readonly Assembly _configurationAssembly;
 
-        private ConcurrentDictionary<Type, DbSet> _dbSets;
-
         public Repository() : this(prefix: null) { }
 
         public Repository(string prefix = null, 
@@ -53,7 +51,6 @@ namespace Yarn.Data.EntityFrameworkProvider
             {
                 _assemblyNameOrLocation = assemblyNameOrLocation;
             }
-            _dbSets = new ConcurrentDictionary<Type, DbSet>();
         }
 
         public T GetById<T, ID>(ID id) where T : class
@@ -200,8 +197,7 @@ namespace Yarn.Data.EntityFrameworkProvider
 
         public DbSet<T> Table<T>() where T : class
         {
-            var dbSet = _dbSets.GetOrAdd(typeof(T), t => this.DbContext.Set<T>());
-            return dbSet.Cast<T>();
+            return this.DbContext.Set<T>();
         }
 
         protected DbContext DbContext
@@ -234,7 +230,6 @@ namespace Yarn.Data.EntityFrameworkProvider
         {
             if (disposing)
             {
-                _dbSets.Clear();
                 if (_context != null)
                 {
                     _context.Dispose();
@@ -250,7 +245,6 @@ namespace Yarn.Data.EntityFrameworkProvider
             return ((IObjectContextAdapter)this.DbContext)
                     .ObjectContext.CreateObjectSet<T>()
                     .EntitySet.ElementType.KeyMembers.Select(k => k.Name).ToArray();
-        
         }
 
         object[] IMetaDataProvider.GetPrimaryKeyValue<T>(T entity)
