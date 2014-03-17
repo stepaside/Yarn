@@ -15,7 +15,7 @@ namespace Yarn.Extensions
             var properties = root.GetType().GetProperties();
             var objectProperties = properties.Where(t => typeof(T).IsAssignableFrom(t.PropertyType));
             var collectionProperties = properties.Where(t => t.PropertyType.IsGenericType
-                                                                && typeof(ICollection<>).IsAssignableFrom(t.PropertyType.GetGenericTypeDefinition())
+                                                                && typeof(ICollection<T>).IsAssignableFrom(t.PropertyType.GetGenericTypeDefinition().MakeGenericType(typeof(T)))
                                                                 && typeof(T).IsAssignableFrom(t.PropertyType.GetGenericArguments()[0]));
 
             foreach (var property in objectProperties)

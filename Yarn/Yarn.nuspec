@@ -2,7 +2,7 @@
 <package >
   <metadata>
     <id>Yarn</id>
-    <version>0.7.2</version>
+    <version>0.7.3</version>
     <title>Yarn</title>
     <authors>Max Stepanskiy</authors>
     <owners>Stepaside, Inc.</owners>
@@ -12,10 +12,7 @@
     <copyright>Copyright © Max Stepanskiy 2012-2014</copyright>
     <tags>Repository Repository-Pattern</tags>
 	  <releaseNotes>
-      * BREAKING CHANGE: Removed ILazyLoader and introduced ILoadServiceProvider interface
-      * Made name/connection string available in Yarn.EF and Yarn.NHibernate repository and data context constructors
-      * Made assembly and assembly name/location available in Yarn.EF and Yarn.NHibernate repository and data context constructors
-      * Refactored model compilation in Yarn.EF
+      * Fixed Cascade value functionality
     </releaseNotes>
   </metadata>
   <files>
