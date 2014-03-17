@@ -129,3 +129,39 @@ var categories1 = cachedRepo.FindAll<Category>(spec);
 // This call produces a cache hit, hence there will be no trip to the database
 var categories2 = cachedRepo.FindAll<Category>(spec);
 ```
+
+###Example of passing parameters to repository/data context constructor during initialization
+
+```c#
+// Bind IRepository to specific implementation
+// Constructor arguments may differ depending on a concrete implemnetations of IRepository
+
+// Here is the example based on Entity Framework repository implementation
+ObjectContainer.Current.Register<IRepository, Yarn.Data.EntityFrameworkProvider.Repository>(
+  () => new Repository(lazyLoadingEnabled: false, 
+                      nameOrConnectionString: "NorthwindConnection", 
+                      configurationAssembly: typeof(Customer).Assembly));
+                      
+// Here is the example based on NHiberante repository implementation using SQL Server database backend
+ObjectContainer.Current.Register<IRepository, Yarn.Data.NHibernate.Repository>();
+ObjectContainer.Current.Register<IDataContext, Yarn.Data.NHibernate.SqlClient.Sql2012DataContext>(
+  () => new Sql2012DataContext(nameOrConnectionString: "NorthwindConnection", 
+                              configurationAssembly: typeof(Customer).Assembly));
+```
+
+###Example of using eager loading
+
+```c#
+// Bind IRepository to specific implementation (this should happen during application startup)
+ObjectContainer.Current.Register<IRepository, Yarn.Data.EntityFrameworkProvider.Repository>();
+
+// Resolve IRepository (this may happen anywhere within application)
+var repo = ObjectContainer.Current.Resolve<IRepository>();
+
+// Load customer with orders and order details
+var customer = repo.As<ILoadServiceProvider>()
+                  .Load<Customer>()
+                  .Include(c => c.Orders)
+                  .Include(c => c.Orders.Select(o => o.Order_Details))
+                  .Find(c => c.CustomerID == "ALFKI");
+```
