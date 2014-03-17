@@ -10,10 +10,11 @@ using NHibernate.Transform;
 using NHibernate.Engine;
 using Yarn.Reflection;
 using NHibernate.Criterion;
+using Yarn.Specification;
 
 namespace Yarn.Data.NHibernateProvider
 {
-    public class Repository : IRepository, IMetaDataProvider, IRelationNavigator
+    public class Repository : IRepository, IMetaDataProvider, ILoadServiceProvider
     {
         private IDataContext<ISession> _context;
         protected readonly string _dataContextInstanceName;
@@ -225,33 +226,69 @@ namespace Yarn.Data.NHibernateProvider
 
         #endregion
 
-        #region IRelationNavigator Members
+        #region LoadServiceProvider Members
 
-        IFetchPath<T> IRelationNavigator.Relations<T>()
+        ILoadService<T> ILoadServiceProvider.Load<T>()
         {
-            return new FetchPath<T>(this.All<T>());
+            return new LoadService<T>(this);
         }
 
-        private class FetchPath<T> : IFetchPath<T>
+        private class LoadService<T> : ILoadService<T>
             where T : class
         {
             IQueryable<T> _query;
+            IRepository _repository;
 
-            public FetchPath(IQueryable<T> query)
+            public LoadService(IRepository repository)
             {
-                _query = query;
+                _repository = repository;
+                _query = repository.All<T>();
             }
 
-            public IFetchPath<T> Include<TProperty>(Expression<Func<T, TProperty>> path)
+            public ILoadService<T> Include<TProperty>(Expression<Func<T, TProperty>> path)
                 where TProperty : class
             {
                 _query = _query.Fetch(path);
                 return this;
             }
 
-            public IQueryable<T> Compile()
+            public T Find(Expression<Func<T, bool>> criteria)
+            {
+                return _query.FirstOrDefault(criteria);
+            }
+
+            public IEnumerable<T> FindAll(Expression<Func<T, bool>> criteria, int offset = 0, int limit = 0)
+            {
+                var query = _query.Where(criteria);
+                if (offset > 0)
+                {
+                    query.Skip(offset);
+                }
+                if (limit > 0)
+                {
+                    query.Take(limit);
+                }
+                return query;
+            }
+
+            public T Find(ISpecification<T> criteria)
+            {
+                return Find(((Specification<T>)criteria).Predicate);
+            }
+
+            public IEnumerable<T> FindAll(ISpecification<T> criteria, int offset = 0, int limit = 0)
+            {
+                return FindAll(((Specification<T>)criteria).Predicate, offset, limit);
+            }
+
+            public IQueryable<T> All()
             {
                 return _query;
+            }
+
+            public void Dispose()
+            {
+                
             }
         }
 

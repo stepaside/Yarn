@@ -42,15 +42,27 @@ namespace Yarn.Data.NHibernateProvider
     {
         private static ConcurrentDictionary<string, Tuple<ISessionFactory, NHibernate.Cfg.Configuration>> _sessionFactories = new ConcurrentDictionary<string, Tuple<ISessionFactory, NHibernate.Cfg.Configuration>>();
         protected PersistenceConfiguration<TThisConfiguration, TConnectionString> _configuration = null;
-        private string _prefix = null;
-        private string _nameOrConnectionString = null;
+        private readonly string _prefix = null;
+        private readonly string _nameOrConnectionString = null;
+        private readonly string _assemblyNameOrLocation;
+        private readonly Assembly _configurationAssembly;
+
         private ISession _session = SessionCache.CurrentSession;
 
-        protected NHibernateDataContext(PersistenceConfiguration<TThisConfiguration, TConnectionString> configuration, string prefix = null, string nameOrConnectionString = null)
+        protected NHibernateDataContext(PersistenceConfiguration<TThisConfiguration, TConnectionString> configuration, 
+                                        string prefix = null, 
+                                        string nameOrConnectionString = null,
+                                        string assemblyNameOrLocation = null,
+                                        Assembly configurationAssembly = null)
         {
             _configuration = configuration;
             _prefix = prefix;
             _nameOrConnectionString = nameOrConnectionString;
+            _configurationAssembly = configurationAssembly;
+            if (configurationAssembly == null)
+            {
+                _assemblyNameOrLocation = assemblyNameOrLocation;
+            }
         }
 
         protected Tuple<ISessionFactory, NHibernate.Cfg.Configuration> CreateSessionFactory(string prefix)
@@ -68,15 +80,19 @@ namespace Yarn.Data.NHibernateProvider
             var assemblyKey = prefix + ".Model";
             var nameOrConnectionString = _nameOrConnectionString ?? prefix + ".Connection";
 
-            Assembly assembly = null;
-            var assemblyLocation = ConfigurationManager.AppSettings.Get(assemblyKey);
-            if (Uri.IsWellFormedUriString(assemblyLocation, UriKind.Absolute))
+            var configurationAssembly = _configurationAssembly;
+            if (configurationAssembly == null)
             {
-                assembly = Assembly.LoadFrom(assemblyLocation);
-            }
-            else
-            {
-                assembly = Assembly.Load(assemblyLocation);
+                var assemblyNameOrLocation = _assemblyNameOrLocation ?? ConfigurationManager.AppSettings.Get(assemblyKey);
+
+                if (Uri.IsWellFormedUriString(assemblyNameOrLocation, UriKind.Absolute))
+                {
+                    configurationAssembly = Assembly.LoadFrom(assemblyNameOrLocation);
+                }
+                else
+                {
+                    configurationAssembly = Assembly.Load(assemblyNameOrLocation);
+                }
             }
 
             var connectionString = nameOrConnectionString;
@@ -90,7 +106,7 @@ namespace Yarn.Data.NHibernateProvider
             var sessionFactory = Fluently.Configure()
                 .Database(_configuration.Dialect<TDialect>().ConnectionString(connectionString))
                 //.Mappings(m => m.AutoMappings.Add(AutoMap.Assembly(assembly)))
-                .Mappings(m => m.FluentMappings.AddFromAssembly(assembly))
+                .Mappings(m => m.FluentMappings.AddFromAssembly(configurationAssembly))
                 .ExposeConfiguration(c => config = c)
                 .BuildSessionFactory();
 

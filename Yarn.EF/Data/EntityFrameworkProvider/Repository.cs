@@ -6,12 +6,14 @@ using System.Data.Entity.Infrastructure;
 using System.Data.Entity.Migrations;
 using System.Linq;
 using System.Linq.Expressions;
+using System.Reflection;
 using Yarn.Extensions;
 using Yarn.Reflection;
+using Yarn.Specification;
 
 namespace Yarn.Data.EntityFrameworkProvider
 {
-    public class Repository : IRepository, IMetaDataProvider, IRelationNavigator
+    public class Repository : IRepository, IMetaDataProvider, ILoadServiceProvider
     {
         protected IDataContext<DbContext> _context;
 
@@ -22,6 +24,8 @@ namespace Yarn.Data.EntityFrameworkProvider
         protected readonly bool _validateOnSaveEnabled;
         protected readonly bool _migrationEnabled;
         private readonly string _nameOrConnectionString;
+        private readonly string _assemblyNameOrLocation;
+        private readonly Assembly _configurationAssembly;
 
         private ConcurrentDictionary<Type, DbSet> _dbSets;
 
@@ -33,7 +37,9 @@ namespace Yarn.Data.EntityFrameworkProvider
                             bool autoDetectChangesEnabled = false,
                             bool validateOnSaveEnabled = true,
                             bool migrationEnabled = false,
-                            string nameOrConnectionString = null) 
+                            string nameOrConnectionString = null,
+                            string assemblyNameOrLocation = null,
+                            Assembly configurationAssembly = null) 
         {
             _prefix = prefix;
             _lazyLoadingEnabled = lazyLoadingEnabled;
@@ -42,6 +48,11 @@ namespace Yarn.Data.EntityFrameworkProvider
             _validateOnSaveEnabled = validateOnSaveEnabled;
             _migrationEnabled = migrationEnabled;
             _nameOrConnectionString = nameOrConnectionString;
+            _configurationAssembly = configurationAssembly;
+            if (_configurationAssembly != null)
+            {
+                _assemblyNameOrLocation = assemblyNameOrLocation;
+            }
             _dbSets = new ConcurrentDictionary<Type, DbSet>();
         }
 
@@ -207,7 +218,7 @@ namespace Yarn.Data.EntityFrameworkProvider
             {
                 if (_context == null)
                 {
-                    _context = new DataContext(_prefix, _lazyLoadingEnabled, _proxyCreationEnabled, _autoDetectChangesEnabled, _validateOnSaveEnabled, _migrationEnabled, _nameOrConnectionString);
+                    _context = new DataContext(_prefix, _lazyLoadingEnabled, _proxyCreationEnabled, _autoDetectChangesEnabled, _validateOnSaveEnabled, _migrationEnabled, _nameOrConnectionString, _assemblyNameOrLocation, _configurationAssembly);
                 }
                 return _context;
             }
@@ -255,33 +266,69 @@ namespace Yarn.Data.EntityFrameworkProvider
 
         #endregion
 
-        #region IRelationNavigator Members
+        #region ILoadServiceProvider Members
 
-        IFetchPath<T> IRelationNavigator.Relations<T>()
+        ILoadService<T> ILoadServiceProvider.Load<T>()
         {
-            return new FetchPath<T>(this.All<T>());
+            return new LoadService<T>(this);
         }
 
-        private class FetchPath<T> : IFetchPath<T>
+        private class LoadService<T> : ILoadService<T>
             where T : class
         {
+            IRepository _repository;
             IQueryable<T> _query;
 
-            public FetchPath(IQueryable<T> query)
+            public LoadService(IRepository repository)
             {
-                _query = query;
+                _repository = repository;
+                _query = repository.All<T>();
             }
 
-            public IFetchPath<T> Include<TProperty>(Expression<Func<T, TProperty>> path) 
+            public ILoadService<T> Include<TProperty>(Expression<Func<T, TProperty>> path) 
                 where TProperty : class
             {
                 _query = _query.Include(path);
                 return this;
             }
 
-            public IQueryable<T> Compile()
+            public T Find(Expression<Func<T, bool>> criteria)
+            {
+                return _query.FirstOrDefault(criteria);
+            }
+
+            public IEnumerable<T> FindAll(Expression<Func<T, bool>> criteria, int offset = 0, int limit = 0)
+            {
+                var query = _query.Where(criteria);
+                if (offset > 0)
+                {
+                    query.Skip(offset);
+                }
+                if (limit > 0)
+                {
+                    query.Take(limit);
+                }
+                return query;
+            }
+
+            public T Find(ISpecification<T> criteria)
+            {
+                return Find(((Specification<T>)criteria).Predicate);
+            }
+
+            public IEnumerable<T> FindAll(ISpecification<T> criteria, int offset = 0, int limit = 0)
+            {
+                return FindAll(((Specification<T>)criteria).Predicate, offset, limit);
+            }
+
+            public IQueryable<T> All()
             {
                 return _query;
+            }
+
+            public void Dispose()
+            {
+                
             }
         }
 

@@ -7,8 +7,8 @@ using System.Threading.Tasks;
 
 namespace Yarn
 {
-    public interface IRelationNavigator
+    public interface ILoadServiceProvider
     {
-        IFetchPath<T> Relations<T>() where T : class;
+        ILoadService<T> Load<T>() where T : class;
     }
 }

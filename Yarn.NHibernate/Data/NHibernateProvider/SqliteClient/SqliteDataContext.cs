@@ -10,8 +10,12 @@ namespace Yarn.Data.NHibernateProvider.SqliteClient
 {
     public abstract class SQLiteDataContext : NHibernateDataContext<SQLiteConfiguration, ConnectionStringBuilder, SQLiteDialect>
     {
-        public SQLiteDataContext(SQLiteConfiguration configuration, string prefix = null, string nameOrConnectionString = null)
-            : base(configuration, prefix, nameOrConnectionString)
+        public SQLiteDataContext(SQLiteConfiguration configuration, 
+                                string prefix = null, 
+                                string nameOrConnectionString = null, 
+                                string assemblyNameOrLocation = null,
+                                Assembly configurationAssembly = null)
+            : base(configuration, prefix, nameOrConnectionString, assemblyNameOrLocation, configurationAssembly)
         { }
 
         protected override Tuple<ISessionFactory, NHibernate.Cfg.Configuration> ConfigureSessionFactory(string factoryKey)

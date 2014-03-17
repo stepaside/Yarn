@@ -8,6 +8,7 @@ using System.Threading.Tasks;
 using Yarn;
 using Yarn.Cache;
 using Yarn.Data.EntityFrameworkProvider;
+using Yarn.Extensions;
 using YarnTest.Models.EF;
 
 namespace YarnTest

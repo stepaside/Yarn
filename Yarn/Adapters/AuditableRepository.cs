@@ -9,7 +9,7 @@ using Yarn.Extensions;
 
 namespace Yarn.Adapters
 {
-    public class AuditableRepository : IRepository, IRelationNavigator, IMetaDataProvider
+    public class AuditableRepository : IRepository, ILoadServiceProvider, IMetaDataProvider
     {
          private IRepository _repository;
         private IPrincipal _principal;
@@ -148,11 +148,11 @@ namespace Yarn.Adapters
             _repository.Dispose();
         }
 
-        IFetchPath<T> IRelationNavigator.Relations<T>()
+        ILoadService<T> ILoadServiceProvider.Load<T>()
         {
-            if (_repository is IRelationNavigator)
+            if (_repository is ILoadServiceProvider)
             {
-                return ((IRelationNavigator)_repository).Relations<T>();
+                return ((ILoadServiceProvider)_repository).Load<T>();
             }
             else
             {

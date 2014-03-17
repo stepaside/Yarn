@@ -24,7 +24,7 @@ namespace Yarn.Data.EntityFrameworkProvider
         {
             public DbModelBuilder ModelBuilder { get; set; }
             public Type DbContextType { get; set; }
-            public bool AcceptsNameOrConnectionString { get; set; }
+            public ConstructorInfo DbContextConstructor { get; set; }
         }
 
         private static ConcurrentDictionary<string, ModelInfo> _dbModelBuilders = new ConcurrentDictionary<string, ModelInfo>();
@@ -38,6 +38,8 @@ namespace Yarn.Data.EntityFrameworkProvider
         private readonly bool _validateOnSaveEnabled;
         private readonly bool _migrationEnabled;
         private readonly string _nameOrConnectionString;
+        private readonly string _assemblyNameOrLocation;
+        private readonly Assembly _configurationAssembly;
 
         private bool? _codeFirst = null;
         
@@ -51,7 +53,9 @@ namespace Yarn.Data.EntityFrameworkProvider
                             bool autoDetectChangesEnabled = false,
                             bool validateOnSaveEnabled = true,
                             bool migrationEnabled = false,
-                            string nameOrConnectionString = null)
+                            string nameOrConnectionString = null,
+                            string assemblyNameOrLocation = null,
+                            Assembly configurationAssembly = null)
         {
             _prefix = prefix;
             _lazyLoadingEnabled = lazyLoadingEnabled;
@@ -60,6 +64,11 @@ namespace Yarn.Data.EntityFrameworkProvider
             _validateOnSaveEnabled = validateOnSaveEnabled;
             _migrationEnabled = migrationEnabled;
             _nameOrConnectionString = nameOrConnectionString;
+            _configurationAssembly = configurationAssembly;
+            if (_configurationAssembly != null)
+            {
+                _assemblyNameOrLocation = assemblyNameOrLocation;
+            }
             InitializeDbContext();
         }
 
@@ -68,14 +77,53 @@ namespace Yarn.Data.EntityFrameworkProvider
             _context = DbContextCache.CurrentContext;
         }
 
+        private DbConnection CreateConnection(string nameOrConnectionString)
+        {
+            DbConnection connection = null;
+            var providerName = DbFactory.GetProviderInvariantNameByConnectionString(nameOrConnectionString);
+            if (providerName == null)
+            {
+                connection = DbFactory.CreateConnection(nameOrConnectionString);
+            }
+            else
+            {
+                connection = DbFactory.CreateConnection(nameOrConnectionString, providerName);
+            }
+            return connection;
+        }
+
         protected DbContext CreateDbContext(string prefix)
         {
             var modelInfo = _dbModelBuilders.GetOrAdd(prefix, key => ConfigureDbModel(key));
             var nameOrConnectionString = _nameOrConnectionString ?? prefix + ".Connection";
-
+            
             if (modelInfo.DbContextType != null)
             {
-                var dbContext = modelInfo.AcceptsNameOrConnectionString ? (DbContext)Activator.CreateInstance(modelInfo.DbContextType, nameOrConnectionString) : (DbContext)Activator.CreateInstance(modelInfo.DbContextType);
+                DbContext dbContext = null;
+                if (modelInfo.DbContextConstructor != null)
+                {
+                    var parameters = modelInfo.DbContextConstructor.GetParameters().Select(p => p.ParameterType).ToArray();
+                    var activator = Reflection.Activator.CreateDelegate(modelInfo.DbContextType, parameters);
+                    if (parameters.Length == 2 && parameters[0] == typeof(DbConnection) && parameters[1] == typeof(bool))
+                    {
+                        var connection = CreateConnection(nameOrConnectionString);
+                        dbContext = (DbContext)activator(connection, true);
+                    }
+                    else if (parameters.Length == 1 && parameters[0] == typeof(DbConnection))
+                    {
+                        var connection = CreateConnection(nameOrConnectionString);
+                        dbContext = (DbContext)activator(connection);
+                    }
+                    else if (parameters.Length == 1 && parameters[0] == typeof(string))
+                    {
+                        dbContext = (DbContext)activator(nameOrConnectionString);
+                    }
+                }
+                else
+                {
+                    dbContext = (DbContext)Activator.CreateInstance(modelInfo.DbContextType);
+                }
+                    
                 dbContext.Configuration.LazyLoadingEnabled = _lazyLoadingEnabled;
                 dbContext.Configuration.ProxyCreationEnabled = _proxyCreationEnabled;
                 dbContext.Configuration.AutoDetectChangesEnabled = _autoDetectChangesEnabled;
@@ -87,17 +135,8 @@ namespace Yarn.Data.EntityFrameworkProvider
             }
             else
             {
-                DbConnection connection = null;
+                var connection = CreateConnection(nameOrConnectionString);
                 var builder = modelInfo.ModelBuilder;
-                var providerName = DbFactory.GetProviderInvariantNameByConnectionString(nameOrConnectionString);
-                if (providerName == null)
-                {
-                    connection = DbFactory.CreateConnection(nameOrConnectionString);
-                }
-                else
-                {
-                    connection = DbFactory.CreateConnection(nameOrConnectionString, providerName);
-                }
                 var dbModel = builder.Build(connection);
                 var objectContext = dbModel.Compile().CreateObjectContext<ObjectContext>(connection);
                 objectContext.ContextOptions.LazyLoadingEnabled = _lazyLoadingEnabled;
@@ -129,43 +168,46 @@ namespace Yarn.Data.EntityFrameworkProvider
         
         protected ModelInfo ConfigureDbModel(string prefix)
         {
-            var assemblyKey = prefix + ".Model";
-
             DbModelBuilder builder = null;
             Type dbContextType = null;
-            var acceptsNameOrConnectionString = false;
-            
-            var assemblies = new List<Assembly>();
-            var assemblyLocationsOrNames = ConfigurationManager.AppSettings.Get(assemblyKey);
-            foreach (var locationOrName in assemblyLocationsOrNames.Split('|'))
+            ConstructorInfo dbContextCtor = null;
+
+            var configurationAssembly = _configurationAssembly;
+            if (configurationAssembly == null)
             {
-                Assembly assembly = null;
-                if (Uri.IsWellFormedUriString(locationOrName, UriKind.Absolute))
+                var assemblyKey = prefix + ".Model";
+                var assemblyNameOrLocation = _assemblyNameOrLocation ?? ConfigurationManager.AppSettings.Get(assemblyKey);
+
+                if (Uri.IsWellFormedUriString(assemblyNameOrLocation, UriKind.Absolute))
                 {
-                    assembly = Assembly.LoadFrom(locationOrName);
+                    configurationAssembly = Assembly.LoadFrom(assemblyNameOrLocation);
                 }
                 else
                 {
-                    assembly = Assembly.Load(locationOrName);
+                    configurationAssembly = Assembly.Load(assemblyNameOrLocation);
                 }
-                assemblies.Add(assembly);
             }
 
-            dbContextType = assemblies.SelectMany(a => a.GetTypes()).FirstOrDefault(t => typeof(DbContext).IsAssignableFrom(t));
+            dbContextType = configurationAssembly.GetTypes().FirstOrDefault(t => typeof(DbContext).IsAssignableFrom(t));
             if (dbContextType == null)
             {
                 builder = new DbModelBuilder();
-                foreach (var assembly in assemblies)
-                {
-                    builder.Configurations.AddFromAssembly(assembly);
-                }
+                builder.Configurations.AddFromAssembly(configurationAssembly);
             }
             else
             {
-               acceptsNameOrConnectionString = dbContextType.GetConstructor(new[] { typeof(string) }) != null;
+                dbContextCtor = dbContextType.GetConstructor(new[] { typeof(DbConnection), typeof(bool) });
+                if (dbContextCtor == null)
+                {
+                    dbContextCtor = dbContextType.GetConstructor(new[] { typeof(DbConnection) });
+                    if (dbContextCtor == null)
+                    {
+                        dbContextCtor = dbContextType.GetConstructor(new[] { typeof(string) });
+                    }
+                }
             }
 
-            return new ModelInfo { ModelBuilder = builder, DbContextType = dbContextType, AcceptsNameOrConnectionString = acceptsNameOrConnectionString };
+            return new ModelInfo { ModelBuilder = builder, DbContextType = dbContextType, DbContextConstructor = dbContextCtor };
         }
 
         protected virtual string DefaultPrefix

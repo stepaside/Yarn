@@ -11,14 +11,10 @@ namespace Yarn
        where T : class
     {
         // Retrieve methods
-        T GetById<ID>(ID id);
-        IEnumerable<T> GetByIdList<ID>(IList<ID> ids);
+        T Find(Expression<Func<T, bool>> criteria);
+        IEnumerable<T> FindAll(Expression<Func<T, bool>> criteria, int offset = 0, int limit = 0);
         T Find(ISpecification<T> criteria);
         IEnumerable<T> FindAll(ISpecification<T> criteria, int offset = 0, int limit = 0);
-
-        // DML methods
-        T Add(T entity);
-        T Remove(T entity);
 
         // LINQ methods
         IQueryable<T> All();

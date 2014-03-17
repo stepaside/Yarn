@@ -12,8 +12,9 @@
     <copyright>Copyright © Max Stepanskiy 2012-2014</copyright>
     <tags>Repository Repository-Pattern</tags>
 	  <releaseNotes>
-      * BREAKING CHANGE: Removed ILazyLoader and introduced IRelationNavigator interface
+      * BREAKING CHANGE: Removed ILazyLoader and introduced ILoadServiceProvider interface
       * Made name/connection string available in Yarn.EF and Yarn.NHibernate repository and data context constructors
+      * Made assembly and assembly name/location available in Yarn.EF and Yarn.NHibernate repository and data context constructors
       * Refactored model compilation in Yarn.EF
     </releaseNotes>
   </metadata>

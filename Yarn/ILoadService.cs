@@ -7,10 +7,9 @@ using System.Threading.Tasks;
 
 namespace Yarn
 {
-    public interface IFetchPath<T>
+    public interface ILoadService<T> : IService<T>
         where T : class
     {
-        IFetchPath<T> Include<TProperty>(Expression<Func<T, TProperty>> path) where TProperty : class;
-        IQueryable<T> Compile();
+        ILoadService<T> Include<TProperty>(Expression<Func<T, TProperty>> path) where TProperty : class;
     }
 }

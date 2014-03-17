@@ -19,5 +19,17 @@ namespace Yarn.Extensions
         {
             return new AuditableRepository(repository, principal ?? WindowsPrincipal.Current);
         }
+
+        public static T As<T>(this IRepository repository)
+        {
+            if (repository is T)
+            {
+                return (T)repository;
+            }
+            else
+            {
+                return default(T);
+            }
+        }
     }
 }

@@ -73,7 +73,7 @@
     <Compile Include="IDataContextAsync.cs" />
     <Compile Include="Data\DbFactory.cs" />
     <Compile Include="Data\FullTextProvider.cs" />
-    <Compile Include="IFetchPath.cs" />
+    <Compile Include="ILoadService.cs" />
     <Compile Include="IoC\DefaultContainer.cs" />
     <Compile Include="Extensions\ExpressionExtensions.cs" />
     <Compile Include="Extensions\ExpressionVisitor.cs" />
@@ -85,7 +85,7 @@
     <Compile Include="IService.cs" />
     <Compile Include="IFullTextProvider.cs" />
     <Compile Include="IFullTextRepository.cs" />
-    <Compile Include="IRelationNavigator.cs" />
+    <Compile Include="ILoadServiceProvider.cs" />
     <Compile Include="IMetaDataProvider.cs" />
     <Compile Include="IMigrationProvider.cs" />
     <Compile Include="IRepository.cs" />
