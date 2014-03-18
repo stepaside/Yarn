@@ -137,16 +137,16 @@ var categories2 = cachedRepo.FindAll<Category>(spec);
 // Constructor arguments may differ depending on a concrete implemnetations of IRepository
 
 // Here is the example based on Entity Framework repository implementation
-ObjectContainer.Current.Register<IRepository, Yarn.Data.EntityFrameworkProvider.Repository>(
-  new Repository(lazyLoadingEnabled: false, 
-                  nameOrConnectionString: "NorthwindConnection", 
-                  configurationAssembly: typeof(Customer).Assembly));
+ObjectContainer.Current.Register<IRepository>(
+  () => new Yarn.Data.EntityFrameworkProvider.Repository(lazyLoadingEnabled: false, 
+                                                          nameOrConnectionString: "NorthwindConnection", 
+                                                          configurationAssembly: typeof(Customer).Assembly));
                     
 // Here is the example based on NHiberante repository implementation using SQL Server database backend
 ObjectContainer.Current.Register<IRepository, Yarn.Data.NHibernate.Repository>();
-ObjectContainer.Current.Register<IDataContext, Yarn.Data.NHibernate.SqlClient.Sql2012DataContext>(
-  new Sql2012DataContext(nameOrConnectionString: "NorthwindConnection", 
-                  configurationAssembly: typeof(Customer).Assembly);
+ObjectContainer.Current.Register<IDataContext>(
+  () => new Yarn.Data.NHibernate.SqlClient.Sql2012DataContext(nameOrConnectionString: "NorthwindConnection", 
+                                                              configurationAssembly: typeof(Customer).Assembly));
 ```
 
 ###Example of using eager loading
