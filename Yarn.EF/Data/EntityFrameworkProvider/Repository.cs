@@ -84,9 +84,13 @@ namespace Yarn.Data.EntityFrameworkProvider
         public IEnumerable<T> FindAll<T>(Expression<Func<T, bool>> criteria, int offset = 0, int limit = 0) where T : class
         {
             var results = this.Table<T>().Where(criteria);
-            if (offset >= 0 && limit > 0)
+            if (offset >= 0)
             {
-                results = results.Skip(offset).Take(limit);
+                results = results.Skip(offset);
+            }
+            if (limit > 0)
+            {
+                results = results.Take(limit);
             }
             return results;
         }

@@ -21,6 +21,11 @@ namespace Yarn.Adapters
                 throw new ArgumentNullException("repository");
             }
 
+            if (principal == null)
+            {
+                throw new ArgumentNullException("principal");
+            }
+
             _repository = repository;
             _principal = principal;
         }

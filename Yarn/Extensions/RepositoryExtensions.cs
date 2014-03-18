@@ -20,6 +20,11 @@ namespace Yarn.Extensions
             return new AuditableRepository(repository, principal ?? WindowsPrincipal.Current);
         }
 
+        public static IRepository WithMultiTenancy(this IRepository repository, ITenant tenant)
+        {
+            return new MultiTenantRepository(repository, tenant);
+        }
+
         public static T As<T>(this IRepository repository)
         {
             if (repository is T)

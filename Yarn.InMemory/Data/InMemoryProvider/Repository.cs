@@ -64,7 +64,11 @@ namespace Yarn.Data.InMemoryProvider
 
         public IEnumerable<T> FindAll<T>(System.Linq.Expressions.Expression<Func<T, bool>> criteria, int offset = 0, int limit = 0) where T : class
         {
-            var query = this.All<T>().Where(criteria).Skip(offset);
+            var query = this.All<T>().Where(criteria);
+            if (offset >= 0)
+            {
+                query = query.Skip(offset);
+            }
             if (limit > 0)
             {
                 query = query.Take(limit);

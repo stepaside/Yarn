@@ -137,23 +137,19 @@ namespace Yarn.Data.EntityFrameworkProvider
             {
                 var connection = CreateConnection(nameOrConnectionString);
                 var builder = modelInfo.ModelBuilder;
-                var dbModel = builder.Build(connection);
-                var objectContext = dbModel.Compile().CreateObjectContext<ObjectContext>(connection);
-                objectContext.ContextOptions.LazyLoadingEnabled = _lazyLoadingEnabled;
-                objectContext.ContextOptions.ProxyCreationEnabled = _proxyCreationEnabled;
-
-                if (!objectContext.DatabaseExists())
-                {
-                    try
-                    {
-                        objectContext.CreateDatabase();
-                    }
-                    catch { }
-                }
+                var dbModel = builder.Build(connection).Compile();
                 
-                var dbContext = new DbContext(objectContext, true);
+                var dbContext = new DbContext(connection, dbModel, true);
+                dbContext.Configuration.LazyLoadingEnabled = _lazyLoadingEnabled;
+                dbContext.Configuration.ProxyCreationEnabled = _proxyCreationEnabled;
                 dbContext.Configuration.AutoDetectChangesEnabled = _autoDetectChangesEnabled;
                 dbContext.Configuration.ValidateOnSaveEnabled = _validateOnSaveEnabled;
+
+                try
+                {
+                    dbContext.Database.Initialize(false);
+                }
+                catch { }
 
                 _codeFirst = true;
 
