@@ -13,5 +13,8 @@ namespace Yarn
 
         DateTime? UpdateDate { get; set; }
         string UpdatedBy { get; set; }
+
+        Guid? AuditId { get; set; }
+        string IpAddress { get; set; }
     }
 }

@@ -69,6 +69,7 @@ namespace Yarn.Adapters
         {
             if (entity is IAuditable)
             {
+                ((IAuditable)entity).AuditId = Guid.NewGuid();
                 ((IAuditable)entity).CreateDate = DateTime.UtcNow;
                 if (_principal != null && _principal.Identity != null)
                 {
@@ -79,6 +80,7 @@ namespace Yarn.Adapters
                 {
                     item.CreateDate = root.CreateDate;
                     item.CreatedBy = root.CreatedBy;
+                    item.AuditId = root.AuditId;
                 });
             }
             return _repository.Add(entity);
@@ -98,6 +100,7 @@ namespace Yarn.Adapters
         {
             if (entity is IAuditable)
             {
+                ((IAuditable)entity).AuditId = Guid.NewGuid();
                 ((IAuditable)entity).UpdateDate = DateTime.UtcNow;
                 if (_principal != null && _principal.Identity != null)
                 {
@@ -108,6 +111,7 @@ namespace Yarn.Adapters
                 {
                     item.UpdateDate = root.UpdateDate;
                     item.UpdatedBy = root.UpdatedBy;
+                    item.AuditId = root.AuditId;
                 });
             }
             return _repository.Update(entity);
