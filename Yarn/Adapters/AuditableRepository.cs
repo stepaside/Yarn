@@ -2,6 +2,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
+using System.Linq.Expressions;
 using System.Security.Principal;
 using System.Text;
 using System.Threading.Tasks;
@@ -50,14 +51,14 @@ namespace Yarn.Adapters
             return _repository.Find<T>(criteria);
         }
 
-        public IEnumerable<T> FindAll<T>(ISpecification<T> criteria, int offset = 0, int limit = 0) where T : class
+        public IEnumerable<T> FindAll<T>(ISpecification<T> criteria, int offset = 0, int limit = 0, Expression<Func<T, object>> orderBy = null) where T : class
         {
-            return _repository.FindAll<T>(criteria, offset, limit);
+            return _repository.FindAll<T>(criteria, offset, limit, orderBy);
         }
 
-        public IEnumerable<T> FindAll<T>(System.Linq.Expressions.Expression<Func<T, bool>> criteria, int offset = 0, int limit = 0) where T : class
+        public IEnumerable<T> FindAll<T>(System.Linq.Expressions.Expression<Func<T, bool>> criteria, int offset = 0, int limit = 0, Expression<Func<T, object>> orderBy = null) where T : class
         {
-            return _repository.FindAll<T>(criteria, offset, limit);
+            return _repository.FindAll<T>(criteria, offset, limit, orderBy);
         }
 
         public IList<T> Execute<T>(string command, ParamList parameters) where T : class

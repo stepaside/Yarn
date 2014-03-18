@@ -81,28 +81,16 @@ namespace Yarn.Data.EntityFrameworkProvider
             return FindAll(criteria).FirstOrDefault();
         }
         
-        public IEnumerable<T> FindAll<T>(Expression<Func<T, bool>> criteria, int offset = 0, int limit = 0) where T : class
+        public IEnumerable<T> FindAll<T>(Expression<Func<T, bool>> criteria, int offset = 0, int limit = 0, Expression<Func<T, object>> orderBy = null) where T : class
         {
-            var results = this.Table<T>().Where(criteria);
-            if (offset >= 0)
-            {
-                results = results.Skip(offset);
-            }
-            if (limit > 0)
-            {
-                results = results.Take(limit);
-            }
-            return results;
+            var query = this.Table<T>().Where(criteria);
+            return this.Page<T>(query, offset, limit, orderBy);
         }
 
-        public IEnumerable<T> FindAll<T>(ISpecification<T> criteria, int offset = 0, int limit = 0) where T : class
+        public IEnumerable<T> FindAll<T>(ISpecification<T> criteria, int offset = 0, int limit = 0, Expression<Func<T, object>> orderBy = null) where T : class
         {
-            var results = criteria.Apply(Table<T>());
-            if (offset >= 0 && limit > 0)
-            {
-                results = results.Skip(offset).Take(limit);
-            }
-            return results;
+            var query = criteria.Apply(Table<T>());
+            return this.Page<T>(query, offset, limit, orderBy);
         }
 
         public IList<T> Execute<T>(string command, ParamList parameters) where T : class

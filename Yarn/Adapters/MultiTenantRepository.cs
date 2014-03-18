@@ -1,9 +1,11 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Linq.Expressions;
 using System.Security.Principal;
 using System.Text;
 using System.Threading.Tasks;
+using Yarn.Extensions;
 using Yarn.Specification;
 
 namespace Yarn.Adapters
@@ -71,29 +73,21 @@ namespace Yarn.Adapters
             }
         }
 
-        public IEnumerable<T> FindAll<T>(ISpecification<T> criteria, int offset = 0, int limit = 0) where T : class
+        public IEnumerable<T> FindAll<T>(ISpecification<T> criteria, int offset = 0, int limit = 0, Expression<Func<T, object>> orderBy = null) where T : class
         {
-            return this.FindAll<T>(((Specification<T>)criteria).Predicate, offset, limit);
+            return this.FindAll<T>(((Specification<T>)criteria).Predicate, offset, limit, orderBy);
         }
 
-        public IEnumerable<T> FindAll<T>(System.Linq.Expressions.Expression<Func<T, bool>> criteria, int offset = 0, int limit = 0) where T : class
+        public IEnumerable<T> FindAll<T>(System.Linq.Expressions.Expression<Func<T, bool>> criteria, int offset = 0, int limit = 0, Expression<Func<T, object>> orderBy = null) where T : class
         {
             if (typeof(ITenant).IsAssignableFrom(typeof(T)))
             {
                 var query = _repository.All<T>().Where(e => ((ITenant)e).TenantId == _owner.TenantId);
-                if (offset >= 0)
-                {
-                    query = query.Skip(offset);
-                }
-                if (limit > 0)
-                {
-                    query = query.Take(limit);
-                }
-                return query;
+                return this.Page<T>(query, offset, limit, orderBy);
             }
             else
             {
-                return _repository.FindAll<T>(criteria, offset, limit);
+                return _repository.FindAll<T>(criteria, offset, limit, orderBy);
             }
         }
 
@@ -200,19 +194,12 @@ namespace Yarn.Adapters
 
         public long Count<T>(ISpecification<T> criteria) where T : class
         {
-            return this.Count(((Specification<T>)criteria).Predicate);
+            return FindAll<T>(criteria).LongCount();
         }
 
         public long Count<T>(System.Linq.Expressions.Expression<Func<T, bool>> criteria) where T : class
         {
-            if (typeof(ITenant).IsAssignableFrom(typeof(T)))
-            {
-                return _repository.All<T>().Where(e => ((ITenant)e).TenantId == _owner.TenantId).LongCount(criteria);
-            }
-            else
-            {
-                return _repository.Count<T>(criteria);
-            }
+            return FindAll<T>(criteria).LongCount();
         }
 
         public IQueryable<T> All<T>() where T : class

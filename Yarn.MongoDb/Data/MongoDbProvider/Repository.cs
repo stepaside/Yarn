@@ -10,6 +10,7 @@ using System.Data.Entity.Design.PluralizationServices;
 using System.Globalization;
 using System.Linq;
 using System.Linq.Expressions;
+using Yarn.Extensions;
 
 namespace Yarn.Data.MongoDbProvider
 {
@@ -49,28 +50,16 @@ namespace Yarn.Data.MongoDbProvider
             return FindAll(criteria).FirstOrDefault();
         }
 
-        public IEnumerable<T> FindAll<T>(Expression<Func<T, bool>> criteria, int offset = 0, int limit = 0) where T : class
+        public IEnumerable<T> FindAll<T>(Expression<Func<T, bool>> criteria, int offset = 0, int limit = 0, Expression<Func<T, object>> orderBy = null) where T : class
         {
-            var results = this.All<T>().Where(criteria);
-            if (offset >= 0)
-            {
-                results = results.Skip(offset);
-            }
-            if (limit > 0)
-            {
-                results = results.Take(limit);
-            }
-            return results;
+            var query = this.All<T>().Where(criteria);
+            return this.Page<T>(query, offset, limit, orderBy);
         }
 
-        public IEnumerable<T> FindAll<T>(ISpecification<T> criteria, int offset = 0, int limit = 0) where T : class
+        public IEnumerable<T> FindAll<T>(ISpecification<T> criteria, int offset = 0, int limit = 0, Expression<Func<T, object>> orderBy = null) where T : class
         {
-            var results = criteria.Apply(this.All<T>());
-            if (offset >= 0 && limit > 0)
-            {
-                results = results.Skip(offset).Take(limit);
-            }
-            return results;
+            var query = criteria.Apply(this.All<T>());
+            return this.Page<T>(query, offset, limit, orderBy);
         }
 
         public T Add<T>(T entity) where T : class

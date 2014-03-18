@@ -57,23 +57,15 @@ namespace Yarn.Data.InMemoryProvider
             return FindAll<T>(criteria).FirstOrDefault();
         }
 
-        public IEnumerable<T> FindAll<T>(ISpecification<T> criteria, int offset = 0, int limit = 0) where T : class
+        public IEnumerable<T> FindAll<T>(ISpecification<T> criteria, int offset = 0, int limit = 0, Expression<Func<T, object>> orderBy = null) where T : class
         {
-            return FindAll<T>(((Specification<T>)criteria).Predicate, offset, limit);
+            return FindAll<T>(((Specification<T>)criteria).Predicate, offset, limit, orderBy);
         }
 
-        public IEnumerable<T> FindAll<T>(System.Linq.Expressions.Expression<Func<T, bool>> criteria, int offset = 0, int limit = 0) where T : class
+        public IEnumerable<T> FindAll<T>(System.Linq.Expressions.Expression<Func<T, bool>> criteria, int offset = 0, int limit = 0, Expression<Func<T, object>> orderBy = null) where T : class
         {
             var query = this.All<T>().Where(criteria);
-            if (offset >= 0)
-            {
-                query = query.Skip(offset);
-            }
-            if (limit > 0)
-            {
-                query = query.Take(limit);
-            }
-            return query.AsEnumerable();
+            return this.Page<T>(query, offset, limit, orderBy);
         }
 
         public IList<T> Execute<T>(string command, ParamList parameters) where T : class
@@ -120,7 +112,7 @@ namespace Yarn.Data.InMemoryProvider
 
         public long Count<T>() where T : class
         {
-            throw new NotImplementedException();
+            return this.All<T>().LongCount();
         }
 
         public long Count<T>(ISpecification<T> criteria) where T : class

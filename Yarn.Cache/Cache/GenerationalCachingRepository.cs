@@ -104,18 +104,18 @@ namespace Yarn.Cache
             return FindAll<T>(criteria, limit: 1).FirstOrDefault();
         }
 
-        public IEnumerable<T> FindAll<T>(ISpecification<T> criteria, int offset = 0, int limit = 0) where T : class
+        public IEnumerable<T> FindAll<T>(ISpecification<T> criteria, int offset = 0, int limit = 0, Expression<Func<T, object>> orderBy = null) where T : class
         {
             return FindAll<T>(((Specification<T>)criteria).Predicate, offset, limit);
         }
 
-        public IEnumerable<T> FindAll<T>(System.Linq.Expressions.Expression<Func<T, bool>> criteria, int offset = 0, int limit = 0) where T : class
+        public IEnumerable<T> FindAll<T>(System.Linq.Expressions.Expression<Func<T, bool>> criteria, int offset = 0, int limit = 0, Expression<Func<T, object>> orderBy = null) where T : class
         {
             // Reduce invalid cache combinations
             if (offset < 0) offset = 0;
             if (limit < 0) limit = 0;
 
-            var key = CacheKey<T>(criteria, offset, limit);
+            var key = CacheKey<T>(criteria, offset, limit, orderBy);
             IList<T> items;
             if (!_cache.Get<IList<T>>(key, out items))
             {
@@ -329,10 +329,14 @@ namespace Yarn.Cache
                 return string.Concat(typeof(T).FullName, "/", operation, parametersValue);
             }
         }
-                
-        private string CacheKey<T>(Expression<Func<T, bool>> predicate = null, int offset = 0, int limit = 0)
+
+        private string CacheKey<T>(Expression<Func<T, bool>> predicate = null, int offset = 0, int limit = 0, Expression<Func<T, object>> orderBy = null)
         {
             var predicateKey = predicate == null ? "All" : string.Concat(predicate.ToString(), ",", offset, ",", limit);
+            if (orderBy != null)
+            {
+                predicateKey += "/" + orderBy.ToString();
+            }
             return string.Concat(typeof(T).FullName, "/", GetGeneration<T>(), "/", predicateKey);
         }
     }

@@ -1,15 +1,16 @@
-﻿using System;
+﻿using NHibernate;
+using NHibernate.Criterion;
+using NHibernate.Engine;
+using NHibernate.Linq;
+using NHibernate.Transform;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Text;
 using Yarn;
-using NHibernate;
-using NHibernate.Linq;
-using NHibernate.Transform;
-using NHibernate.Engine;
+using Yarn.Extensions;
 using Yarn.Reflection;
-using NHibernate.Criterion;
 using Yarn.Specification;
 
 namespace Yarn.Data.NHibernateProvider
@@ -82,28 +83,16 @@ namespace Yarn.Data.NHibernateProvider
             return FindAll(criteria).FirstOrDefault();
         }
 
-        public IEnumerable<T> FindAll<T>(Expression<Func<T, bool>> criteria, int offset = 0, int limit = 0) where T : class
+        public IEnumerable<T> FindAll<T>(Expression<Func<T, bool>> criteria, int offset = 0, int limit = 0, Expression<Func<T, object>> orderBy = null) where T : class
         {
-            var results = this.All<T>().Where(criteria);
-            if (offset >= 0)
-            {
-                results = results.Skip(offset);
-            }
-            if (limit > 0)
-            {
-                results = results.Take(limit);
-            }
-            return results;
+            var query = this.All<T>().Where(criteria);
+            return this.Page<T>(query, offset, limit, orderBy);
         }
 
-        public IEnumerable<T> FindAll<T>(ISpecification<T> criteria, int offset = 0, int limit = 0) where T : class
+        public IEnumerable<T> FindAll<T>(ISpecification<T> criteria, int offset = 0, int limit = 0, Expression<Func<T, object>> orderBy = null) where T : class
         {
-            var results = criteria.Apply(this.All<T>());
-            if (offset >= 0 && limit > 0)
-            {
-                results = results.Skip(offset).Take(limit);
-            }
-            return results;
+            var query = criteria.Apply(this.All<T>());
+            return this.Page<T>(query, offset, limit, orderBy);
         }
 
         public IList<T> Execute<T>(string command, ParamList parameters) where T : class
