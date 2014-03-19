@@ -7,3 +7,4 @@ mkdir NugetPackages
 .nuget\nuget.exe pack Yarn.NHibernate\Yarn.NHibernate.nuspec -BasePath Yarn.NHibernate\bin\Release -OutputDirectory NugetPackages
 .nuget\nuget.exe pack Yarn.RavenDb\Yarn.RavenDb.nuspec -BasePath Yarn.RavenDb\bin\Release -OutputDirectory NugetPackages
 .nuget\nuget.exe pack Yarn.Cache\Yarn.Cache.nuspec -BasePath Yarn.Cache\bin\Release -OutputDirectory NugetPackages
+.nuget\nuget.exe pack Yarn.StructureMap\Yarn.StructureMap.nuspec -BasePath Yarn.StructureMap\bin\Release -OutputDirectory NugetPackages

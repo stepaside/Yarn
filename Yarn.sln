@@ -15,6 +15,7 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution 
 		Yarn.NHibernate\Yarn.NHibernate.nuspec = Yarn.NHibernate\Yarn.NHibernate.nuspec
 		Yarn\Yarn.nuspec = Yarn\Yarn.nuspec
 		Yarn.RavenDb\Yarn.RavenDb.nuspec = Yarn.RavenDb\Yarn.RavenDb.nuspec
+		Yarn.StructureMap\Yarn.StructureMap.nuspec = Yarn.StructureMap\Yarn.StructureMap.nuspec
 	EndProjectSection
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "YarnTest", "YarnTest\YarnTest.csproj", "{293BD754-CC0A-4A1F-BDCD-10223E60F99B}"
@@ -30,6 +31,8 @@ EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Yarn.InMemory", "Yarn.InMemory\Yarn.InMemory.csproj", "{5F67579D-B26E-47F8-AEA9-60DF9F415F17}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Yarn.Cache", "Yarn.Cache\Yarn.Cache.csproj", "{DB50F4B1-18E7-446D-BF12-B97DB499781C}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Yarn.StructureMap", "Yarn.StructureMap\Yarn.StructureMap.csproj", "{4D3DD658-3FC1-44D6-97F9-1E3F9663DC7D}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -69,6 +72,10 @@ Global
 		{DB50F4B1-18E7-446D-BF12-B97DB499781C}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{DB50F4B1-18E7-446D-BF12-B97DB499781C}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{DB50F4B1-18E7-446D-BF12-B97DB499781C}.Release|Any CPU.Build.0 = Release|Any CPU
+		{4D3DD658-3FC1-44D6-97F9-1E3F9663DC7D}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{4D3DD658-3FC1-44D6-97F9-1E3F9663DC7D}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{4D3DD658-3FC1-44D6-97F9-1E3F9663DC7D}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{4D3DD658-3FC1-44D6-97F9-1E3F9663DC7D}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
