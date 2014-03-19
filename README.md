@@ -21,7 +21,7 @@ Here is what it currently supports:
 
 ```c#
 // Bind IRepository to specific implementation (this should happen during application startup)
-ObjectContainer.Current.Register<IRepository, Yarn.Data.MongoDbProvider.Repository>();
+ObjectContainer.Current.Register<IRepository>(() => new Yarn.Data.MongoDbProvider.Repository());
 
 // Resolve IRepository (this may happen anywhere within application)
 // Let's assume we have defined entity Category
@@ -36,8 +36,8 @@ var categories = repo.GetByIdList<Category, int>(new[] { 1000, 1100 });
 // Bind IRepository to specific implementation (this should happen during application startup)
 // For this example one must provide "EF.Default.Model" application setting and "EF.Default.Connection" connection string setting
 // ("EF.Default.Model" points to an assembly which contains model class definition)
-ObjectContainer.Current.Register<IRepository, Yarn.Data.MongoDbProvider.Repository>("mongo");
-ObjectContainer.Current.Register<IRepository, Yarn.Data.EntityFrameworkProvider.Repository>("ef");
+ObjectContainer.Current.Register<IRepository>(() => new Yarn.Data.MongoDbProvider.Repository(), "mongo");
+ObjectContainer.Current.Register<IRepository>(() => new Yarn.Data.EntityFrameworkProvider.Repository(), "ef");
 
 // Resolve IRepository (this may happen anywhere within application)
 // "mongo" will resolve to MongoDB implementation, while "ef" will resolve to EF implementation
@@ -46,24 +46,25 @@ var repo = ObjectContainer.Current.Resolve<IRepository>("ef");
 var category = repo.GetById<Category, int>(1000);
 ```
 
-###Example of NHibernate implementation of IRepository###
+###NHibernate implementation of IRepository###
 
 ```c#
 // With NHibernate one must specify implementation of the data context to be used with repository
 // For this example one must provide "NHibernate.MySqlClient.Model" application setting and "NHibernate.MySqlClient.Connection" connection string setting
-ObjectContainer.Current.Register<IRepository, Yarn.Data.NHibernateProvider.Repository>(
-                                          new Yarn.Data.NHibernateProvider.Repository("nh_uow"), "nh");
-ObjectContainer.Current.Register<IDataContext, Yarn.Data.NHibernateProvider.MySqlClient.MySqlDataContext>("nh_uow");
+ObjectContainer.Current.Register<IRepository>(
+  () => new Yarn.Data.NHibernateProvider.Repository("nh_uow"), "nh");
+ObjectContainer.Current.Register<IDataContext>(
+  () => new Yarn.Data.NHibernateProvider.MySqlClient.MySqlDataContext(), "nh_uow");
 
 // In order to use NHibernate with SQL Server one has to bind IDataContext to the SQL Server implementation
 // Similarly to the MySQL example "NHibernate.SqlClient.Model" application setting and "NHibernate.SqlClient.Connection" connection string setting should be defined
-// ObjectContainer.Current.Register<IDataContext, Yarn.Data.NHibernateProvider.SqlClient.SqlDataContext>("nh_uow");
+// ObjectContainer.Current.Register<IDataContext>(() => new Yarn.Data.NHibernateProvider.SqlClient.Sql2012DataContext"nh_uow");
 
 var repo = ObjectContainer.Current.Resolve<IRepository>("nh");
 var categories = repo.FindAll<Category>(c => c.Name.Contains("cat"), offset: 50, limit: 10);
 ```
 
-###Example of the full text search implementation with IRepository###
+###Full text search implementation with IRepository###
 
 - EF
 
@@ -88,7 +89,7 @@ var categories = repo.FindAll<Category>(c => c.Name.Contains("cat"), offset: 50,
   var categories = ((IFullTextRepository)repo).FullText.Seach<Category>("hello world");
   ```
   
-###Example of the specification pattern implementation with IRepository
+###Specification pattern implementation with IRepository###
 
 ```c#
 // Bind IRepository to specific implementation (this should happen during application startup)
@@ -102,7 +103,7 @@ var spec = new Specification<Category>(c => c.Name.Contains("hello")).Or(c => c.
 var categories = repo.FindAll<Category>(spec);
 ```
 
-###Example of utilizing caching with IRepository
+###Utilizing caching with IRepository###
 
 ```c#
 // Implement a cache provider to support caching of your choice
@@ -117,7 +118,9 @@ ObjectContainer.Current.Register<IRepository, Yarn.Data.EntityFrameworkProvider.
 // Resolve IRepository (this may happen anywhere within application)
 var repo = ObjectContainer.Current.Resolve<IRepository>();
 
-// Create a repository decorator to support caching
+// Initialize cache repository adapter
+// Note: Cache adapter implements write-through cache for entity-related 
+// operations and generational caching for queries
 var cachedRepo = repo.WithCache<SimpleCache>();
 
 // Create a specification to abstract search criteria
@@ -130,7 +133,7 @@ var categories1 = cachedRepo.FindAll<Category>(spec);
 var categories2 = cachedRepo.FindAll<Category>(spec);
 ```
 
-###Example of passing parameters to repository/data context constructor during initialization
+###Passing parameters to repository/data context constructor during initialization###
 
 ```c#
 // Bind IRepository to specific implementation
@@ -149,7 +152,7 @@ ObjectContainer.Current.Register<IDataContext>(
                                                               configurationAssembly: typeof(Customer).Assembly));
 ```
 
-###Example of using eager loading
+###Eager loading with IRepository###
 
 ```c#
 // Bind IRepository to specific implementation (this should happen during application startup)
@@ -164,4 +167,27 @@ var customer = repo.As<ILoadServiceProvider>()
                   .Include(c => c.Orders)
                   .Include(c => c.Orders.Select(o => o.Order_Details))
                   .Find(c => c.CustomerID == "ALFKI");
+```
+
+###Repository adapters###
+
+```c#
+// Auditable adapter will automatically populate audit information 
+// when calling Add/Update if entity implements IAuditable interface
+var repo = ObjectContainer.Current.Resolve<IRepository>().WithAudit(Thread.CurrentPrincipal);
+
+// Soft-delete adapter will automatically re-write Remove as Update 
+// and will filter all deleted records out on retrieve if entity implements ISoftDelete interface
+var repo = ObjectContainer.Current.Resolve<IRepository>().WithSoftDelete(Thread.CurrentPrincipal);
+
+// Multi-tenancy adapter will automatically filter tenant related data for retrieve 
+// as well as check tenant ownership when calling Add, Update and Remove if entity 
+// implements ITenant interface
+// Note: the following example assumes Thread.CurrentPrincipal implements ITenant interface
+var repo = ObjectContainer.Current.Resolve<IRepository>().WithMultiTenancy((ITenant)Thread.CurrentPrincipal);
+
+// It is also possible to chain the adapters
+// Note: IPrincipal parameter is optional for soft-delete and auidtable adapters
+var repo = ObjectContainer.Current.Resolve<IRepository>().WithSoftDelete().WihAudit();
+
 ```
