@@ -30,6 +30,36 @@ var category = repo.GetById<Category, int>(1000);
 var categories = repo.GetByIdList<Category, int>(new[] { 1000, 1100 });
 ```
 
+###IoC with Yarn###
+
+```c#
+// Yarn provides a simple IoC container implementation
+// One can easily override it with any DI framework 
+// of choice by implementing IContainer
+// This should be called on application startup
+ObjectContainer.Initialize(() => new Any_IoC_Implementation_Based_On_IContainer());
+
+// IRepository is instantiated using default constructor of Yarn.Data.EntityFrameworkProvider.Repository
+ObjectContainer.Current.Register<IRepository, Yarn.Data.EntityFrameworkProvider.Repository>();
+
+// IRepository is instantiated using parametrized constructor of Yarn.Data.EntityFrameworkProvider.Repository
+ObjectContainer.Current.Register<IRepository>(
+  () => new Yarn.Data.EntityFrameworkProvider.Repository(lazyLoadingEnabled: false));
+  
+// IRepository is instantiated unders a specific instance name
+ObjectContainer.Current.Register<IRepository>(
+  () => new Yarn.Data.EntityFrameworkProvider.Repository(lazyLoadingEnabled: false), "Lazy");
+
+// IRepository is instantiated as a singleton
+ObjectContainer.Current.Register<IRepository>(new Yarn.Data.EntityFrameworkProvider.Repository());
+
+// Resolved IRepository implementation
+var repo = ObjectContainer.Current.Resolve<IRepository>();
+// IRepository is resolved by instance name
+var repo = ObjectContainer.Current.Resolve<IRepository>("Lazy");
+
+```
+
 ###Slightly more sophisticated example utilizing multiple implementations of IRepository###
 
 ```c#
