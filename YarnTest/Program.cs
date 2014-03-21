@@ -34,7 +34,7 @@ namespace YarnTest
                 var session = ((IDataContext<DbContext>)dctx).Session;
             }
 
-            var customer = repo.GetById<Customer, string>("ALFKI");
+            //var customer = repo.GetById<Customer, string>("ALFKI");
             
             var eager_customer = repo.As<ILoadServiceProvider>().Load<Customer>().Include(c => c.Orders).Include(c => c.Orders.Select(o => o.Order_Details)).Find(c => c.CustomerID == "ALFKI");
 
@@ -43,8 +43,9 @@ namespace YarnTest
             var customers = repo.Execute<Customer>("EXEC spDTO_Customer_Retrieve @CustomerID", new ParamList { { "CustomerID", "ALFKI" } });
 
             var cachedRepo = repo.WithCache<LocalCache>();
-            var customer1 = cachedRepo.GetById<Customer, string>("ALFKI");
-            var customer2 = cachedRepo.GetById<Customer, string>("ALFKI");
+            var id = "ALFKI";
+            var customer1 = cachedRepo.Find<Customer>(c => c.CustomerID == id);
+            var customer2 = cachedRepo.Find<Customer>(c => c.CustomerID == id);
 
             if (object.ReferenceEquals(customer1, customer2))
             {

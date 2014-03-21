@@ -1,14 +1,15 @@
 ﻿using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
-using Yarn.Specification;
-using System.Collections.Concurrent;
 using System.Linq.Expressions;
+using System.Text;
+using Yarn.Extensions;
+using Yarn.Specification;
 
 namespace Yarn.Cache
 {
-    public class GenerationalCachingRepository<TCache> : CachingStrategy<TCache>, IRepository
+    public class GenerationalCachingRepository<TCache> : CachingStrategy<TCache>, IRepository, ILoadServiceProvider
         where TCache : class, ICacheProvider, new()
     {
         private IMetaDataProvider _metaData;
@@ -101,7 +102,7 @@ namespace Yarn.Cache
 
         public T Find<T>(System.Linq.Expressions.Expression<Func<T, bool>> criteria) where T : class
         {
-            return FindAll<T>(criteria, limit: 1).FirstOrDefault();
+            return FindAll<T>(criteria, limit: 1).AsQueryable<T>().FirstOrDefault();
         }
 
         public IEnumerable<T> FindAll<T>(ISpecification<T> criteria, int offset = 0, int limit = 0, Expression<Func<T, object>> orderBy = null) where T : class
@@ -224,12 +225,12 @@ namespace Yarn.Cache
 
         public long Count<T>(ISpecification<T> criteria) where T : class
         {
-            return FindAll<T>(criteria).LongCount();
+            return FindAll<T>(criteria).AsQueryable<T>().LongCount();
         }
 
         public long Count<T>(System.Linq.Expressions.Expression<Func<T, bool>> criteria) where T : class
         {
-            return FindAll<T>(criteria).LongCount();
+            return FindAll<T>(criteria).AsQueryable<T>().LongCount();
         }
 
         public IQueryable<T> All<T>() where T : class
@@ -252,6 +253,91 @@ namespace Yarn.Cache
             get
             {
                 return _context;
+            }
+        }
+
+        #endregion
+
+        #region ILoadServiceProvider Members
+
+        ILoadService<T> ILoadServiceProvider.Load<T>()
+        {
+            if (_repository is ILoadServiceProvider)
+            {
+                return new LoadService<T>(((ILoadServiceProvider)_repository).Load<T>(), this);
+            }
+            else
+            {
+                throw new NotImplementedException();
+            }
+        }
+
+        private class LoadService<T> : ILoadService<T>
+           where T : class
+        {
+            ILoadService<T> _service;
+            GenerationalCachingRepository<TCache> _cache;
+
+            public LoadService(ILoadService<T> service, GenerationalCachingRepository<TCache> cache)
+            {
+                _cache = cache;
+                _service = service;
+            }
+
+            public ILoadService<T> Include<TProperty>(Expression<Func<T, TProperty>> path)
+                where TProperty : class
+            {
+                _service = _service.Include(path);
+                return this;
+            }
+
+            public T Find(Expression<Func<T, bool>> criteria)
+            {
+                return this.FindAll(criteria, limit: 1).FirstOrDefault();
+            }
+
+            public IEnumerable<T> FindAll(Expression<Func<T, bool>> criteria, int offset = 0, int limit = 0, Expression<Func<T, object>> orderBy = null)
+            {
+                // Reduce invalid cache combinations
+                if (offset < 0) offset = 0;
+                if (limit < 0) limit = 0;
+
+                var key = _cache.CacheKey<T>(criteria, offset, limit, orderBy, _service.Identity);
+                IList<T> items;
+                if (!_cache.Cache.Get<IList<T>>(key, out items))
+                {
+                    items = _service.FindAll(criteria, offset, limit, orderBy).ToArray();
+                    _cache.Cache.Set<IList<T>>(key, items);
+                }
+                return items;
+            }
+
+            public T Find(ISpecification<T> criteria)
+            {
+                return Find(((Specification<T>)criteria).Predicate);
+            }
+
+            public IEnumerable<T> FindAll(ISpecification<T> criteria, int offset = 0, int limit = 0, Expression<Func<T, object>> orderBy = null)
+            {
+                return FindAll(((Specification<T>)criteria).Predicate, offset, limit, orderBy);
+            }
+
+            public IQueryable<T> All()
+            {
+                return _service.All();
+            }
+
+            public string Identity
+            {
+                get
+                {
+                    return _service.Identity;
+                }
+            }
+
+            public void Dispose()
+            {
+
             }
         }
 
@@ -319,7 +405,7 @@ namespace Yarn.Cache
 
         private string CacheKey<T>(string operation, IEnumerable<dynamic> parameters, bool query)
         {
-            var parametersValue = parameters != null ? "/" + string.Join(",", parameters.Select(t => t.Name + "=" + t.Value)) : "";
+            var parametersValue = parameters != null ? "/" + ComputeHash(string.Join(",", parameters.Select(t => t.Name + "=" + t.Value))) : "";
             if (query)
             {
                 return string.Concat(typeof(T).FullName, "/", GetGeneration<T>(), "/", operation, parametersValue);
@@ -330,14 +416,61 @@ namespace Yarn.Cache
             }
         }
 
-        private string CacheKey<T>(Expression<Func<T, bool>> predicate = null, int offset = 0, int limit = 0, Expression<Func<T, object>> orderBy = null)
+        private string CacheKey<T>(Expression<Func<T, bool>> predicate = null, int offset = 0, int limit = 0, Expression<Func<T, object>> orderBy = null, string identity = null)
         {
-            var predicateKey = predicate == null ? "All" : string.Concat(predicate.ToString(), ",", offset, ",", limit);
+            var predicateKey = "All";
+
+            if (predicate != null)
+            {
+                Expression expression = predicate;
+
+                // locally evaluate as much of the query as possible
+                expression = Evaluator.PartialEval(expression);
+                
+                // support local collections
+                expression = LocalCollectionExpander.Rewrite(expression);
+                predicateKey = string.Concat(expression.ToString(), "|", offset, "|", limit);
+            }
+
             if (orderBy != null)
             {
                 predicateKey += "/" + orderBy.ToString();
             }
-            return string.Concat(typeof(T).FullName, "/", GetGeneration<T>(), "/", predicateKey);
+
+            if (identity != null)
+            {
+                predicateKey += "/" + identity;
+            }
+
+            var hash = ComputeHash(predicateKey);
+
+            return string.Concat(typeof(T).FullName, "/", GetGeneration<T>(), "/", hash);
+        }
+
+        //djb2 hash
+        private static uint ComputeHash(string value)
+        {
+            unsafe
+            {
+                fixed (char* start = value)
+                {
+                    uint hash = 5381; ;
+                    char* ch = start;
+                    uint c;
+                    while ((c = ch[0]) != 0)
+                    {
+                        hash = ((hash << 5) + hash) ^ c;
+                        c = ch[1];
+                        if (c == 0)
+                        {
+                            break;
+                        }
+                        hash = ((hash << 5) + hash) ^ c;
+                        ch += 2;
+                    }
+                    return hash;
+                }
+            }
         }
     }
 }

@@ -1,6 +1,7 @@
 ﻿using NHibernate;
 using NHibernate.Criterion;
 using NHibernate.Engine;
+using NHibernate.Hql.Ast.ANTLR;
 using NHibernate.Linq;
 using NHibernate.Transform;
 using System;
@@ -250,18 +251,10 @@ namespace Yarn.Data.NHibernateProvider
                 return _query.FirstOrDefault(criteria);
             }
 
-            public IEnumerable<T> FindAll(Expression<Func<T, bool>> criteria, int offset = 0, int limit = 0)
+            public IEnumerable<T> FindAll(Expression<Func<T, bool>> criteria, int offset = 0, int limit = 0, Expression<Func<T, object>> orderBy = null)
             {
                 var query = _query.Where(criteria);
-                if (offset > 0)
-                {
-                    query.Skip(offset);
-                }
-                if (limit > 0)
-                {
-                    query.Take(limit);
-                }
-                return query;
+                return _repository.Page(query, offset, limit, orderBy);
             }
 
             public T Find(ISpecification<T> criteria)
@@ -269,14 +262,27 @@ namespace Yarn.Data.NHibernateProvider
                 return Find(((Specification<T>)criteria).Predicate);
             }
 
-            public IEnumerable<T> FindAll(ISpecification<T> criteria, int offset = 0, int limit = 0)
+            public IEnumerable<T> FindAll(ISpecification<T> criteria, int offset = 0, int limit = 0, Expression<Func<T, object>> orderBy = null)
             {
-                return FindAll(((Specification<T>)criteria).Predicate, offset, limit);
+                return FindAll(((Specification<T>)criteria).Predicate, offset, limit, orderBy);
             }
 
             public IQueryable<T> All()
             {
                 return _query;
+            }
+
+            public string Identity
+            {
+                get
+                {
+                    var sessionImplementation = (ISessionImplementor)((IDataContext<ISession>)_repository.DataContext).Session;
+                    var linqExpression = new NhLinqExpression(_query.Expression, sessionImplementation.Factory);
+                    var translatorFactory = new ASTQueryTranslatorFactory();
+                    var translators = translatorFactory.CreateQueryTranslators(linqExpression.Key, linqExpression, null, false, sessionImplementation.EnabledFilters, sessionImplementation.Factory);
+
+                    return translators[0].SQLString;
+                }
             }
 
             public void Dispose()

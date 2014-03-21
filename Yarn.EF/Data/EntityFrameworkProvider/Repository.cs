@@ -283,18 +283,10 @@ namespace Yarn.Data.EntityFrameworkProvider
                 return _query.FirstOrDefault(criteria);
             }
 
-            public IEnumerable<T> FindAll(Expression<Func<T, bool>> criteria, int offset = 0, int limit = 0)
+            public IEnumerable<T> FindAll(Expression<Func<T, bool>> criteria, int offset = 0, int limit = 0, Expression<Func<T, object>> orderBy = null)
             {
                 var query = _query.Where(criteria);
-                if (offset > 0)
-                {
-                    query.Skip(offset);
-                }
-                if (limit > 0)
-                {
-                    query.Take(limit);
-                }
-                return query;
+                return _repository.Page(query, offset, limit, orderBy);
             }
 
             public T Find(ISpecification<T> criteria)
@@ -302,14 +294,22 @@ namespace Yarn.Data.EntityFrameworkProvider
                 return Find(((Specification<T>)criteria).Predicate);
             }
 
-            public IEnumerable<T> FindAll(ISpecification<T> criteria, int offset = 0, int limit = 0)
+            public IEnumerable<T> FindAll(ISpecification<T> criteria, int offset = 0, int limit = 0, Expression<Func<T, object>> orderBy = null)
             {
-                return FindAll(((Specification<T>)criteria).Predicate, offset, limit);
+                return FindAll(((Specification<T>)criteria).Predicate, offset, limit, orderBy);
             }
 
             public IQueryable<T> All()
             {
                 return _query;
+            }
+
+            public string Identity
+            {
+                get
+                {
+                    return _query.ToString();
+                }
             }
 
             public void Dispose()

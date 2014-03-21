@@ -2,7 +2,7 @@
 <package >
   <metadata>
     <id>Yarn</id>
-    <version>0.7.6</version>
+    <version>0.7.7</version>
     <title>Yarn</title>
     <authors>Max Stepanskiy</authors>
     <owners>Stepaside, Inc.</owners>
@@ -12,8 +12,9 @@
     <copyright>Copyright © Max Stepanskiy 2012-2014</copyright>
     <tags>Repository Repository-Pattern</tags>
 	  <releaseNotes>
-      * Fixed pagination implementation
-      * Modified IRepository.FindAll signature to accept order by
+      * Added Identity property to ILoadService
+      * Added ability to cache object graphs retrieved using eager loading
+      * Fixed query caching
     </releaseNotes>
   </metadata>
   <files>
