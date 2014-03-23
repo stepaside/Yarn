@@ -204,21 +204,22 @@ var customer = repo.As<ILoadServiceProvider>()
 
 ```c#
 // Auditable adapter will automatically populate audit information 
-// when calling Add/Update if entity implements IAuditable interface
+// when calling Add/Update for all entities which implement IAuditable interface
 var repo = ObjectContainer.Current.Resolve<IRepository>().WithAudit(Thread.CurrentPrincipal);
 
 // Soft-delete adapter will automatically re-write Remove as Update 
-// and will filter all deleted records out on retrieve if entity implements ISoftDelete interface
+// and will filter all deleted records out on retrieve for all entities
+// which implement ISoftDelete interface
 var repo = ObjectContainer.Current.Resolve<IRepository>().WithSoftDelete(Thread.CurrentPrincipal);
 
-// Multi-tenancy adapter will automatically filter tenant related data for retrieve 
-// as well as check tenant ownership when calling Add, Update and Remove if entity 
-// implements ITenant interface
+// Multi-tenancy adapter will automatically filter tenant related data as well 
+// as check tenant ownership when calling Add, Update and Remove for all entities 
+// which implement ITenant interface
 // Note: the following example assumes Thread.CurrentPrincipal implements ITenant interface
 var repo = ObjectContainer.Current.Resolve<IRepository>().WithMultiTenancy((ITenant)Thread.CurrentPrincipal);
 
 // It is also possible to chain the adapters
-// Note: IPrincipal parameter is optional for soft-delete and auidtable adapters
+// Note: IPrincipal parameter is optional for soft-delete and auditable adapters
 var repo = ObjectContainer.Current.Resolve<IRepository>().WithSoftDelete().WihAudit();
 
 ```
