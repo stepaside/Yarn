@@ -2,7 +2,7 @@
 <package >
   <metadata>
     <id>Yarn</id>
-    <version>0.7.7</version>
+    <version>0.7.8</version>
     <title>Yarn</title>
     <authors>Max Stepanskiy</authors>
     <owners>Stepaside, Inc.</owners>
@@ -12,9 +12,8 @@
     <copyright>Copyright © Max Stepanskiy 2012-2014</copyright>
     <tags>Repository Repository-Pattern</tags>
 	  <releaseNotes>
-      * Added Identity property to ILoadService
-      * Added ability to cache object graphs retrieved using eager loading
-      * Fixed query caching
+      * Removed Identity property from ILoadService
+      * Simplified query caching
     </releaseNotes>
   </metadata>
   <files>

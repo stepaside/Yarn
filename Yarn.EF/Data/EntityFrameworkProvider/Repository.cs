@@ -304,14 +304,6 @@ namespace Yarn.Data.EntityFrameworkProvider
                 return _query;
             }
 
-            public string Identity
-            {
-                get
-                {
-                    return _query.ToString();
-                }
-            }
-
             public void Dispose()
             {
                 

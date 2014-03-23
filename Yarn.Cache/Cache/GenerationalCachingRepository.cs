@@ -277,16 +277,19 @@ namespace Yarn.Cache
         {
             ILoadService<T> _service;
             GenerationalCachingRepository<TCache> _cache;
+            List<Expression> _paths;
 
             public LoadService(ILoadService<T> service, GenerationalCachingRepository<TCache> cache)
             {
                 _cache = cache;
                 _service = service;
+                _paths = new List<Expression>();
             }
 
             public ILoadService<T> Include<TProperty>(Expression<Func<T, TProperty>> path)
                 where TProperty : class
             {
+                _paths.Add(path);
                 _service = _service.Include(path);
                 return this;
             }
@@ -302,7 +305,7 @@ namespace Yarn.Cache
                 if (offset < 0) offset = 0;
                 if (limit < 0) limit = 0;
 
-                var key = _cache.CacheKey<T>(criteria, offset, limit, orderBy, _service.Identity);
+                var key = _cache.CacheKey<T>(criteria, offset, limit, orderBy, _paths);
                 IList<T> items;
                 if (!_cache.Cache.Get<IList<T>>(key, out items))
                 {
@@ -325,14 +328,6 @@ namespace Yarn.Cache
             public IQueryable<T> All()
             {
                 return _service.All();
-            }
-
-            public string Identity
-            {
-                get
-                {
-                    return _service.Identity;
-                }
             }
 
             public void Dispose()
@@ -416,9 +411,9 @@ namespace Yarn.Cache
             }
         }
 
-        private string CacheKey<T>(Expression<Func<T, bool>> predicate = null, int offset = 0, int limit = 0, Expression<Func<T, object>> orderBy = null, string identity = null)
+        private string CacheKey<T>(Expression<Func<T, bool>> predicate = null, int offset = 0, int limit = 0, Expression<Func<T, object>> orderBy = null, IEnumerable<Expression> paths = null)
         {
-            var predicateKey = "All";
+            var identity = new StringBuilder();
 
             if (predicate != null)
             {
@@ -429,20 +424,39 @@ namespace Yarn.Cache
                 
                 // support local collections
                 expression = LocalCollectionExpander.Rewrite(expression);
-                predicateKey = string.Concat(expression.ToString(), "|", offset, "|", limit);
+                identity.Append(expression.ToString());
+            }
+            else
+            {
+                identity.Append("All");
+            }
+
+            if (offset > 0)
+            {
+                identity.AppendFormat("|offset:{0}", offset);
+            }
+
+            if (limit > 0)
+            {
+                identity.AppendFormat("|limit:{0}", limit);
             }
 
             if (orderBy != null)
             {
-                predicateKey += "/" + orderBy.ToString();
+                identity.AppendFormat("|orderby:{0}", orderBy.ToString());
             }
 
-            if (identity != null)
+            if (paths != null)
             {
-                predicateKey += "/" + identity;
+                var includes = new SortedSet<string>();
+                foreach (var path in paths)
+                {
+                    includes.Add(path.ToString());
+                }
+                identity.AppendFormat("|includes:[{0}]", string.Join(",", includes));
             }
 
-            var hash = ComputeHash(predicateKey);
+            var hash = ComputeHash(identity.ToString());
 
             return string.Concat(typeof(T).FullName, "/", GetGeneration<T>(), "/", hash);
         }

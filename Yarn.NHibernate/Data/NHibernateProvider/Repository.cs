@@ -272,19 +272,6 @@ namespace Yarn.Data.NHibernateProvider
                 return _query;
             }
 
-            public string Identity
-            {
-                get
-                {
-                    var sessionImplementation = (ISessionImplementor)((IDataContext<ISession>)_repository.DataContext).Session;
-                    var linqExpression = new NhLinqExpression(_query.Expression, sessionImplementation.Factory);
-                    var translatorFactory = new ASTQueryTranslatorFactory();
-                    var translators = translatorFactory.CreateQueryTranslators(linqExpression.Key, linqExpression, null, false, sessionImplementation.EnabledFilters, sessionImplementation.Factory);
-
-                    return translators[0].SQLString;
-                }
-            }
-
             public void Dispose()
             {
                 
