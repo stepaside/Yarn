@@ -36,7 +36,8 @@ var categories = repo.GetByIdList<Category, int>(new[] { 1000, 1100 });
 // Yarn provides a simple IoC container implementation
 // One can easily override it with any DI framework 
 // of choice by implementing IContainer
-// This should be called on application startup
+// The following code should be called on application startup
+// in order to override IoC container
 ObjectContainer.Initialize(() => new Any_IoC_Implementation_Based_On_IContainer());
 
 // IRepository is instantiated using default constructor of Yarn.Data.EntityFrameworkProvider.Repository
