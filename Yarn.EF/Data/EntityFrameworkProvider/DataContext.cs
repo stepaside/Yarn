@@ -39,8 +39,6 @@ namespace Yarn.Data.EntityFrameworkProvider
 
         private bool? _codeFirst;
 
-        private readonly object _lock = new object();
-
         protected Lazy<DbContext> _context = null;
 
         public DataContext() : this(prefix: null)
