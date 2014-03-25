@@ -40,7 +40,7 @@ namespace Yarn.Data.EntityFrameworkProvider
             return await base.FindAll<T>(criteria).AsQueryable<T>().FirstOrDefaultAsync();
         }
 
-        public new async Task<T> Find<T>(Expression<Func<T, bool>> criteria) where T : class
+        public new async Task<T> FindAsync<T>(Expression<Func<T, bool>> criteria) where T : class
         {
             return await this.Table<T>().FirstOrDefaultAsync(criteria);
         }

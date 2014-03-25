@@ -1,15 +1,9 @@
 ﻿using System;
 using System.Collections.Concurrent;
-using System.Collections.Generic;
 using System.Configuration;
 using System.Data;
 using System.Data.Common;
 using System.Data.Entity;
-using System.Data.Entity.Core.Objects;
-using System.Data.Entity.Infrastructure;
-using System.Data.Entity.Migrations;
-using System.Data.Entity.Migrations.Infrastructure;
-using System.Data.Entity.ModelConfiguration;
 using System.IO;
 using System.Linq;
 using System.Reflection;
@@ -27,9 +21,11 @@ namespace Yarn.Data.EntityFrameworkProvider
             public ConstructorInfo DbContextConstructor { get; set; }
         }
 
-        private static ConcurrentDictionary<string, ModelInfo> _dbModelBuilders = new ConcurrentDictionary<string, ModelInfo>();
+        private static readonly ConcurrentDictionary<string, ModelInfo> DbModelBuilders =
+            new ConcurrentDictionary<string, ModelInfo>();
 
-        private static ScriptGeneratorMigrationInitializer<DbContext> _dbInitializer = new ScriptGeneratorMigrationInitializer<DbContext>();
+        private static readonly ScriptGeneratorMigrationInitializer<DbContext> DbInitializer =
+            new ScriptGeneratorMigrationInitializer<DbContext>();
 
         protected readonly string _prefix;
         private readonly bool _lazyLoadingEnabled;
@@ -41,21 +37,25 @@ namespace Yarn.Data.EntityFrameworkProvider
         private readonly string _assemblyNameOrLocation;
         private readonly Assembly _configurationAssembly;
 
-        private bool? _codeFirst = null;
-        
-        protected DbContext _context = null;
+        private bool? _codeFirst;
 
-        public DataContext() : this(prefix: null) { }
+        private readonly object _lock = new object();
 
-        public DataContext(string prefix = null, 
-                            bool lazyLoadingEnabled = true, 
-                            bool proxyCreationEnabled = false, 
-                            bool autoDetectChangesEnabled = false,
-                            bool validateOnSaveEnabled = true,
-                            bool migrationEnabled = false,
-                            string nameOrConnectionString = null,
-                            string assemblyNameOrLocation = null,
-                            Assembly configurationAssembly = null)
+        protected Lazy<DbContext> _context = null;
+
+        public DataContext() : this(prefix: null)
+        {
+        }
+
+        public DataContext(string prefix = null,
+            bool lazyLoadingEnabled = true,
+            bool proxyCreationEnabled = false,
+            bool autoDetectChangesEnabled = false,
+            bool validateOnSaveEnabled = true,
+            bool migrationEnabled = false,
+            string nameOrConnectionString = null,
+            string assemblyNameOrLocation = null,
+            Assembly configurationAssembly = null)
         {
             _prefix = prefix;
             _lazyLoadingEnabled = lazyLoadingEnabled;
@@ -69,12 +69,23 @@ namespace Yarn.Data.EntityFrameworkProvider
             {
                 _assemblyNameOrLocation = assemblyNameOrLocation;
             }
-            InitializeDbContext();
+            _context = new Lazy<DbContext>(InitializeDbContext, true);
         }
 
-        protected virtual void InitializeDbContext()
+        private DbContext InitializeDbContext()
         {
-            _context = DbContextCache.CurrentContext;
+            var dbContext = DbContextCache.CurrentContext;
+            if (dbContext == null || dbContext.Database.Connection.State == ConnectionState.Broken)
+            {
+                if (dbContext != null)
+                {
+                    dbContext.Dispose();
+                }
+
+                dbContext = _prefix == null ? GetDefaultDbContext() : CreateDbContext(_prefix);
+                DbContextCache.CurrentContext = dbContext;
+            }
+            return dbContext;
         }
 
         private DbConnection CreateConnection(string nameOrConnectionString)
@@ -94,36 +105,38 @@ namespace Yarn.Data.EntityFrameworkProvider
 
         protected DbContext CreateDbContext(string prefix)
         {
-            var modelInfo = _dbModelBuilders.GetOrAdd(prefix, key => ConfigureDbModel(key));
+            var modelInfo = DbModelBuilders.GetOrAdd(prefix, key => ConfigureDbModel(key));
             var nameOrConnectionString = _nameOrConnectionString ?? prefix + ".Connection";
-            
+
             if (modelInfo.DbContextType != null)
             {
                 DbContext dbContext = null;
                 if (modelInfo.DbContextConstructor != null)
                 {
-                    var parameters = modelInfo.DbContextConstructor.GetParameters().Select(p => p.ParameterType).ToArray();
+                    var parameters =
+                        modelInfo.DbContextConstructor.GetParameters().Select(p => p.ParameterType).ToArray();
                     var activator = Reflection.Activator.CreateDelegate(modelInfo.DbContextType, parameters);
-                    if (parameters.Length == 2 && parameters[0] == typeof(DbConnection) && parameters[1] == typeof(bool))
+                    if (parameters.Length == 2 && parameters[0] == typeof (DbConnection) &&
+                        parameters[1] == typeof (bool))
                     {
                         var connection = CreateConnection(nameOrConnectionString);
-                        dbContext = (DbContext)activator(connection, true);
+                        dbContext = (DbContext) activator(connection, true);
                     }
-                    else if (parameters.Length == 1 && parameters[0] == typeof(DbConnection))
+                    else if (parameters.Length == 1 && parameters[0] == typeof (DbConnection))
                     {
                         var connection = CreateConnection(nameOrConnectionString);
-                        dbContext = (DbContext)activator(connection);
+                        dbContext = (DbContext) activator(connection);
                     }
-                    else if (parameters.Length == 1 && parameters[0] == typeof(string))
+                    else if (parameters.Length == 1 && parameters[0] == typeof (string))
                     {
-                        dbContext = (DbContext)activator(nameOrConnectionString);
+                        dbContext = (DbContext) activator(nameOrConnectionString);
                     }
                 }
                 else
                 {
-                    dbContext = (DbContext)Activator.CreateInstance(modelInfo.DbContextType);
+                    dbContext = (DbContext) Activator.CreateInstance(modelInfo.DbContextType);
                 }
-                    
+
                 dbContext.Configuration.LazyLoadingEnabled = _lazyLoadingEnabled;
                 dbContext.Configuration.ProxyCreationEnabled = _proxyCreationEnabled;
                 dbContext.Configuration.AutoDetectChangesEnabled = _autoDetectChangesEnabled;
@@ -138,7 +151,7 @@ namespace Yarn.Data.EntityFrameworkProvider
                 var connection = CreateConnection(nameOrConnectionString);
                 var builder = modelInfo.ModelBuilder;
                 var dbModel = builder.Build(connection).Compile();
-                
+
                 var dbContext = new DbContext(connection, dbModel, true);
                 dbContext.Configuration.LazyLoadingEnabled = _lazyLoadingEnabled;
                 dbContext.Configuration.ProxyCreationEnabled = _proxyCreationEnabled;
@@ -149,19 +162,21 @@ namespace Yarn.Data.EntityFrameworkProvider
                 {
                     dbContext.Database.Initialize(false);
                 }
-                catch { }
+                catch
+                {
+                }
 
                 _codeFirst = true;
 
                 if (_migrationEnabled)
                 {
-                    Database.SetInitializer(_dbInitializer);
+                    Database.SetInitializer(DbInitializer);
                 }
 
                 return dbContext;
             }
         }
-        
+
         protected ModelInfo ConfigureDbModel(string prefix)
         {
             DbModelBuilder builder = null;
@@ -172,7 +187,8 @@ namespace Yarn.Data.EntityFrameworkProvider
             if (configurationAssembly == null)
             {
                 var assemblyKey = prefix + ".Model";
-                var assemblyNameOrLocation = _assemblyNameOrLocation ?? ConfigurationManager.AppSettings.Get(assemblyKey);
+                var assemblyNameOrLocation = _assemblyNameOrLocation ??
+                                             ConfigurationManager.AppSettings.Get(assemblyKey);
 
                 if (Uri.IsWellFormedUriString(assemblyNameOrLocation, UriKind.Absolute))
                 {
@@ -184,7 +200,7 @@ namespace Yarn.Data.EntityFrameworkProvider
                 }
             }
 
-            dbContextType = configurationAssembly.GetTypes().FirstOrDefault(t => typeof(DbContext).IsAssignableFrom(t));
+            dbContextType = configurationAssembly.GetTypes().FirstOrDefault(t => typeof (DbContext).IsAssignableFrom(t));
             if (dbContextType == null)
             {
                 builder = new DbModelBuilder();
@@ -192,26 +208,28 @@ namespace Yarn.Data.EntityFrameworkProvider
             }
             else
             {
-                dbContextCtor = dbContextType.GetConstructor(new[] { typeof(DbConnection), typeof(bool) });
+                dbContextCtor = dbContextType.GetConstructor(new[] {typeof (DbConnection), typeof (bool)});
                 if (dbContextCtor == null)
                 {
-                    dbContextCtor = dbContextType.GetConstructor(new[] { typeof(DbConnection) });
+                    dbContextCtor = dbContextType.GetConstructor(new[] {typeof (DbConnection)});
                     if (dbContextCtor == null)
                     {
-                        dbContextCtor = dbContextType.GetConstructor(new[] { typeof(string) });
+                        dbContextCtor = dbContextType.GetConstructor(new[] {typeof (string)});
                     }
                 }
             }
 
-            return new ModelInfo { ModelBuilder = builder, DbContextType = dbContextType, DbContextConstructor = dbContextCtor };
+            return new ModelInfo
+            {
+                ModelBuilder = builder,
+                DbContextType = dbContextType,
+                DbContextConstructor = dbContextCtor
+            };
         }
 
         protected virtual string DefaultPrefix
         {
-            get
-            {
-                return "EF.Default";
-            }
+            get { return "EF.Default"; }
         }
 
         protected DbContext GetDefaultDbContext()
@@ -221,53 +239,34 @@ namespace Yarn.Data.EntityFrameworkProvider
 
         public void SaveChanges()
         {
-            this.Session.SaveChanges();
+            Session.SaveChanges();
         }
 
         public virtual DbContext Session
         {
-            get 
-            {
-                if (_context == null || _context.Database.Connection.State == ConnectionState.Broken)
-                {
-                    if (_context != null)
-                    {
-                        _context.Dispose();
-                    }
-
-                    _context = _prefix == null ? GetDefaultDbContext() : CreateDbContext(_prefix);
-                    DbContextCache.CurrentContext = _context;
-                }
-                return _context;
-            }
+            get { return _context.Value; }
         }
 
         public string Source
         {
-            get 
-            {
-                return this.Session.Database.Connection.ConnectionString;
-            }
+            get { return Session.Database.Connection.ConnectionString; }
         }
 
         public IDataContextCache DataContextCache
         {
-            get
-            {
-                return DbContextCache.Instance;
-            }
+            get { return DbContextCache.Instance; }
         }
-               
+
         public Stream BuildSchema()
         {
-            if (this.Session != null && _codeFirst.HasValue && _codeFirst.Value)
+            if (Session != null && _codeFirst.HasValue && _codeFirst.Value)
             {
-                _dbInitializer.Enabled = true;
-                this.Session.Database.Initialize(true);
-                _dbInitializer.Enabled = false;
-                if (_dbInitializer.CreateSql != null)
+                DbInitializer.Enabled = true;
+                Session.Database.Initialize(true);
+                DbInitializer.Enabled = false;
+                if (DbInitializer.CreateSql != null)
                 {
-                    return new MemoryStream(Encoding.UTF8.GetBytes(_dbInitializer.CreateSql));
+                    return new MemoryStream(Encoding.UTF8.GetBytes(DbInitializer.CreateSql));
                 }
             }
             return new MemoryStream();
@@ -275,14 +274,14 @@ namespace Yarn.Data.EntityFrameworkProvider
 
         public Stream UpdateSchema()
         {
-            if (this.Session != null && _codeFirst.HasValue && _codeFirst.Value)
+            if (Session != null && _codeFirst.HasValue && _codeFirst.Value)
             {
-                _dbInitializer.Enabled = true;
-                this.Session.Database.Initialize(true);
-                _dbInitializer.Enabled = false;
-                if (_dbInitializer.UpdateSql != null)
+                DbInitializer.Enabled = true;
+                Session.Database.Initialize(true);
+                DbInitializer.Enabled = false;
+                if (DbInitializer.UpdateSql != null)
                 {
-                    return new MemoryStream(Encoding.UTF8.GetBytes(_dbInitializer.UpdateSql));
+                    return new MemoryStream(Encoding.UTF8.GetBytes(DbInitializer.UpdateSql));
                 }
             }
             return new MemoryStream();
@@ -301,7 +300,6 @@ namespace Yarn.Data.EntityFrameworkProvider
                 if (_context != null)
                 {
                     DbContextCache.Instance.Cleanup();
-                    _context.Dispose();
                     _context = null;
                 }
             }

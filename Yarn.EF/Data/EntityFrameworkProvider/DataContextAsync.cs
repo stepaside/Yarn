@@ -23,27 +23,26 @@ namespace Yarn.Data.EntityFrameworkProvider
         public DataContextAsync() : this(prefix: null) { }
 
         public DataContextAsync(string prefix = null,
-                            bool lazyLoadingEnabled = true,
-                            bool proxyCreationEnabled = false,
-                            bool autoDetectChangesEnabled = false,
-                            bool validateOnSaveEnabled = true,
-                            bool migrationEnabled = false)
-            : base(prefix, lazyLoadingEnabled, proxyCreationEnabled, autoDetectChangesEnabled, validateOnSaveEnabled, migrationEnabled)
-        { }
-
-        protected override void InitializeDbContext()
+            bool lazyLoadingEnabled = true,
+            bool proxyCreationEnabled = false,
+            bool autoDetectChangesEnabled = false,
+            bool validateOnSaveEnabled = true,
+            bool migrationEnabled = false)
+            : base(
+                prefix, lazyLoadingEnabled, proxyCreationEnabled, autoDetectChangesEnabled, validateOnSaveEnabled,
+                migrationEnabled)
         {
-            _context = DbContextCache.CurrentContext;
+
         }
-        
+
         public async Task SaveChangesAsync()
         {
-            await this.Session.SaveChangesAsync();
+            await Session.SaveChangesAsync();
         }
 
         public async Task SaveChangesAsync(CancellationToken cancellationToken)
         {
-            await this.Session.SaveChangesAsync(cancellationToken);
+            await Session.SaveChangesAsync(cancellationToken);
         }
     }
 }

@@ -13,7 +13,7 @@ namespace Yarn
         Task<T> GetByIdAsync<T, ID>(ID id) where T : class;
         Task<IEnumerable<T>> GetByIdListAsync<T, ID>(IList<ID> ids) where T : class;
         Task<T> FindAsync<T>(ISpecification<T> criteria) where T : class;
-        Task<T> Find<T>(Expression<Func<T, bool>> criteria) where T : class;
+        Task<T> FindAsync<T>(Expression<Func<T, bool>> criteria) where T : class;
         Task<IEnumerable<T>> FindAllAsync<T>(ISpecification<T> criteria, int offset = 0, int limit = 0, Expression<Func<T, object>> orderBy = null) where T : class;
         Task<IEnumerable<T>> FindAllAsync<T>(Expression<Func<T, bool>> criteria, int offset = 0, int limit = 0, Expression<Func<T, object>> orderBy = null) where T : class;
 

@@ -25,11 +25,11 @@ namespace Yarn.IoC.StructureMap
         {
             if (instanceName == null)
             {
-                ObjectFactory.Container.Configure(c => c.For<TAbstract>().Use(createInstanceFactory()));
+                ObjectFactory.Container.Configure(c => c.For<TAbstract>().Use(createInstanceFactory));
             }
             else
             {
-                ObjectFactory.Container.Configure(c => c.For<TAbstract>().Use(createInstanceFactory()).Named(instanceName));
+                ObjectFactory.Container.Configure(c => c.For<TAbstract>().Use(createInstanceFactory).Named(instanceName));
             }
         }
 
