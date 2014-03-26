@@ -30,7 +30,7 @@ namespace Yarn.Adapters
             _repository = repository;
             _owner = owner;
         }
-
+        
         public T GetById<T, ID>(ID id) where T : class
         {
             var result = _repository.GetById<T, ID>(id);
@@ -296,6 +296,16 @@ namespace Yarn.Adapters
             {
                 throw new InvalidOperationException();
             }
+        }
+
+        public long TenantId
+        {
+            get { return _owner.TenantId; }
+        }
+
+        public long OwnerId
+        {
+            get { return _owner.OwnerId; }
         }
     }
 }
