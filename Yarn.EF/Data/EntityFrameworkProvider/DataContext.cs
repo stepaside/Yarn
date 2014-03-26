@@ -4,6 +4,7 @@ using System.Configuration;
 using System.Data;
 using System.Data.Common;
 using System.Data.Entity;
+using System.Data.Entity.Infrastructure;
 using System.IO;
 using System.Linq;
 using System.Reflection;
@@ -16,7 +17,7 @@ namespace Yarn.Data.EntityFrameworkProvider
     {
         protected class ModelInfo
         {
-            public DbModelBuilder ModelBuilder { get; set; }
+            public DbCompiledModel DbModel { get; set; }
             public Type DbContextType { get; set; }
             public ConstructorInfo DbContextConstructor { get; set; }
         }
@@ -146,10 +147,9 @@ namespace Yarn.Data.EntityFrameworkProvider
             }
             else
             {
+                var dbModel = modelInfo.DbModel;
                 var connection = CreateConnection(nameOrConnectionString);
-                var builder = modelInfo.ModelBuilder;
-                var dbModel = builder.Build(connection).Compile();
-
+                
                 var dbContext = new DbContext(connection, dbModel, true);
                 dbContext.Configuration.LazyLoadingEnabled = _lazyLoadingEnabled;
                 dbContext.Configuration.ProxyCreationEnabled = _proxyCreationEnabled;
@@ -177,7 +177,7 @@ namespace Yarn.Data.EntityFrameworkProvider
 
         protected ModelInfo ConfigureDbModel(string prefix)
         {
-            DbModelBuilder builder = null;
+            DbCompiledModel dbModel = null;
             Type dbContextType = null;
             ConstructorInfo dbContextCtor = null;
 
@@ -201,8 +201,12 @@ namespace Yarn.Data.EntityFrameworkProvider
             dbContextType = configurationAssembly.GetTypes().FirstOrDefault(t => typeof (DbContext).IsAssignableFrom(t));
             if (dbContextType == null)
             {
-                builder = new DbModelBuilder();
+                var nameOrConnectionString = _nameOrConnectionString ?? prefix + ".Connection";
+                var connection = CreateConnection(nameOrConnectionString);
+
+                var builder = new DbModelBuilder();
                 builder.Configurations.AddFromAssembly(configurationAssembly);
+                dbModel = builder.Build(connection).Compile();
             }
             else
             {
@@ -219,7 +223,7 @@ namespace Yarn.Data.EntityFrameworkProvider
 
             return new ModelInfo
             {
-                ModelBuilder = builder,
+                DbModel = dbModel,
                 DbContextType = dbContextType,
                 DbContextConstructor = dbContextCtor
             };
