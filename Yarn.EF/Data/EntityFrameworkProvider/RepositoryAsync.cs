@@ -18,7 +18,7 @@ namespace Yarn.Data.EntityFrameworkProvider
 
         public RepositoryAsync(string prefix = null,
                             bool lazyLoadingEnabled = true,
-                            bool proxyCreationEnabled = false,
+                            bool proxyCreationEnabled = true,
                             bool autoDetectChangesEnabled = false,
                             bool validateOnSaveEnabled = true,
                             bool migrationEnabled = false)
