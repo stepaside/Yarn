@@ -13,6 +13,7 @@
     <tags>Repository Repository-Pattern</tags>
 	  <releaseNotes>
       * Modified DbCompiledModel caching
+      * Made caching work with multi-tenant repositories
     </releaseNotes>
   </metadata>
   <files>
