@@ -1,9 +1,7 @@
 ﻿using System;
-using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Data.Entity;
 using System.Data.Entity.Infrastructure;
-using System.Data.Entity.Migrations;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
@@ -55,7 +53,7 @@ namespace Yarn.Data.EntityFrameworkProvider
 
         public T GetById<T, ID>(ID id) where T : class
         {
-            return this.Table<T>().Find(id);
+            return Table<T>().Find(id);
         }
 
         public IEnumerable<T> GetByIdList<T, ID>(IList<ID> ids) where T : class
@@ -68,12 +66,12 @@ namespace Yarn.Data.EntityFrameworkProvider
 
             var predicate = idSelector.BuildOrExpression<T, ID>(ids);
 
-            return this.Table<T>().Where(predicate);
+            return Table<T>().Where(predicate);
         }
 
         public T Find<T>(Expression<Func<T, bool>> criteria) where T : class
         {
-            return this.Table<T>().FirstOrDefault(criteria);
+            return Table<T>().FirstOrDefault(criteria);
         }
 
         public T Find<T>(ISpecification<T> criteria) where T : class
@@ -83,14 +81,14 @@ namespace Yarn.Data.EntityFrameworkProvider
         
         public IEnumerable<T> FindAll<T>(Expression<Func<T, bool>> criteria, int offset = 0, int limit = 0, Expression<Func<T, object>> orderBy = null) where T : class
         {
-            var query = this.Table<T>().Where(criteria);
-            return this.Page<T>(query, offset, limit, orderBy);
+            var query = Table<T>().Where(criteria);
+            return this.Page(query, offset, limit, orderBy);
         }
 
         public IEnumerable<T> FindAll<T>(ISpecification<T> criteria, int offset = 0, int limit = 0, Expression<Func<T, object>> orderBy = null) where T : class
         {
             var query = criteria.Apply(Table<T>());
-            return this.Page<T>(query, offset, limit, orderBy);
+            return this.Page(query, offset, limit, orderBy);
         }
 
         public IList<T> Execute<T>(string command, ParamList parameters) where T : class
@@ -100,47 +98,48 @@ namespace Yarn.Data.EntityFrameworkProvider
 
         protected DbRawSqlQuery<T> PrepareSqlQuery<T>(string command, ParamList parameters) where T : class
         {
-            var connection = this.DbContext.Database.Connection;
+            var connection = DbContext.Database.Connection;
             var query = parameters != null
-                ? this.DbContext.Database.SqlQuery<T>(command, parameters.Select(p => DbFactory.CreateParameter(connection, p.Key, p.Value)).ToArray())
-                : this.DbContext.Database.SqlQuery<T>(command);
+                ? DbContext.Database.SqlQuery<T>(command, parameters.Select(p => DbFactory.CreateParameter(connection, p.Key, p.Value)).ToArray())
+                : DbContext.Database.SqlQuery<T>(command);
             return query;
         }
 
         public T Add<T>(T entity) where T : class
         {
-            return this.Table<T>().Add(entity);
+            return Table<T>().Add(entity);
         }
 
         public T Remove<T>(T entity) where T : class
         {
-            return this.Table<T>().Remove(entity);
+            return Table<T>().Remove(entity);
         }
 
         public T Remove<T, ID>(ID id) where T : class
         {
-            var result = this.GetById<T, ID>(id);
+            var result = GetById<T, ID>(id);
             if (result != null)
             {
-                Remove<T>(result);
+                Remove(result);
             }
             return result;
         }
 
         public T Update<T>(T entity) where T : class
         {
-            var entry = this.DbContext.Entry(entity);
+            var entry = DbContext.Entry(entity);
             if (entry != null)
             {
-                var dbSet = this.Table<T>();
+                var dbSet = Table<T>();
                 if (entry.State == EntityState.Detached)
                 {
-                    var key = ((IMetaDataProvider)this).GetPrimaryKeyValue(entity);
-                    var currentEntry = dbSet.Find(key);
-                    if (currentEntry != null)
+                    var attachedEntity = dbSet.Local.FirstOrDefault(this.BuildPrimaryKeyExpression(entity).Compile());
+                    if (attachedEntity != null)
                     {
-                        entry = this.DbContext.Entry(currentEntry);
-                        entry.CurrentValues.SetValues(entity);
+                        //var attachedEntry = DbContext.Entry(attachedEntity);
+                        //attachedEntry.CurrentValues.SetValues(entity);
+                        Mapper.Map(entity, attachedEntity);
+                        entry = DbContext.Entry(attachedEntity);
                     }
                     else
                     {
@@ -164,12 +163,12 @@ namespace Yarn.Data.EntityFrameworkProvider
 
         public void Detach<T>(T entity) where T : class
         {
-            ((IObjectContextAdapter)this.DbContext).ObjectContext.Detach(entity);
+            ((IObjectContextAdapter)DbContext).ObjectContext.Detach(entity);
         }
 
         public IQueryable<T> All<T>() where T : class
         {
-            return this.Table<T>();
+            return Table<T>();
         }
 
         public long Count<T>() where T : class
@@ -189,7 +188,7 @@ namespace Yarn.Data.EntityFrameworkProvider
 
         public DbSet<T> Table<T>() where T : class
         {
-            return this.DbContext.Set<T>();
+            return DbContext.Set<T>();
         }
 
         protected DbContext DbContext
@@ -262,12 +261,12 @@ namespace Yarn.Data.EntityFrameworkProvider
         private class LoadService<T> : ILoadService<T>
             where T : class
         {
-            IRepository _repository;
+            Repository _repository;
             IQueryable<T> _query;
 
             public LoadService(IRepository repository)
             {
-                _repository = repository;
+                _repository = (Repository)repository;
                 _query = repository.All<T>();
             }
 
@@ -302,6 +301,13 @@ namespace Yarn.Data.EntityFrameworkProvider
             public IQueryable<T> All()
             {
                 return _query;
+            }
+
+            public T Update(T entity)
+            {
+                var loadedEntity = Find(_repository.As<IMetaDataProvider>().BuildPrimaryKeyExpression(entity));
+                _repository.Update(loadedEntity);
+                return loadedEntity;
             }
 
             public void Dispose()

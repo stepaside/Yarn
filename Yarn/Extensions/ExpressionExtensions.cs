@@ -52,8 +52,21 @@ namespace Yarn.Extensions
             }
 
             var equals = values.Select(value => (Expression)Expression.Equal(valueSelector.Body, Expression.Constant(value, typeof(ID))));
-            var body = equals.Aggregate<Expression>((accumulate, equal) => Expression.Or(accumulate, equal));
+            var body = @equals.Aggregate((accumulate, equal) => Expression.Or(accumulate, equal));
             return Expression.Lambda<Func<T, bool>>(body, p);
-        } 
+        }
+
+        public static Expression<Func<T, bool>> BuildPrimaryKeyExpression<T>(this IMetaDataProvider repository, T entity)
+            where T : class
+        {
+            var primaryKeyValue = repository.GetPrimaryKeyValue(entity).First();
+            var primaryKey = repository.GetPrimaryKey<T>().First();
+
+            var parameter = Expression.Parameter(typeof(T));
+            var body = Expression.Convert(Expression.PropertyOrField(parameter, primaryKey), typeof(object));
+            var idSelector = Expression.Lambda<Func<T, object>>(body, parameter);
+            var predicate = idSelector.BuildOrExpression(new[] { primaryKeyValue });
+            return predicate;
+        }
     }
 }

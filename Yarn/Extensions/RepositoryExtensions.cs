@@ -2,8 +2,10 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
+using System.Security.Claims;
 using System.Security.Principal;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 using Yarn.Adapters;
 
@@ -35,12 +37,12 @@ namespace Yarn.Extensions
 
         public static IRepository WithSoftDelete(this IRepository repository, IPrincipal principal = null)
         {
-            return new SoftDeleteRepository(repository, principal ?? WindowsPrincipal.Current);
+            return new SoftDeleteRepository(repository, principal ?? Thread.CurrentPrincipal);
         }
 
         public static IRepository WithAudit(this IRepository repository, IPrincipal principal = null)
         {
-            return new AuditableRepository(repository, principal ?? WindowsPrincipal.Current);
+            return new AuditableRepository(repository, principal ?? Thread.CurrentPrincipal);
         }
 
         public static IRepository WithMultiTenancy(this IRepository repository, ITenant tenant)
@@ -54,10 +56,7 @@ namespace Yarn.Extensions
             {
                 return (T)repository;
             }
-            else
-            {
-                return default(T);
-            }
+            return default(T);
         }
     }
 }

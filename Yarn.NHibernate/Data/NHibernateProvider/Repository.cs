@@ -1,4 +1,5 @@
-﻿using NHibernate;
+﻿using System.Reflection;
+using NHibernate;
 using NHibernate.Criterion;
 using NHibernate.Engine;
 using NHibernate.Hql.Ast.ANTLR;
@@ -13,6 +14,8 @@ using Yarn;
 using Yarn.Extensions;
 using Yarn.Reflection;
 using Yarn.Specification;
+using System.Collections;
+using Expression = System.Linq.Expressions.Expression;
 
 namespace Yarn.Data.NHibernateProvider
 {
@@ -30,25 +33,22 @@ namespace Yarn.Data.NHibernateProvider
 
         public T GetById<T, ID>(ID id) where T : class
         {
-            return this.GetById<T, ID>(id, null);
+            return GetById<T, ID>(id, null);
         }
 
         public T GetById<T, ID>(ID id, LockMode lockMode) where T : class
         {
-            var session = this.Session;
+            var session = Session;
             if (lockMode != null)
             {
                 return session.Get<T>(id, lockMode);
             }
-            else
-            {
-                return session.Get<T>(id);
-            }
+            return session.Get<T>(id);
         }
 
         public IEnumerable<T> GetByIdList<T, ID>(IList<ID> ids) where T : class
         {
-            var session = this.Session;
+            var session = Session;
             var criteria = session.CreateCriteria<T>();
             var idsRestriction = Restrictions.Disjunction();
             ids.ForEach(id => idsRestriction.Add(Restrictions.IdEq(id)));
@@ -58,25 +58,22 @@ namespace Yarn.Data.NHibernateProvider
 
         public T LoadById<T, ID>(ID id) where T : class
         {
-            return this.LoadById<T, ID>(id, null);
+            return LoadById<T, ID>(id, null);
         }
 
         public T LoadById<T, ID>(ID id, LockMode lockMode) where T : class
         {
-            var session = this.Session;
+            var session = Session;
             if (lockMode != null)
             {
                 return session.Load<T>(id, lockMode);
             }
-            else
-            {
-                return session.Load<T>(id);
-            }
+            return session.Load<T>(id);
         }
 
         public T Find<T>(Expression<Func<T, bool>> criteria) where T : class
         {
-            return this.All<T>().Where(criteria).FirstOrDefault();
+            return All<T>().Where(criteria).FirstOrDefault();
         }
 
         public T Find<T>(ISpecification<T> criteria) where T : class
@@ -86,19 +83,19 @@ namespace Yarn.Data.NHibernateProvider
 
         public IEnumerable<T> FindAll<T>(Expression<Func<T, bool>> criteria, int offset = 0, int limit = 0, Expression<Func<T, object>> orderBy = null) where T : class
         {
-            var query = this.All<T>().Where(criteria);
-            return this.Page<T>(query, offset, limit, orderBy);
+            var query = All<T>().Where(criteria);
+            return this.Page(query, offset, limit, orderBy);
         }
 
         public IEnumerable<T> FindAll<T>(ISpecification<T> criteria, int offset = 0, int limit = 0, Expression<Func<T, object>> orderBy = null) where T : class
         {
             var query = criteria.Apply(this.All<T>());
-            return this.Page<T>(query, offset, limit, orderBy);
+            return this.Page(query, offset, limit, orderBy);
         }
 
         public IList<T> Execute<T>(string command, ParamList parameters) where T : class
         {
-            var query = this.Session.CreateSQLQuery(command);
+            var query = Session.CreateSQLQuery(command);
             if (parameters != null)
             {
                 foreach (var parameter in parameters)
@@ -112,20 +109,20 @@ namespace Yarn.Data.NHibernateProvider
 
         public T Add<T>(T entity) where T : class
         {
-            this.Session.SaveOrUpdate(entity);
+            Session.SaveOrUpdate(entity);
             return entity;
         }
 
         public T Remove<T>(T entity) where T : class
         {
-            this.Session.Delete(entity);
+            Session.Delete(entity);
             return entity;
         }
 
         public T Remove<T, ID>(ID id) where T : class
         {
             var entity = GetById<T, ID>(id);
-            this.Session.Delete(entity);
+            Session.Delete(entity);
             return entity;
             //var result = this.Session.Delete<T, ID>(id);
             //return result;
@@ -133,28 +130,28 @@ namespace Yarn.Data.NHibernateProvider
 
         public T Update<T>(T entity) where T : class
         {
-            this.Session.Update(entity);
+            Session.Update(entity);
             return entity;
         }
 
         public void Attach<T>(T entity) where T : class
         {
-            this.Session.Merge(entity);
+            Session.Merge(entity);
         }
 
         public void Detach<T>(T entity) where T : class
         {
-            this.Session.Evict(entity);
+            Session.Evict(entity);
         }
 
         public IQueryable<T> All<T>() where T : class
         {
-            return this.Session.Query<T>();
+            return Session.Query<T>();
         }
 
         public long Count<T>() where T : class
         {
-            return this.All<T>().LongCount();
+            return All<T>().LongCount();
         }
 
         public long Count<T>(ISpecification<T> criteria) where T : class
@@ -232,6 +229,9 @@ namespace Yarn.Data.NHibernateProvider
         {
             IQueryable<T> _query;
             IRepository _repository;
+            MethodInfo _fetchMany = typeof(EagerFetchingExtensionMethods).GetMethod("FetchMany");
+            MethodInfo _thenFetchMany = typeof(EagerFetchingExtensionMethods).GetMethod("ThenFetchMany");
+            MethodInfo _thenFetch = typeof(EagerFetchingExtensionMethods).GetMethod("ThenFetch");
 
             public LoadService(IRepository repository)
             {
@@ -242,7 +242,65 @@ namespace Yarn.Data.NHibernateProvider
             public ILoadService<T> Include<TProperty>(Expression<Func<T, TProperty>> path)
                 where TProperty : class
             {
-                _query = _query.Fetch(path);
+                var properties = path.Body.ToString().Split('.');
+                if (properties.Length == 2)
+                {
+                    if (typeof(IEnumerable).IsAssignableFrom(typeof(TProperty)))
+                    {
+                        ((IQueryable<T>)_fetchMany.Invoke(null, new object[] { _query, path })).ToFuture();
+                    }
+                    else
+                    {
+                        _query.Fetch(path).ToFuture();
+                    }
+                }
+                else if (properties.Length > 2)
+                {
+                    var current = typeof(T);
+                    IQueryable<T> query = null;
+                    for (var i = 1; i < properties.Length; i++)
+                    {
+                        if (i == 1)
+                        {
+                            if (typeof(IEnumerable).IsAssignableFrom(typeof(TProperty)))
+                            {
+                                query = (IQueryable<T>)_fetchMany.Invoke(null, new object[] { _query, path });
+                                current = typeof(TProperty).GetGenericArguments()[0];
+                            }
+                            else
+                            {
+                                query = _query.Fetch(path);
+                                current = typeof(TProperty);
+                            }
+                        }
+                        else
+                        {
+                            var property = current.GetProperty(properties[i]);
+                            if (property == null)
+                            {
+                                break;
+                            }
+
+                            var propertyType = property.PropertyType;
+                            var parameter = Expression.Parameter(current);
+                            var body = Expression.Convert(Expression.PropertyOrField(parameter, properties[i]),
+                                propertyType);
+                            var selector = Expression.Lambda(body, parameter);
+
+                            if (typeof(IEnumerable).IsAssignableFrom(propertyType))
+                            {
+                                query = (IQueryable<T>)_thenFetchMany.Invoke(null, new object[] { query, selector });
+                                current = propertyType.GetGenericArguments()[0];
+                            }
+                            else
+                            {
+                                query = (IQueryable<T>)_thenFetch.Invoke(null, new object[] { query, selector });
+                                current = propertyType;
+                            }
+                        }
+                    }
+                    query.ToFuture();
+                }
                 return this;
             }
 
@@ -270,6 +328,13 @@ namespace Yarn.Data.NHibernateProvider
             public IQueryable<T> All()
             {
                 return _query;
+            }
+
+            public T Update(T entity)
+            {
+                var loadedEntity = Find(_repository.As<IMetaDataProvider>().BuildPrimaryKeyExpression(entity));
+                _repository.Update(loadedEntity);
+                return loadedEntity;
             }
 
             public void Dispose()

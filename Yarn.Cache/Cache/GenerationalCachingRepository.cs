@@ -338,6 +338,15 @@ namespace Yarn.Cache
                 return _service.All();
             }
 
+            public T Update(T entity)
+            {
+                // Load full graph from the db
+                var loadedEntity = _service.Find(_cache._repository.As<IMetaDataProvider>().BuildPrimaryKeyExpression(entity));
+                // Update entity and cache
+                _cache.Update(entity);
+                return loadedEntity;
+            }
+
             public void Dispose()
             {
 
