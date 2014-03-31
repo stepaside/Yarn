@@ -242,7 +242,8 @@ namespace Yarn.Data.NHibernateProvider
             public ILoadService<T> Include<TProperty>(Expression<Func<T, TProperty>> path)
                 where TProperty : class
             {
-                var properties = path.Body.ToString().Split('.');
+                var properties = path.Body.ToString().Split('.').Where(p => !p.StartsWith("Select")).Select(p => p.TrimEnd(')')).ToArray();
+
                 if (properties.Length == 2)
                 {
                     if (typeof(IEnumerable).IsAssignableFrom(typeof(TProperty)))
