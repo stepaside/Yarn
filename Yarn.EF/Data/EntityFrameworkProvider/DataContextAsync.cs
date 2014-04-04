@@ -27,10 +27,14 @@ namespace Yarn.Data.EntityFrameworkProvider
             bool proxyCreationEnabled = false,
             bool autoDetectChangesEnabled = false,
             bool validateOnSaveEnabled = true,
-            bool migrationEnabled = false)
+            bool migrationEnabled = false,
+            string nameOrConnectionString = null,
+            string assemblyNameOrLocation = null,
+            Assembly configurationAssembly = null,
+            Type dbContextType = null)
             : base(
                 prefix, lazyLoadingEnabled, proxyCreationEnabled, autoDetectChangesEnabled, validateOnSaveEnabled,
-                migrationEnabled)
+                migrationEnabled, nameOrConnectionString, assemblyNameOrLocation, configurationAssembly, dbContextType)
         {
 
         }

@@ -37,6 +37,7 @@ namespace Yarn.Data.EntityFrameworkProvider
         private readonly string _nameOrConnectionString;
         private readonly string _assemblyNameOrLocation;
         private readonly Assembly _configurationAssembly;
+        private readonly Type _dbContextType;
 
         private bool? _codeFirst;
 
@@ -54,7 +55,8 @@ namespace Yarn.Data.EntityFrameworkProvider
             bool migrationEnabled = false,
             string nameOrConnectionString = null,
             string assemblyNameOrLocation = null,
-            Assembly configurationAssembly = null)
+            Assembly configurationAssembly = null,
+            Type dbContextType = null)
         {
             _prefix = prefix;
             _lazyLoadingEnabled = lazyLoadingEnabled;
@@ -68,6 +70,7 @@ namespace Yarn.Data.EntityFrameworkProvider
             {
                 _assemblyNameOrLocation = assemblyNameOrLocation;
             }
+            _dbContextType = dbContextType;
             _context = new Lazy<DbContext>(InitializeDbContext, true);
         }
 
@@ -178,27 +181,31 @@ namespace Yarn.Data.EntityFrameworkProvider
         protected ModelInfo ConfigureDbModel(string prefix)
         {
             DbCompiledModel dbModel = null;
-            Type dbContextType = null;
             ConstructorInfo dbContextCtor = null;
-
+            var dbContextType = _dbContextType;
             var configurationAssembly = _configurationAssembly;
-            if (configurationAssembly == null)
-            {
-                var assemblyKey = prefix + ".Model";
-                var assemblyNameOrLocation = _assemblyNameOrLocation ??
-                                             ConfigurationManager.AppSettings.Get(assemblyKey);
 
-                if (Uri.IsWellFormedUriString(assemblyNameOrLocation, UriKind.Absolute))
+            if (dbContextType == null)
+            {
+                if (configurationAssembly == null)
                 {
-                    configurationAssembly = Assembly.LoadFrom(assemblyNameOrLocation);
+                    var assemblyKey = prefix + ".Model";
+                    var assemblyNameOrLocation = _assemblyNameOrLocation ??
+                                                 ConfigurationManager.AppSettings.Get(assemblyKey);
+
+                    if (Uri.IsWellFormedUriString(assemblyNameOrLocation, UriKind.Absolute))
+                    {
+                        configurationAssembly = Assembly.LoadFrom(assemblyNameOrLocation);
+                    }
+                    else
+                    {
+                        configurationAssembly = Assembly.Load(assemblyNameOrLocation);
+                    }
                 }
-                else
-                {
-                    configurationAssembly = Assembly.Load(assemblyNameOrLocation);
-                }
+
+                dbContextType = configurationAssembly.GetTypes().FirstOrDefault(t => typeof(DbContext).IsAssignableFrom(t));
             }
 
-            dbContextType = configurationAssembly.GetTypes().FirstOrDefault(t => typeof (DbContext).IsAssignableFrom(t));
             if (dbContextType == null)
             {
                 var nameOrConnectionString = _nameOrConnectionString ?? prefix + ".Connection";

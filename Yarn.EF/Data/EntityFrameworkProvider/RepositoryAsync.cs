@@ -6,6 +6,7 @@ using System.Data.Entity.Infrastructure;
 using System.Data.Entity.Migrations;
 using System.Linq;
 using System.Linq.Expressions;
+using System.Reflection;
 using System.Threading.Tasks;
 using Yarn.Extensions;
 using Yarn.Reflection;
@@ -17,13 +18,20 @@ namespace Yarn.Data.EntityFrameworkProvider
         public RepositoryAsync() : this(prefix: null) { }
 
         public RepositoryAsync(string prefix = null,
-                            bool lazyLoadingEnabled = true,
-                            bool proxyCreationEnabled = true,
-                            bool autoDetectChangesEnabled = false,
-                            bool validateOnSaveEnabled = true,
-                            bool migrationEnabled = false)
-            : base(prefix, lazyLoadingEnabled, proxyCreationEnabled, autoDetectChangesEnabled, validateOnSaveEnabled, migrationEnabled)
-        { }
+            bool lazyLoadingEnabled = true,
+            bool proxyCreationEnabled = true,
+            bool autoDetectChangesEnabled = false,
+            bool validateOnSaveEnabled = true,
+            bool migrationEnabled = false,
+            string nameOrConnectionString = null,
+            string assemblyNameOrLocation = null,
+            Assembly configurationAssembly = null,
+            Type dbContextType = null)
+            : base(
+                prefix, lazyLoadingEnabled, proxyCreationEnabled, autoDetectChangesEnabled, validateOnSaveEnabled,
+                migrationEnabled, nameOrConnectionString, assemblyNameOrLocation, configurationAssembly, dbContextType)
+        {
+        }
 
         public async Task<T> GetByIdAsync<T, ID>(ID id) where T : class
         {
@@ -85,10 +93,11 @@ namespace Yarn.Data.EntityFrameworkProvider
             {
                 if (_context == null)
                 {
-                    _context = new DataContextAsync(_prefix, _lazyLoadingEnabled, _proxyCreationEnabled, _autoDetectChangesEnabled, _validateOnSaveEnabled, _migrationEnabled);
+                    _context = new DataContextAsync(_prefix, _lazyLoadingEnabled, _proxyCreationEnabled,
+                        _autoDetectChangesEnabled, _validateOnSaveEnabled, _migrationEnabled, _nameOrConnectionString,
+                        _assemblyNameOrLocation, _configurationAssembly, _dbContextType);
                 }
                 return (IDataContextAsync)_context;
-                
             }
         }
     }

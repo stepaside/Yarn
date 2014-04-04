@@ -21,9 +21,10 @@ namespace Yarn.Data.EntityFrameworkProvider
         protected readonly bool _autoDetectChangesEnabled;
         protected readonly bool _validateOnSaveEnabled;
         protected readonly bool _migrationEnabled;
-        private readonly string _nameOrConnectionString;
-        private readonly string _assemblyNameOrLocation;
-        private readonly Assembly _configurationAssembly;
+        protected readonly string _nameOrConnectionString;
+        protected readonly string _assemblyNameOrLocation;
+        protected readonly Assembly _configurationAssembly;
+        protected readonly Type _dbContextType;
 
         public Repository() : this(prefix: null) { }
 
@@ -35,7 +36,8 @@ namespace Yarn.Data.EntityFrameworkProvider
                             bool migrationEnabled = false,
                             string nameOrConnectionString = null,
                             string assemblyNameOrLocation = null,
-                            Assembly configurationAssembly = null) 
+                            Assembly configurationAssembly = null,
+                            Type dbContextType = null) 
         {
             _prefix = prefix;
             _lazyLoadingEnabled = lazyLoadingEnabled;
@@ -49,6 +51,7 @@ namespace Yarn.Data.EntityFrameworkProvider
             {
                 _assemblyNameOrLocation = assemblyNameOrLocation;
             }
+            _dbContextType = dbContextType;
         }
 
         public T GetById<T, ID>(ID id) where T : class
@@ -205,7 +208,9 @@ namespace Yarn.Data.EntityFrameworkProvider
             {
                 if (_context == null)
                 {
-                    _context = new DataContext(_prefix, _lazyLoadingEnabled, _proxyCreationEnabled, _autoDetectChangesEnabled, _validateOnSaveEnabled, _migrationEnabled, _nameOrConnectionString, _assemblyNameOrLocation, _configurationAssembly);
+                    _context = new DataContext(_prefix, _lazyLoadingEnabled, _proxyCreationEnabled,
+                        _autoDetectChangesEnabled, _validateOnSaveEnabled, _migrationEnabled, _nameOrConnectionString,
+                        _assemblyNameOrLocation, _configurationAssembly, _dbContextType);
                 }
                 return _context;
             }
