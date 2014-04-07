@@ -4,7 +4,6 @@ using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Configuration;
 using System.Linq.Expressions;
-using Yarn;
 using Raven.Abstractions.Indexing;
 using Raven.Client;
 using Raven.Client.Document;
@@ -15,13 +14,16 @@ namespace Yarn.Data.RavenDbProvider
 {
     public class DataContext : IDataContext<IDocumentSession>
     {
-        private static ConcurrentDictionary<string, IDocumentStore> _documentStores = new ConcurrentDictionary<string, IDocumentStore>();
-        private string _prefix = null;
-        private IDocumentSession _session = DocumentSessionCache.CurrentSession;
+        private static readonly ConcurrentDictionary<string, IDocumentStore> _documentStores = new ConcurrentDictionary<string, IDocumentStore>();
+        private readonly string _prefix;
+        private readonly string _key;
+        private IDocumentSession _session;
 
         public DataContext(string prefix = null)
         {
             _prefix = prefix;
+            _key = _prefix ?? DefaultPrefix;
+            _session = (IDocumentSession)DataContextCache.Current.Get(_key);
         }
 
         protected IDocumentStore CreateDocumentStore(string prefix)
@@ -30,16 +32,16 @@ namespace Yarn.Data.RavenDbProvider
             {
                 IDocumentStore ds = null;
                 var shardCountValue = ConfigurationManager.AppSettings.Get(key + ".ShardCount");
-                var shardCount = 0;
+                int shardCount;
 
                 if (int.TryParse(shardCountValue, out shardCount))
                 {
                     var shards = new Dictionary<string, IDocumentStore>();
-                    for (int i = 0; i < shardCount; i++)
+                    for (var i = 0; i < shardCount; i++)
                     {
                         var url = ConfigurationManager.AppSettings.Get(key + ".Shard." + i + ".Url");
                         var id = ConfigurationManager.AppSettings.Get(key + ".Shard." + i + ".Identifier");
-                        shards.Add(id, new DocumentStore() { Identifier = id, Url = url });
+                        shards.Add(id, new DocumentStore { Identifier = id, Url = url });
                     }
 
                     var accessStrategyTypeName = ConfigurationManager.AppSettings.Get(key + ".Shard.AccessStrategy");
@@ -133,7 +135,7 @@ namespace Yarn.Data.RavenDbProvider
 
         public void SaveChanges()
         {
-            this.Session.SaveChanges();
+            Session.SaveChanges();
         }
 
         public IDocumentSession Session
@@ -143,7 +145,7 @@ namespace Yarn.Data.RavenDbProvider
                 if (_session == null)
                 {
                     _session = _prefix == null ? GetDefaultDocumentStore().OpenSession() : CreateDocumentStore(_prefix).OpenSession();
-                    DocumentSessionCache.CurrentSession = _session;
+                    DataContextCache.Current.Set(_key, _session);
                 }
                 return _session;
             }
@@ -156,15 +158,7 @@ namespace Yarn.Data.RavenDbProvider
                 return Session.Advanced.DocumentStore.Url;
             }
         }
-
-        public IDataContextCache DataContextCache
-        {
-            get
-            {
-                return DocumentSessionCache.Instance;
-            }
-        }
-
+        
         public void Dispose()
         {
             Dispose(true);
@@ -177,7 +171,7 @@ namespace Yarn.Data.RavenDbProvider
             {
                 if (_session != null)
                 {
-                    DocumentSessionCache.Instance.Cleanup();
+                    DataContextCache.Current.Cleanup(_key);
                     _session.Dispose();
                     _session = null;
                 }

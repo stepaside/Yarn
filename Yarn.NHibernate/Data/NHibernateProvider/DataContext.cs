@@ -2,7 +2,6 @@
 using System.Collections.Concurrent;
 using System.Configuration;
 using System.Reflection;
-using Yarn;
 using FluentNHibernate.Cfg;
 using FluentNHibernate.Cfg.Db;
 using NHibernate;
@@ -25,11 +24,9 @@ namespace Yarn.Data.NHibernateProvider
             }
         }
 
-        public abstract IDataContextCache DataContextCache { get; }
-        
         public void SaveChanges()
         {
-            this.Session.Flush();
+            Session.Flush();
         }
 
         public abstract void Dispose();
@@ -42,12 +39,13 @@ namespace Yarn.Data.NHibernateProvider
     {
         private static ConcurrentDictionary<string, Tuple<ISessionFactory, NHibernate.Cfg.Configuration>> _sessionFactories = new ConcurrentDictionary<string, Tuple<ISessionFactory, NHibernate.Cfg.Configuration>>();
         protected PersistenceConfiguration<TThisConfiguration, TConnectionString> _configuration = null;
-        private readonly string _prefix = null;
-        private readonly string _nameOrConnectionString = null;
+        private readonly string _prefix;
+        private readonly string _nameOrConnectionString;
         private readonly string _assemblyNameOrLocation;
         private readonly Assembly _configurationAssembly;
 
-        private ISession _session = SessionCache.CurrentSession;
+        private ISession _session;
+        private readonly string _connectionString;
 
         protected NHibernateDataContext(PersistenceConfiguration<TThisConfiguration, TConnectionString> configuration, 
                                         string prefix = null, 
@@ -63,6 +61,20 @@ namespace Yarn.Data.NHibernateProvider
             {
                 _assemblyNameOrLocation = assemblyNameOrLocation;
             }
+
+            _connectionString = GetConnectionString();
+            _session = (ISession)DataContextCache.Current.Get(_connectionString);
+        }
+
+        protected string GetConnectionString()
+        {
+            var nameOrConnectionString = _nameOrConnectionString ?? ((_prefix ?? DefaultPrefix) + ".Connection");
+            var connectionString = nameOrConnectionString;
+            if (ConfigurationManager.ConnectionStrings[nameOrConnectionString] != null)
+            {
+                connectionString = ConfigurationManager.ConnectionStrings[nameOrConnectionString].ConnectionString;
+            }
+            return connectionString;
         }
 
         protected Tuple<ISessionFactory, NHibernate.Cfg.Configuration> CreateSessionFactory(string prefix)
@@ -78,33 +90,18 @@ namespace Yarn.Data.NHibernateProvider
         protected virtual Tuple<ISessionFactory, NHibernate.Cfg.Configuration> ConfigureSessionFactory(string prefix)
         {
             var assemblyKey = prefix + ".Model";
-            var nameOrConnectionString = _nameOrConnectionString ?? prefix + ".Connection";
-
+            
             var configurationAssembly = _configurationAssembly;
             if (configurationAssembly == null)
             {
                 var assemblyNameOrLocation = _assemblyNameOrLocation ?? ConfigurationManager.AppSettings.Get(assemblyKey);
-
-                if (Uri.IsWellFormedUriString(assemblyNameOrLocation, UriKind.Absolute))
-                {
-                    configurationAssembly = Assembly.LoadFrom(assemblyNameOrLocation);
-                }
-                else
-                {
-                    configurationAssembly = Assembly.Load(assemblyNameOrLocation);
-                }
-            }
-
-            var connectionString = nameOrConnectionString;
-            if (ConfigurationManager.ConnectionStrings[nameOrConnectionString] != null)
-            {
-                connectionString = ConfigurationManager.ConnectionStrings[nameOrConnectionString].ConnectionString;
+                configurationAssembly = Uri.IsWellFormedUriString(assemblyNameOrLocation, UriKind.Absolute) ? Assembly.LoadFrom(assemblyNameOrLocation) : Assembly.Load(assemblyNameOrLocation);
             }
 
             NHibernate.Cfg.Configuration config = null;
 
             var sessionFactory = Fluently.Configure()
-                .Database(_configuration.Dialect<TDialect>().ConnectionString(connectionString))
+                .Database(_configuration.Dialect<TDialect>().ConnectionString(_connectionString))
                 //.Mappings(m => m.AutoMappings.Add(AutoMap.Assembly(assembly)))
                 .Mappings(m => m.FluentMappings.AddFromAssembly(configurationAssembly))
                 .ExposeConfiguration(c => config = c)
@@ -139,24 +136,16 @@ namespace Yarn.Data.NHibernateProvider
 
                     var factory = _prefix == null ? GetDefaultSessionFactory() : CreateSessionFactory(_prefix).Item1;
                     _session = factory.OpenSession();
-                    SessionCache.CurrentSession = _session;
+                    DataContextCache.Current.Set(_connectionString, _session);
                 }
                 return _session;
             }
         }
-
-        public override IDataContextCache DataContextCache
-        {
-            get
-            {
-                return SessionCache.Instance;
-            }
-        }
-
+        
         public Stream BuildSchema()
         {
             var output = new MemoryStream();
-            var session = this.Session;
+            var session = Session;
             if (session != null)
             {
                 var export = new SchemaExport(CreateSessionFactory(DefaultPrefix).Item2);
@@ -168,7 +157,7 @@ namespace Yarn.Data.NHibernateProvider
         public Stream UpdateSchema()
         {
             var output = new MemoryStream();
-            var session = this.Session;
+            var session = Session;
             if (session != null)
             {
                 var update = new SchemaUpdate(CreateSessionFactory(DefaultPrefix).Item2);
@@ -189,7 +178,7 @@ namespace Yarn.Data.NHibernateProvider
             {
                 if (_session != null)
                 {
-                    SessionCache.Instance.Cleanup();
+                    DataContextCache.Current.Cleanup(_connectionString);
                     _session.Dispose();
                     _session = null;
                 }

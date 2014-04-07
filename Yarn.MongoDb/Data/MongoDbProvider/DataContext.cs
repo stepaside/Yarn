@@ -14,9 +14,9 @@ namespace Yarn.Data.MongoDbProvider
 {
     public class DataContext : IDataContext<MongoDatabase>
     {
-        private string _prefix = null;
-        private MongoDatabase _database = null;
-        private MongoUrl _url = null;
+        private readonly string _prefix;
+        private MongoDatabase _database;
+        private MongoUrl _url;
 
         public DataContext() : this(null) { }
 
@@ -108,14 +108,6 @@ namespace Yarn.Data.MongoDbProvider
             get
             {
                 return _url.Url;
-            }
-        }
-
-        public IDataContextCache DataContextCache
-        {
-            get
-            {
-                return null;
             }
         }
 

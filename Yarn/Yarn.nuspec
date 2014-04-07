@@ -2,7 +2,7 @@
 <package >
   <metadata>
     <id>Yarn</id>
-    <version>0.7.11</version>
+    <version>0.7.12</version>
     <title>Yarn</title>
     <authors>Max Stepanskiy</authors>
     <owners>Stepaside, Inc.</owners>
@@ -12,9 +12,8 @@
     <copyright>Copyright © Max Stepanskiy 2012-2014</copyright>
     <tags>Repository Repository-Pattern</tags>
 	  <releaseNotes>
-      * Added Update method to ILoadService to update object graphs
-      * Fixed NHibernate eager loading
-      * Modified EF Update process to support object graphs
+      * Removed IDataContextCache
+      * Fixed DbContext caching for Yarn.EF
     </releaseNotes>
   </metadata>
   <files>

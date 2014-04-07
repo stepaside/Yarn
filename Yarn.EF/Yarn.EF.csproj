@@ -56,7 +56,6 @@
     <Compile Include="Data\EntityFrameworkProvider\DataContextAsync.cs" />
     <Compile Include="Data\EntityFrameworkProvider\RepositoryAsync.cs" />
     <Compile Include="Data\EntityFrameworkProvider\DataContext.cs" />
-    <Compile Include="Data\EntityFrameworkProvider\DbContextCache.cs" />
     <Compile Include="Data\EntityFrameworkProvider\FullTextRepository.cs" />
     <Compile Include="Data\EntityFrameworkProvider\Migrations\ScriptGeneratorMigrationInitializer.cs" />
     <Compile Include="Data\EntityFrameworkProvider\Repository.cs" />

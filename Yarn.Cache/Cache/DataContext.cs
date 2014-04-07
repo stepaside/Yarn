@@ -34,11 +34,6 @@ namespace Yarn.Cache
             get { return _context.Source; }
         }
 
-        public IDataContextCache DataContextCache
-        {
-            get { return _context.DataContextCache; }
-        }
-
         public void Dispose()
         {
             Dispose(true);

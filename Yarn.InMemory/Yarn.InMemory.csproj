@@ -47,7 +47,6 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Data\InMemoryProvider\DataContext.cs" />
-    <Compile Include="Data\InMemoryProvider\OdbCache.cs" />
     <Compile Include="Data\InMemoryProvider\Repository.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>

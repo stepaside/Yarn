@@ -9,7 +9,6 @@ namespace Yarn
     {
         void SaveChanges();
         string Source { get; }
-        IDataContextCache DataContextCache { get; }
     }
 
     public interface IDataContext<TSession> : IDataContext

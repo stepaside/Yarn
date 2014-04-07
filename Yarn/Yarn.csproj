@@ -81,7 +81,7 @@
     <Compile Include="Extensions\ParameterRebinder.cs" />
     <Compile Include="IoC\IContainer.cs" />
     <Compile Include="IDataContext.cs" />
-    <Compile Include="IDataContextCache.cs" />
+    <Compile Include="DataContextCache.cs" />
     <Compile Include="IRepositoryAsync.cs" />
     <Compile Include="IService.cs" />
     <Compile Include="IFullTextProvider.cs" />

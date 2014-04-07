@@ -40,6 +40,7 @@ namespace Yarn.Data.EntityFrameworkProvider
         private readonly Type _dbContextType;
 
         private bool? _codeFirst;
+        private string _key;
 
         protected Lazy<DbContext> _context = null;
 
@@ -76,67 +77,63 @@ namespace Yarn.Data.EntityFrameworkProvider
 
         private DbContext InitializeDbContext()
         {
-            var dbContext = DbContextCache.CurrentContext;
-            if (dbContext == null || dbContext.Database.Connection.State == ConnectionState.Broken)
-            {
-                if (dbContext != null)
-                {
-                    dbContext.Dispose();
-                }
-
-                dbContext = _prefix == null ? GetDefaultDbContext() : CreateDbContext(_prefix);
-                DbContextCache.CurrentContext = dbContext;
-            }
-            return dbContext;
+            return _prefix == null ? GetDefaultDbContext() : CreateDbContext(_prefix);
         }
 
-        private DbConnection CreateConnection(string nameOrConnectionString)
+        private static DbConnection CreateConnection(string nameOrConnectionString)
         {
-            DbConnection connection = null;
             var providerName = DbFactory.GetProviderInvariantNameByConnectionString(nameOrConnectionString);
-            if (providerName == null)
-            {
-                connection = DbFactory.CreateConnection(nameOrConnectionString);
-            }
-            else
-            {
-                connection = DbFactory.CreateConnection(nameOrConnectionString, providerName);
-            }
+            var connection = providerName == null ? DbFactory.CreateConnection(nameOrConnectionString) : DbFactory.CreateConnection(nameOrConnectionString, providerName);
             return connection;
         }
 
         protected DbContext CreateDbContext(string prefix)
         {
-            var modelInfo = DbModelBuilders.GetOrAdd(prefix, key => ConfigureDbModel(key));
+            var modelInfo = DbModelBuilders.GetOrAdd(prefix, ConfigureDbModel);
             var nameOrConnectionString = _nameOrConnectionString ?? prefix + ".Connection";
 
+            _key = nameOrConnectionString;
             if (modelInfo.DbContextType != null)
             {
-                DbContext dbContext = null;
+                _key = modelInfo.DbContextType.FullName;
+            }
+
+            var dbContext = (DbContext)DataContextCache.Current.Get(_key);
+            if (dbContext != null && dbContext.Database.Connection.State != ConnectionState.Broken)
+            {
+                return dbContext;
+            }
+            
+            if (dbContext != null)
+            {
+                dbContext.Dispose();
+            }
+            dbContext = null;
+            
+            if (modelInfo.DbContextType != null)
+            {
                 if (modelInfo.DbContextConstructor != null)
                 {
-                    var parameters =
-                        modelInfo.DbContextConstructor.GetParameters().Select(p => p.ParameterType).ToArray();
+                    var parameters = modelInfo.DbContextConstructor.GetParameters().Select(p => p.ParameterType).ToArray();
                     var activator = Reflection.Activator.CreateDelegate(modelInfo.DbContextType, parameters);
-                    if (parameters.Length == 2 && parameters[0] == typeof (DbConnection) &&
-                        parameters[1] == typeof (bool))
+                    if (parameters.Length == 2 && parameters[0] == typeof(DbConnection) && parameters[1] == typeof(bool))
                     {
                         var connection = CreateConnection(nameOrConnectionString);
-                        dbContext = (DbContext) activator(connection, true);
+                        dbContext = (DbContext)activator(connection, true);
                     }
-                    else if (parameters.Length == 1 && parameters[0] == typeof (DbConnection))
+                    else if (parameters.Length == 1 && parameters[0] == typeof(DbConnection))
                     {
                         var connection = CreateConnection(nameOrConnectionString);
-                        dbContext = (DbContext) activator(connection);
+                        dbContext = (DbContext)activator(connection);
                     }
-                    else if (parameters.Length == 1 && parameters[0] == typeof (string))
+                    else if (parameters.Length == 1 && parameters[0] == typeof(string))
                     {
-                        dbContext = (DbContext) activator(nameOrConnectionString);
+                        dbContext = (DbContext)activator(nameOrConnectionString);
                     }
                 }
                 else
                 {
-                    dbContext = (DbContext) Activator.CreateInstance(modelInfo.DbContextType);
+                    dbContext = (DbContext)Activator.CreateInstance(modelInfo.DbContextType);
                 }
 
                 dbContext.Configuration.LazyLoadingEnabled = _lazyLoadingEnabled;
@@ -145,15 +142,13 @@ namespace Yarn.Data.EntityFrameworkProvider
                 dbContext.Configuration.ValidateOnSaveEnabled = _validateOnSaveEnabled;
 
                 _codeFirst = false;
-
-                return dbContext;
             }
             else
             {
                 var dbModel = modelInfo.DbModel;
                 var connection = CreateConnection(nameOrConnectionString);
-                
-                var dbContext = new DbContext(connection, dbModel, true);
+
+                dbContext = new DbContext(connection, dbModel, true);
                 dbContext.Configuration.LazyLoadingEnabled = _lazyLoadingEnabled;
                 dbContext.Configuration.ProxyCreationEnabled = _proxyCreationEnabled;
                 dbContext.Configuration.AutoDetectChangesEnabled = _autoDetectChangesEnabled;
@@ -173,9 +168,10 @@ namespace Yarn.Data.EntityFrameworkProvider
                 {
                     Database.SetInitializer(DbInitializer);
                 }
-
-                return dbContext;
             }
+
+            DataContextCache.Current.Set(_key, dbContext);
+            return dbContext;
         }
 
         protected ModelInfo ConfigureDbModel(string prefix)
@@ -193,14 +189,7 @@ namespace Yarn.Data.EntityFrameworkProvider
                     var assemblyNameOrLocation = _assemblyNameOrLocation ??
                                                  ConfigurationManager.AppSettings.Get(assemblyKey);
 
-                    if (Uri.IsWellFormedUriString(assemblyNameOrLocation, UriKind.Absolute))
-                    {
-                        configurationAssembly = Assembly.LoadFrom(assemblyNameOrLocation);
-                    }
-                    else
-                    {
-                        configurationAssembly = Assembly.Load(assemblyNameOrLocation);
-                    }
+                    configurationAssembly = Uri.IsWellFormedUriString(assemblyNameOrLocation, UriKind.Absolute) ? Assembly.LoadFrom(assemblyNameOrLocation) : Assembly.Load(assemblyNameOrLocation);
                 }
 
                 dbContextType = configurationAssembly.GetTypes().FirstOrDefault(t => typeof(DbContext).IsAssignableFrom(t));
@@ -217,15 +206,9 @@ namespace Yarn.Data.EntityFrameworkProvider
             }
             else
             {
-                dbContextCtor = dbContextType.GetConstructor(new[] {typeof (DbConnection), typeof (bool)});
-                if (dbContextCtor == null)
-                {
-                    dbContextCtor = dbContextType.GetConstructor(new[] {typeof (DbConnection)});
-                    if (dbContextCtor == null)
-                    {
-                        dbContextCtor = dbContextType.GetConstructor(new[] {typeof (string)});
-                    }
-                }
+                dbContextCtor = dbContextType.GetConstructor(new[] { typeof(DbConnection), typeof(bool) }) ??
+                                (dbContextType.GetConstructor(new[] { typeof(DbConnection) }) ??
+                                 dbContextType.GetConstructor(new[] { typeof(string) }));
             }
 
             return new ModelInfo
@@ -259,11 +242,6 @@ namespace Yarn.Data.EntityFrameworkProvider
         public string Source
         {
             get { return Session.Database.Connection.ConnectionString; }
-        }
-
-        public IDataContextCache DataContextCache
-        {
-            get { return DbContextCache.Instance; }
         }
 
         public Stream BuildSchema()
@@ -304,14 +282,16 @@ namespace Yarn.Data.EntityFrameworkProvider
 
         protected virtual void Dispose(bool disposing)
         {
-            if (disposing)
+            if (!disposing) return;
+
+            if (_context == null) return;
+            
+            if (_key != null)
             {
-                if (_context != null)
-                {
-                    DbContextCache.Instance.Cleanup();
-                    _context = null;
-                }
+                DataContextCache.Current.Cleanup(_key);
             }
+            _context.Value.Dispose();
+            _context = null;
         }
     }
 }
