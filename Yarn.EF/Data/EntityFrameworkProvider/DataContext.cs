@@ -89,15 +89,14 @@ namespace Yarn.Data.EntityFrameworkProvider
 
         protected DbContext CreateDbContext(string prefix)
         {
-            var modelInfo = DbModelBuilders.GetOrAdd(prefix, ConfigureDbModel);
             var nameOrConnectionString = _nameOrConnectionString ?? prefix + ".Connection";
 
             _key = nameOrConnectionString;
-            if (modelInfo.DbContextType != null)
+            if (_dbContextType != null)
             {
-                _key = modelInfo.DbContextType.FullName;
+                _key = _dbContextType.FullName;
             }
-
+            
             var dbContext = (DbContext)DataContextCache.Current.Get(_key);
             if (dbContext != null && dbContext.Database.Connection.State != ConnectionState.Broken)
             {
@@ -109,7 +108,9 @@ namespace Yarn.Data.EntityFrameworkProvider
                 dbContext.Dispose();
             }
             dbContext = null;
-            
+
+            var modelInfo = DbModelBuilders.GetOrAdd(_key, k => ConfigureDbModel(prefix));
+
             if (modelInfo.DbContextType != null)
             {
                 if (modelInfo.DbContextConstructor != null)
