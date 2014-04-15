@@ -80,7 +80,7 @@ namespace Yarn.Data.EntityFrameworkProvider
             return _prefix == null ? GetDefaultDbContext() : CreateDbContext(_prefix);
         }
 
-        private static DbConnection CreateConnection(string nameOrConnectionString)
+        internal static DbConnection CreateConnection(string nameOrConnectionString)
         {
             var providerName = DbFactory.GetProviderInvariantNameByConnectionString(nameOrConnectionString);
             var connection = providerName == null ? DbFactory.CreateConnection(nameOrConnectionString) : DbFactory.CreateConnection(nameOrConnectionString, providerName);

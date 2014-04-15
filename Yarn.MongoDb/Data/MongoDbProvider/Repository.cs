@@ -11,15 +11,17 @@ using System.Globalization;
 using System.Linq;
 using System.Linq.Expressions;
 using Yarn.Extensions;
+using Yarn.Reflection;
+using Yarn.Specification;
 
 namespace Yarn.Data.MongoDbProvider
 {
-    public class Repository : IRepository, IMetaDataProvider
+    public class Repository : IRepository, IMetaDataProvider, IRepositoryBulk
     {
-        private PluralizationService _pluralizer = PluralizationService.CreateService(CultureInfo.CurrentCulture);
-        private ConcurrentDictionary<Type, MongoCollection> _collections = new ConcurrentDictionary<Type,MongoCollection>();
+        private readonly PluralizationService _pluralizer = PluralizationService.CreateService(CultureInfo.CurrentCulture);
+        private readonly ConcurrentDictionary<Type, MongoCollection> _collections = new ConcurrentDictionary<Type,MongoCollection>();
         private IDataContext<MongoDatabase> _context;
-        private string _prefix;
+        private readonly string _prefix;
 
         public Repository() : this(null) { }
 
@@ -32,17 +34,10 @@ namespace Yarn.Data.MongoDbProvider
         {
             return GetCollection<T>().FindOneByIdAs<T>(BsonValue.Create(id));
         }
-
-        public IEnumerable<T> GetByIdList<T, ID>(IList<ID> ids) where T : class
-        {
-            var primaryKey = ((IMetaDataProvider)this).GetPrimaryKey<T>().First();
-            var query = Query.In(primaryKey, new BsonArray(ids));
-            return GetCollection<T>().FindAs<T>(query);
-        }
-
+        
         public T Find<T>(Expression<Func<T, bool>> criteria) where T : class
         {
-            return this.FindAll(criteria).FirstOrDefault();
+            return FindAll(criteria).FirstOrDefault();
         }
 
         public T Find<T>(ISpecification<T> criteria) where T : class
@@ -52,19 +47,19 @@ namespace Yarn.Data.MongoDbProvider
 
         public IEnumerable<T> FindAll<T>(Expression<Func<T, bool>> criteria, int offset = 0, int limit = 0, Expression<Func<T, object>> orderBy = null) where T : class
         {
-            var query = this.All<T>().Where(criteria);
-            return this.Page<T>(query, offset, limit, orderBy);
+            var query = All<T>().Where(criteria);
+            return this.Page(query, offset, limit, orderBy);
         }
 
         public IEnumerable<T> FindAll<T>(ISpecification<T> criteria, int offset = 0, int limit = 0, Expression<Func<T, object>> orderBy = null) where T : class
         {
-            var query = criteria.Apply(this.All<T>());
-            return this.Page<T>(query, offset, limit, orderBy);
+            var query = criteria.Apply(All<T>());
+            return this.Page(query, offset, limit, orderBy);
         }
 
         public T Add<T>(T entity) where T : class
         {
-            var result = GetCollection<T>().Insert<T>(entity);
+            var result = GetCollection<T>().Insert(entity);
             if (result.DocumentsAffected > 0)
             {
                 return entity;
@@ -74,7 +69,7 @@ namespace Yarn.Data.MongoDbProvider
 
         public T Remove<T>(T entity) where T : class
         {
-            var query = MongoDB.Driver.Builders.Query.EQ("_id", BsonValue.Create(GetId<T>(entity)));
+            var query = Query.EQ("_id", BsonValue.Create(GetId(entity)));
             entity = GetCollection<T>().FindOne(query);
             var result = GetCollection<T>().Remove(query);
             if (result.DocumentsAffected > 0)
@@ -87,32 +82,24 @@ namespace Yarn.Data.MongoDbProvider
         public T Remove<T, ID>(ID id) where T : class
         {
             var entity = GetById<T, ID>(id);
-            var result = GetCollection<T>().Remove(MongoDB.Driver.Builders.Query.EQ("_id", BsonValue.Create(id)));
-            if (result.DocumentsAffected > 0)
-            {
-                return entity;
-            }
-            return null;
+            var result = GetCollection<T>().Remove(Query.EQ("_id", BsonValue.Create(id)));
+            return result.DocumentsAffected > 0 ? entity : null;
         }
 
         public T Update<T>(T entity) where T : class
         {
             var result = GetCollection<T>().Save<T>(entity);
-            if (result.DocumentsAffected > 0)
-            {
-                return entity;
-            }
-            return null;
+            return result.DocumentsAffected > 0 ? entity : null;
         }
 
         public void Attach<T>(T entity) where T : class
         {
-            Update<T>(entity); 
+            Update(entity); 
         }
 
         public void Detach<T>(T entity) where T : class
         {
-            Remove<T>(entity);
+            Remove(entity);
         }
 
         public IQueryable<T> All<T>() where T : class
@@ -125,14 +112,14 @@ namespace Yarn.Data.MongoDbProvider
             return GetCollection<T>().GetStats().ObjectCount;
         }
 
-         public long Count<T>(Expression<Func<T, bool>> criteria) where T : class
+        public long Count<T>(Expression<Func<T, bool>> criteria) where T : class
         {
-            return FindAll<T>(criteria).LongCount();
+            return FindAll(criteria).LongCount();
         }
 
         public long Count<T>(ISpecification<T> criteria) where T : class
         {
-            return FindAll<T>(criteria).LongCount();
+            return FindAll(criteria).LongCount();
         }
 
         public IList<T> Execute<T>(string command, ParamList parameters) where T : class
@@ -140,91 +127,110 @@ namespace Yarn.Data.MongoDbProvider
             IList<T> items = new T[] { };
             var args = parameters != null ? (Dictionary<string, object>)parameters : new Dictionary<string, object>();
 
-            if (command == "aggregate")
+            switch (command)
             {
-                object collection, pipeline;
-                if ((args.TryGetValue("collection", out collection) && collection is string)
-                    && (args.TryGetValue("pipeline", out pipeline) && pipeline is BsonArray))
+                case "aggregate":
                 {
-                    var result = _context.Session.RunCommand(new CommandDocument 
-                                                        {
-                                                            { "aggregate",  (string)collection},
-                                                            { "pipeline", (BsonArray)pipeline }
-                                                        });
-                    items = result.Response["result"].AsBsonArray.Select(v => BsonSerializer.Deserialize<T>(v.AsBsonDocument)).ToArray();
+                    object collection, pipeline;
+                    if ((args.TryGetValue("collection", out collection) && collection is string)
+                        && (args.TryGetValue("pipeline", out pipeline) && pipeline is BsonArray))
+                    {
+                        var result = _context.Session.RunCommand(new CommandDocument
+                        {
+                            { "aggregate", (string)collection },
+                            { "pipeline", (BsonArray)pipeline }
+                        });
+                        items =
+                            result.Response["result"].AsBsonArray.Select(
+                                v => BsonSerializer.Deserialize<T>(v.AsBsonDocument)).ToArray();
+                    }
                 }
-            }
-            else if (command == "mapReduce")
-            {
-                object collection, map, reduce, query, sort, limit, finalize;
-                if ((args.TryGetValue("collection", out collection) && collection is string)
-                    && (args.TryGetValue("map", out map) && (map is string || map is BsonJavaScript))
-                    && (args.TryGetValue("reduce", out reduce) && (reduce is string || reduce is BsonJavaScript)))
+                    break;
+                case "mapReduce":
                 {
-                    var commandDoc = new CommandDocument { { "mapReduce", (string)collection } };
+                    object collection, map, reduce;
+                    if ((args.TryGetValue("collection", out collection) && collection is string)
+                        && (args.TryGetValue("map", out map) && (map is string || map is BsonJavaScript))
+                        && (args.TryGetValue("reduce", out reduce) && (reduce is string || reduce is BsonJavaScript)))
+                    {
+                        var commandDoc = new CommandDocument { { "mapReduce", (string)collection } };
 
-                    if (map is string)
-                    {
-                        commandDoc.Add("map", new BsonJavaScript((string)map));
-                    }
-                    else
-                    {
-                        commandDoc.Add("map", (BsonJavaScript)map);
-                    }
-
-                    if (reduce is string)
-                    {
-                        commandDoc.Add("reduce", new BsonJavaScript((string)reduce));
-                    }
-                    else
-                    {
-                        commandDoc.Add("reduce", (BsonJavaScript)reduce);
-                    }
-
-                    if (args.TryGetValue("query", out query) && (query is string || query is BsonDocument))
-                    {
-                        if (query is string)
+                        var s1 = map as string;
+                        if (s1 != null)
                         {
-                            commandDoc.Add("query", BsonDocument.Parse((string)query));
+                            commandDoc.Add("map", new BsonJavaScript(s1));
                         }
                         else
                         {
-                            commandDoc.Add("query", (BsonDocument)query);
+                            commandDoc.Add("map", (BsonJavaScript)map);
                         }
-                    }
 
-                    if (args.TryGetValue("sort", out sort) && (sort is string || sort is BsonDocument))
-                    {
-                        if (sort is string)
+                        var s2 = reduce as string;
+                        if (s2 != null)
                         {
-                            commandDoc.Add("sort", BsonDocument.Parse((string)sort));
+                            commandDoc.Add("reduce", new BsonJavaScript(s2));
                         }
                         else
                         {
-                            commandDoc.Add("sort", (BsonDocument)sort);
+                            commandDoc.Add("reduce", (BsonJavaScript)reduce);
                         }
-                    }
 
-                    if (args.TryGetValue("limit", out limit) && limit is int)
-                    {
-                        commandDoc.Add("limit", (int)limit);
-                    }
-
-                    if (args.TryGetValue("finalize", out finalize) && (finalize is string || finalize is BsonJavaScript))
-                    {
-                        if (finalize is string)
+                        object query;
+                        if (args.TryGetValue("query", out query) && (query is string || query is BsonDocument))
                         {
-                            commandDoc.Add("finalize", BsonDocument.Parse((string)finalize));
+                            var s = query as string;
+                            if (s != null)
+                            {
+                                commandDoc.Add("query", BsonDocument.Parse(s));
+                            }
+                            else
+                            {
+                                commandDoc.Add("query", (BsonDocument)query);
+                            }
                         }
-                        else
-                        {
-                            commandDoc.Add("finalize", (BsonDocument)finalize);
-                        }
-                    }
 
-                    var result = _context.Session.RunCommand(commandDoc);
-                    items = result.Response["result"].AsBsonArray.Select(v => BsonSerializer.Deserialize<T>(v.AsBsonDocument)).ToArray();
+                        object sort;
+                        if (args.TryGetValue("sort", out sort) && (sort is string || sort is BsonDocument))
+                        {
+                            var s = sort as string;
+                            if (s != null)
+                            {
+                                commandDoc.Add("sort", BsonDocument.Parse(s));
+                            }
+                            else
+                            {
+                                commandDoc.Add("sort", (BsonDocument)sort);
+                            }
+                        }
+
+                        object limit;
+                        if (args.TryGetValue("limit", out limit) && limit is int)
+                        {
+                            commandDoc.Add("limit", (int)limit);
+                        }
+
+                        object finalize;
+                        if (args.TryGetValue("finalize", out finalize) &&
+                            (finalize is string || finalize is BsonJavaScript))
+                        {
+                            var s = finalize as string;
+                            if (s != null)
+                            {
+                                commandDoc.Add("finalize", BsonDocument.Parse(s));
+                            }
+                            else
+                            {
+                                commandDoc.Add("finalize", (BsonDocument)finalize);
+                            }
+                        }
+
+                        var result = _context.Session.RunCommand(commandDoc);
+                        items =
+                            result.Response["result"].AsBsonArray.Select(
+                                v => BsonSerializer.Deserialize<T>(v.AsBsonDocument)).ToArray();
+                    }
                 }
+                    break;
             }
             return items;
         }
@@ -239,14 +245,7 @@ namespace Yarn.Data.MongoDbProvider
 
         public IDataContext DataContext
         {
-            get
-            {
-                if (_context == null)
-                {
-                    _context = new DataContext(_prefix);
-                }
-                return _context;
-            }
+            get { return _context ?? (_context = new DataContext(_prefix)); }
         }
 
         public void Dispose()
@@ -260,11 +259,7 @@ namespace Yarn.Data.MongoDbProvider
             if (disposing)
             {
                 _collections.Clear();
-                if (_context != null)
-                {
-                    //_context.Session.Server.Disconnect();
-                    _context = null;
-                }
+                _context = null;
             }
         }
 
@@ -277,7 +272,7 @@ namespace Yarn.Data.MongoDbProvider
                 {
                     name = _pluralizer.Pluralize(name);
                 }
-                var database = this.Database;
+                var database = Database;
                 if (!database.CollectionExists(name))
                 {
                     database.CreateCollection(name);
@@ -300,9 +295,95 @@ namespace Yarn.Data.MongoDbProvider
 
         object[] IMetaDataProvider.GetPrimaryKeyValue<T>(T entity)
         {
-            return new[] { GetId<T>(entity) };
+            return new[] { GetId(entity) };
         }
 
         #endregion
+
+        public IEnumerable<T> GetById<T, ID>(IEnumerable<ID> ids) where T : class
+        {
+            var primaryKey = ((IMetaDataProvider)this).GetPrimaryKey<T>().First();
+            var query = Query.In(primaryKey, new BsonArray(ids));
+            return GetCollection<T>().FindAs<T>(query);
+        }
+
+        public long Add<T>(IEnumerable<T> entities) where T : class
+        {
+            var operation = GetCollection<T>().InitializeUnorderedBulkOperation();
+            foreach (var entity in entities)
+            {
+                operation.Insert(entity);
+            }
+            var result = operation.Execute(WriteConcern.Acknowledged);
+            if (result.IsAcknowledged)
+            {
+                return result.InsertedCount;
+            }
+            return 0L;
+        }
+
+        public long Update<T>(Expression<Func<T, bool>> criteria, Expression<Func<T, T>> update) where T : class
+        {
+            UpdateBuilder builder = null;
+            var expression = (MemberInitExpression)update.Body;
+            foreach (var binding in expression.Bindings)
+            {
+                var name = binding.Member.Name;
+                object value;
+                var memberExpression = ((MemberAssignment)binding).Expression;
+
+                var constantExpression = memberExpression as ConstantExpression;
+                if (constantExpression != null)
+                {
+                    value = constantExpression.Value;
+                }
+                else
+                {
+                    var lambda = Expression.Lambda(memberExpression, null);
+                    value = lambda.Compile().DynamicInvoke();
+                }
+
+                if (builder == null)
+                {
+                    builder = MongoDB.Driver.Builders.Update.Set(name, BsonValue.Create(value));
+                }
+                else
+                {
+                    builder.Set(name, BsonValue.Create(value));
+                }
+            }
+
+            var linqQuery = GetCollection<T>().AsQueryable().Where(criteria);
+            var query = ((MongoQueryable<T>)linqQuery).GetMongoQuery();
+
+            var result = GetCollection<T>()
+                .Update(query, builder, new MongoUpdateOptions { WriteConcern = WriteConcern.Acknowledged });
+            return result.DocumentsAffected;
+        }
+
+        public long Delete<T>(IEnumerable<T> entities) where T : class
+        {
+            var ids = entities.Select(GetId);
+            return Delete<T, object>(ids);
+        }
+
+        public long Delete<T, ID>(IEnumerable<ID> ids) where T : class
+        {
+            var primaryKey = ((IMetaDataProvider)this).GetPrimaryKey<T>().First();
+            var query = Query.In(primaryKey, new BsonArray(ids));
+            return GetCollection<T>().Remove(query).DocumentsAffected;
+        }
+
+        public long Delete<T>(Expression<Func<T, bool>> criteria) where T : class
+        {
+            var linqQuery = GetCollection<T>().AsQueryable().Where(criteria);
+            var query = ((MongoQueryable<T>)linqQuery).GetMongoQuery();
+            return GetCollection<T>().Remove(query).DocumentsAffected;
+        }
+
+        public long Delete<T>(ISpecification<T> criteria) where T : class
+        {
+            return Delete(((Specification<T>)criteria).Predicate);
+        }
     }
 }

@@ -1,11 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Linq.Expressions;
-using System.Text;
-using System.Threading.Tasks;
 
-namespace Yarn.Cache
+namespace Yarn.Reflection
 {
     /// <summary>
     /// Enables the partial evaluation of queries.

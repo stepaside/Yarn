@@ -1,4 +1,9 @@
-﻿using Newtonsoft.Json;
+﻿using System.Collections;
+using System.Collections.ObjectModel;
+using System.Data.Entity.Core.Mapping;
+using System.Data.Entity.Core.Metadata.Edm;
+using System.Data.Entity.Infrastructure;
+using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
 using System.Data.Entity;
@@ -32,6 +37,7 @@ namespace YarnTest
             else
             {
                 var session = ((IDataContext<DbContext>)dctx).Session;
+                repo.As<IRepositoryBulk>().Delete<Customer>(c => c.CustomerID.Length > 12);
             }
 
             //var customer = repo.GetById<Customer, string>("ALFKI");

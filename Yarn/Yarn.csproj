@@ -83,6 +83,7 @@
     <Compile Include="IDataContext.cs" />
     <Compile Include="DataContextCache.cs" />
     <Compile Include="IRepositoryAsync.cs" />
+    <Compile Include="IRepositoryBulk.cs" />
     <Compile Include="IService.cs" />
     <Compile Include="IFullTextProvider.cs" />
     <Compile Include="IFullTextRepository.cs" />
@@ -97,6 +98,8 @@
     <Compile Include="ParamList.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Reflection\Activator.cs" />
+    <Compile Include="Reflection\Evaluator.cs" />
+    <Compile Include="Reflection\LocalCollectionExpander.cs" />
     <Compile Include="Reflection\Mapper.cs" />
     <Compile Include="Reflection\PropertyAccessor.cs" />
     <Compile Include="Reflection\ReflectionEmitExtensions.cs" />

@@ -35,22 +35,17 @@ namespace Yarn.Data.EntityFrameworkProvider
 
         public async Task<T> GetByIdAsync<T, ID>(ID id) where T : class
         {
-            return await this.Table<T>().FindAsync(id);
-        }
-
-        public async Task<IEnumerable<T>> GetByIdListAsync<T, ID>(IList<ID> ids) where T : class
-        {
-            return await base.GetByIdList<T, ID>(ids).AsQueryable<T>().ToListAsync();
+            return await Table<T>().FindAsync(id);
         }
 
         public async Task<T> FindAsync<T>(ISpecification<T> criteria) where T : class
         {
-            return await base.FindAll<T>(criteria).AsQueryable<T>().FirstOrDefaultAsync();
+            return await FindAll<T>(criteria).AsQueryable<T>().FirstOrDefaultAsync();
         }
 
-        public new async Task<T> FindAsync<T>(Expression<Func<T, bool>> criteria) where T : class
+        public async Task<T> FindAsync<T>(Expression<Func<T, bool>> criteria) where T : class
         {
-            return await this.Table<T>().FirstOrDefaultAsync(criteria);
+            return await Table<T>().FirstOrDefaultAsync(criteria);
         }
 
         public async Task<IEnumerable<T>> FindAllAsync<T>(ISpecification<T> criteria, int offset = 0, int limit = 0, Expression<Func<T, object>> orderBy = null) where T : class

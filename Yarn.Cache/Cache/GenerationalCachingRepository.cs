@@ -6,6 +6,7 @@ using System.Linq.Expressions;
 using System.Text;
 using Yarn.Adapters;
 using Yarn.Extensions;
+using Yarn.Reflection;
 using Yarn.Specification;
 
 namespace Yarn.Cache
@@ -63,7 +64,7 @@ namespace Yarn.Cache
             return item;
         }
 
-        public IEnumerable<T> GetByIdList<T, ID>(IList<ID> ids) where T : class
+        public IEnumerable<T> GetById<T, ID>(IList<ID> ids) where T : class
         {
             var items = new List<T>();
             var missingIds = new Dictionary<string, ID>();

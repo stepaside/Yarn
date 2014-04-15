@@ -2,7 +2,7 @@
 <package >
   <metadata>
     <id>Yarn</id>
-    <version>0.7.13</version>
+    <version>0.8.0</version>
     <title>Yarn</title>
     <authors>Max Stepanskiy</authors>
     <owners>Stepaside, Inc.</owners>
@@ -12,7 +12,9 @@
     <copyright>Copyright © Max Stepanskiy 2012-2014</copyright>
     <tags>Repository Repository-Pattern</tags>
 	  <releaseNotes>
-      * Fixed DbContext caching for Yarn.EF
+      * Removed GetByIdList
+      * Added IRepositoryBulk interface to support bulk operations
+      * Added bulk operations to EF and MongoDB providers
     </releaseNotes>
   </metadata>
   <files>
