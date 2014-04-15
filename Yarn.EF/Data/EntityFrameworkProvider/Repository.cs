@@ -20,7 +20,7 @@ using Yarn.Specification;
 
 namespace Yarn.Data.EntityFrameworkProvider
 {
-    public class Repository : IRepository, IMetaDataProvider, ILoadServiceProvider, IRepositoryBulk
+    public class Repository : IRepository, IMetaDataProvider, ILoadServiceProvider, IBulkOperationsProvider
     {
         private static ConcurrentDictionary<Type, Dictionary<string, string>> _columnMappings = new ConcurrentDictionary<Type, Dictionary<string, string>>();
         
@@ -327,6 +327,8 @@ namespace Yarn.Data.EntityFrameworkProvider
 
         #endregion
 
+        #region IBulkOperationsProvider Members
+
         public IEnumerable<T> GetById<T, ID>(IEnumerable<ID> ids) where T : class
         {
             var primaryKey = ((IMetaDataProvider)this).GetPrimaryKey<T>().First();
@@ -340,15 +342,17 @@ namespace Yarn.Data.EntityFrameworkProvider
             return Table<T>().Where(predicate);
         }
 
-        public long Add<T>(IEnumerable<T> entities) where T : class
+        public long Insert<T>(IEnumerable<T> entities) where T : class
         {
-            var count = 0L;
-            foreach (var entity in entities)
+            using (var dbContext = new DbContext(DbContext.Database.Connection.ConnectionString))
             {
-                Add(entity);
-                count++;
+                dbContext.Configuration.LazyLoadingEnabled = false;
+                dbContext.Configuration.AutoDetectChangesEnabled = false;
+
+                dbContext.Set<T>().AddRange(entities);
+
+                return dbContext.SaveChanges();
             }
-            return count;
         }
 
         public long Update<T>(Expression<Func<T, bool>> criteria, Expression<Func<T, T>> update) where T : class
@@ -372,14 +376,14 @@ namespace Yarn.Data.EntityFrameworkProvider
             var count = 0L;
             try
             {
-                if (connection.State != ConnectionState.Open)
-                {
-                    connection.Open();
-                    destroyConnection = true;
-                }
-
                 using (var scope = new TransactionScope(TransactionScopeOption.Required))
                 {
+                    if (connection.State != ConnectionState.Open)
+                    {
+                        connection.Open();
+                        destroyConnection = true;
+                    }
+
                     using (var command = connection.CreateCommand())
                     {
                         var mappings = ExtractColumnMappings<T>(DbContext);
@@ -496,7 +500,7 @@ namespace Yarn.Data.EntityFrameworkProvider
                                 }
                                 else
                                 {
-                                    builder.AppendFormat("[{0}] = @{1}", name, "p" + i);                                    
+                                    builder.AppendFormat("[{0}] = @{1}", name, "p" + i);
                                 }
 
                                 var parameter = command.CreateParameter();
@@ -508,11 +512,11 @@ namespace Yarn.Data.EntityFrameworkProvider
                             }
                             notFirst = true;
                         }
-                        
+
                         builder.AppendLine();
                         builder.Append("WHERE ");
                         builder.Append(whereClause);
-                        
+
                         command.CommandTimeout = 0;
                         command.CommandText = builder.ToString();
                         count = command.ExecuteNonQuery();
@@ -525,7 +529,7 @@ namespace Yarn.Data.EntityFrameworkProvider
             {
                 if (destroyConnection)
                 {
-                  connection.Dispose();  
+                    connection.Dispose();
                 }
             }
             return count;
@@ -546,14 +550,14 @@ namespace Yarn.Data.EntityFrameworkProvider
             var count = 0L;
             try
             {
-                if (connection.State != ConnectionState.Open)
-                {
-                    connection.Open();
-                    destroyConnection = true;
-                }
-
                 using (var scope = new TransactionScope(TransactionScopeOption.Required))
                 {
+                    if (connection.State != ConnectionState.Open)
+                    {
+                        connection.Open();
+                        destroyConnection = true;
+                    }
+
                     using (var command = connection.CreateCommand())
                     {
                         var mappings = ExtractColumnMappings<T>(DbContext);
@@ -581,7 +585,7 @@ namespace Yarn.Data.EntityFrameworkProvider
             {
                 if (destroyConnection)
                 {
-                  connection.Dispose();  
+                    connection.Dispose();
                 }
             }
             return count;
@@ -606,14 +610,14 @@ namespace Yarn.Data.EntityFrameworkProvider
             var count = 0L;
             try
             {
-                if (connection.State != ConnectionState.Open)
-                {
-                    connection.Open();
-                    destroyConnection = true;
-                }
-
                 using (var scope = new TransactionScope(TransactionScopeOption.Required))
                 {
+                    if (connection.State != ConnectionState.Open)
+                    {
+                        connection.Open();
+                        destroyConnection = true;
+                    }
+
                     using (var command = connection.CreateCommand())
                     {
                         var mappings = ExtractColumnMappings<T>(DbContext);
@@ -715,5 +719,7 @@ namespace Yarn.Data.EntityFrameworkProvider
                 return new Dictionary<string, string>();
             });
         }
+
+        #endregion
     }
 }

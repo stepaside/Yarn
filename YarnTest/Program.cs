@@ -37,7 +37,7 @@ namespace YarnTest
             else
             {
                 var session = ((IDataContext<DbContext>)dctx).Session;
-                //repo.As<IRepositoryBulk>().Update<Customer>(c => c.CustomerID.Length > 12, c => new Customer { ContactName = c.ContactName + " 2" });
+                //repo.As<IBulkOperationsProvider>().Update<Customer>(c => c.CustomerID.Length > 12, c => new Customer { ContactName = c.ContactName + " 2" });
             }
 
             //var customer = repo.GetById<Customer, string>("ALFKI");

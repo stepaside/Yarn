@@ -13,7 +13,7 @@
     <tags>Repository Repository-Pattern</tags>
 	  <releaseNotes>
       * Removed GetByIdList
-      * Added IRepositoryBulk interface to support bulk operations
+      * Added IBulkOperationsProvider interface to support bulk operations
       * Added bulk operations to EF and MongoDB providers
     </releaseNotes>
   </metadata>

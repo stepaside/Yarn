@@ -16,7 +16,7 @@ using Yarn.Specification;
 
 namespace Yarn.Data.MongoDbProvider
 {
-    public class Repository : IRepository, IMetaDataProvider, IRepositoryBulk
+    public class Repository : IRepository, IMetaDataProvider, IBulkOperationsProvider
     {
         private readonly PluralizationService _pluralizer = PluralizationService.CreateService(CultureInfo.CurrentCulture);
         private readonly ConcurrentDictionary<Type, MongoCollection> _collections = new ConcurrentDictionary<Type,MongoCollection>();
@@ -307,7 +307,7 @@ namespace Yarn.Data.MongoDbProvider
             return GetCollection<T>().FindAs<T>(query);
         }
 
-        public long Add<T>(IEnumerable<T> entities) where T : class
+        public long Insert<T>(IEnumerable<T> entities) where T : class
         {
             var operation = GetCollection<T>().InitializeUnorderedBulkOperation();
             foreach (var entity in entities)

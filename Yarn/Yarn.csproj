@@ -83,7 +83,7 @@
     <Compile Include="IDataContext.cs" />
     <Compile Include="DataContextCache.cs" />
     <Compile Include="IRepositoryAsync.cs" />
-    <Compile Include="IRepositoryBulk.cs" />
+    <Compile Include="IBulkOperationsProvider.cs" />
     <Compile Include="IService.cs" />
     <Compile Include="IFullTextProvider.cs" />
     <Compile Include="IFullTextRepository.cs" />
