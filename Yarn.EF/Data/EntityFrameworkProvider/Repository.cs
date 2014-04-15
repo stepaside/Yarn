@@ -139,10 +139,18 @@ namespace Yarn.Data.EntityFrameworkProvider
                     var attachedEntity = dbSet.Local.FirstOrDefault(this.BuildPrimaryKeyExpression(entity).Compile());
                     if (attachedEntity != null)
                     {
-                        //var attachedEntry = DbContext.Entry(attachedEntity);
-                        //attachedEntry.CurrentValues.SetValues(entity);
-                        Mapper.Map(entity, attachedEntity);
-                        entry = DbContext.Entry(attachedEntity);
+                        // Update only root attributes for lazy loaded entities
+                        if (DbContext.Configuration.LazyLoadingEnabled)
+                        {
+                            var attachedEntry = DbContext.Entry(attachedEntity);
+                            attachedEntry.CurrentValues.SetValues(entity);
+                            entry = attachedEntry;
+                        }
+                        else
+                        {
+                            Mapper.Map(entity, attachedEntity);
+                            entry = DbContext.Entry(attachedEntity);
+                        }
                     }
                     else
                     {
