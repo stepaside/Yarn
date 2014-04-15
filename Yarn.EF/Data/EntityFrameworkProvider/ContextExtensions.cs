@@ -24,7 +24,7 @@ namespace Yarn.Data.EntityFrameworkProvider
         public static string GetTableName<T>(this ObjectContext context) where T : class
         {
             var sql = context.CreateObjectSet<T>().ToTraceString();
-            var regex = new Regex("FROM (?<table>.*) AS");
+            var regex = new Regex("FROM\\s+(?<table>.*)\\s+AS");
             var match = regex.Match(sql);
 
             var table = match.Groups["table"].Value;

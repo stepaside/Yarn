@@ -7,6 +7,7 @@ using System.Data;
 using System.Data.Entity;
 using System.Data.Entity.Core.Metadata.Edm;
 using System.Data.Entity.Infrastructure;
+using System.Data.SqlClient;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
@@ -364,11 +365,7 @@ namespace Yarn.Data.EntityFrameworkProvider
             var whereClause = match.Groups["criteria"].Value;
             whereClause = whereClause.Replace(asClause + ".", "");
 
-            Expression updateExpression = update;
-            updateExpression = Evaluator.PartialEval(updateExpression);
-            updateExpression = LocalCollectionExpander.Rewrite(updateExpression);
-
-            var updateBody = (MemberInitExpression)((Expression<Func<T, T>>)updateExpression).Body;
+            var updateBody = (MemberInitExpression)update.Body;
 
             var connection = DbContext.Database.Connection;
             var destroyConnection = false;
@@ -391,10 +388,17 @@ namespace Yarn.Data.EntityFrameworkProvider
                         builder.Append("UPDATE ");
                         builder.Append(DbContext.GetTableName<T>());
                         builder.AppendLine();
+                        builder.Append("SET ");
 
                         var i = 0;
+                        var notFirst = false;
                         foreach (var binding in updateBody.Bindings)
                         {
+                            if (notFirst)
+                            {
+                                builder.AppendLine(", ");
+                            }
+
                             var name = binding.Member.Name;
                             string columnName;
                             if (!mappings.TryGetValue(name, out columnName))
@@ -404,6 +408,24 @@ namespace Yarn.Data.EntityFrameworkProvider
 
                             object value;
                             var memberExpression = ((MemberAssignment)binding).Expression;
+
+                            var selfReference = false;
+                            var isLeft = false;
+                            var binaryExpression = memberExpression as BinaryExpression;
+                            if (binaryExpression != null)
+                            {
+                                if (binaryExpression.Left is MemberExpression && ((MemberExpression)binaryExpression.Left).Member.Name == name)
+                                {
+                                    isLeft = true;
+                                    selfReference = true;
+                                    memberExpression = binaryExpression.Right;
+                                }
+                                else if (binaryExpression.Right is MemberExpression && ((MemberExpression)binaryExpression.Right).Member.Name == name)
+                                {
+                                    selfReference = true;
+                                    memberExpression = binaryExpression.Left;
+                                }
+                            }
 
                             var constantExpression = memberExpression as ConstantExpression;
                             if (constantExpression != null)
@@ -416,22 +438,80 @@ namespace Yarn.Data.EntityFrameworkProvider
                                 value = lambda.Compile().DynamicInvoke();
                             }
 
-                            builder.Append(name);
-                            builder.Append(" = ");
-                            builder.Append("@p");
-                            builder.Append(i);
+                            if (value == null)
+                            {
+                                builder.AppendFormat("[{0}] = NULL", name);
+                            }
+                            else
+                            {
+                                if (selfReference)
+                                {
+                                    switch (binaryExpression.NodeType)
+                                    {
+                                        case ExpressionType.Add:
+                                        {
+                                            if (value is string)
+                                            {
+                                                var providerName = DbFactory.GetProviderInvariantNameByConnectionString(connection.ConnectionString);
+                                                if (providerName.Contains("SqlClient"))
+                                                {
+                                                    builder.AppendFormat(isLeft ? "[{0}] = [{0}] + @{1}" : "[{0}] = @{1} + [{0}]", name, "p" + i);
+                                                }
+                                                else if (providerName.Contains("MySql"))
+                                                {
+                                                    builder.AppendFormat(isLeft ? "[{0}] = CONCAT([{0}], @{1})" : "[{0}] = CONCAT(@{1}, [{0}])", name, "p" + i);
+                                                }
+                                                else
+                                                {
+                                                    builder.AppendFormat(isLeft ? "[{0}] = [{0}] || @{1}" : "[{0}] = @{1} || [{0}]", name, "p" + i);
+                                                }
+                                            }
+                                            else
+                                            {
+                                                builder.AppendFormat("[{0}] = [{0}] + @{1}", name, "p" + i);
+                                            }
+                                            break;
+                                        }
+                                        case ExpressionType.Subtract:
+                                        {
+                                            builder.AppendFormat(isLeft ? "[{0}] = [{0}] - @{1}" : "[{0}] = @{1} - [{0}]", name, "p" + i);
+                                            break;
+                                        }
+                                        case ExpressionType.Multiply:
+                                        {
+                                            builder.AppendFormat("[{0}] = [{0}] * @{1}", name, "p" + i);
+                                            break;
+                                        }
+                                        case ExpressionType.Divide:
+                                        {
+                                            builder.AppendFormat(isLeft ? "[{0}] = [{0}] / @{1}" : "[{0}] = @{1} / [{0}]", name, "p" + i);
+                                            break;
+                                        }
+                                        default:
+                                        {
+                                            builder.AppendFormat("[{0}] = @{1}", name, "p" + i);
+                                            break;
+                                        }
+                                    }
+                                }
+                                else
+                                {
+                                    builder.AppendFormat("[{0}] = @{1}", name, "p" + i);                                    
+                                }
 
-                            var parameter = command.CreateParameter();
-                            parameter.ParameterName = "p" + i;
-                            parameter.Value = value;
-                            command.Parameters.Add(parameter);
+                                var parameter = command.CreateParameter();
+                                parameter.ParameterName = "p" + i;
+                                parameter.Value = value;
+                                command.Parameters.Add(parameter);
 
-                            i++;
+                                i++;
+                            }
+                            notFirst = true;
                         }
-
+                        
+                        builder.AppendLine();
                         builder.Append("WHERE ");
                         builder.Append(whereClause);
-                        builder.AppendLine();
                         
                         command.CommandTimeout = 0;
                         command.CommandText = builder.ToString();
@@ -514,7 +594,7 @@ namespace Yarn.Data.EntityFrameworkProvider
             expression = LocalCollectionExpander.Rewrite(expression);
 
             var sql = All<T>().Where((Expression<Func<T, bool>>)expression).ToString();
-            var regex = new Regex("FROM (?<table>.*) AS (?<as>.*)\\s+WHERE (?<criteria>.*)");
+            var regex = new Regex("FROM\\s+(?<table>.*)\\s+AS\\s+(?<as>.*)\\s+WHERE\\s+(?<criteria>.*)");
             var match = regex.Match(sql);
 
             var asClause = match.Groups["as"].Value.Trim();
@@ -544,7 +624,6 @@ namespace Yarn.Data.EntityFrameworkProvider
                         builder.AppendLine();
                         builder.Append("WHERE ");
                         builder.Append(whereClause);
-                        builder.AppendLine();
 
                         command.CommandTimeout = 0;
                         command.CommandText = builder.ToString();
