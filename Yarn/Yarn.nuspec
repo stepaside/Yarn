@@ -2,7 +2,7 @@
 <package >
   <metadata>
     <id>Yarn</id>
-    <version>0.7.14</version>
+    <version>0.7.15</version>
     <title>Yarn</title>
     <authors>Max Stepanskiy</authors>
     <owners>Stepaside, Inc.</owners>
@@ -12,7 +12,9 @@
     <copyright>Copyright © Max Stepanskiy 2012-2014</copyright>
     <tags>Repository Repository-Pattern</tags>
 	  <releaseNotes>
-      * Fixed Update method for Yarn.EF
+      * Fixed Update method for ILoadService implementations
+      * Fixed Update method in Yarn EF (not a perfect but workable solution)
+      * Updated Mapper
     </releaseNotes>
   </metadata>
   <files>

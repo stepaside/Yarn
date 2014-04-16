@@ -149,7 +149,12 @@ namespace Yarn.Data.EntityFrameworkProvider
                         else
                         {
                             Mapper.Map(entity, attachedEntity);
+                            if (!DbContext.Configuration.AutoDetectChangesEnabled)
+                            {
+                                DbContext.ChangeTracker.DetectChanges();
+                            }
                             entry = DbContext.Entry(attachedEntity);
+                            entry.State = EntityState.Modified;
                         }
                     }
                     else
@@ -319,7 +324,10 @@ namespace Yarn.Data.EntityFrameworkProvider
             public T Update(T entity)
             {
                 var loadedEntity = Find(_repository.As<IMetaDataProvider>().BuildPrimaryKeyExpression(entity));
-                _repository.Update(loadedEntity);
+                if (loadedEntity != null)
+                {
+                    _repository.Update(loadedEntity);
+                }
                 return loadedEntity;
             }
 

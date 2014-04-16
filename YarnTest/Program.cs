@@ -9,6 +9,7 @@ using Yarn;
 using Yarn.Cache;
 using Yarn.Data.EntityFrameworkProvider;
 using Yarn.Extensions;
+using Yarn.Reflection;
 using YarnTest.Models.EF;
 
 namespace YarnTest
@@ -17,7 +18,7 @@ namespace YarnTest
     {
         static void Main(string[] args)
         {
-            ObjectContainer.Current.Register<IRepository, Repository>(new Repository("Yarn.EF2"), "EF");
+            ObjectContainer.Current.Register<IRepository, Repository>(new Repository("Yarn.EF2", false, false), "EF");
             
             var repo = ObjectContainer.Current.Resolve<IRepository>("EF");
             if (repo == null)
@@ -37,7 +38,7 @@ namespace YarnTest
             //var customer = repo.GetById<Customer, string>("ALFKI");
             
             var eager_customer = repo.As<ILoadServiceProvider>().Load<Customer>().Include(c => c.Orders).Include(c => c.Orders.Select(o => o.Order_Details)).Find(c => c.CustomerID == "ALFKI");
-
+            
             var customersFromLondon = repo.FindAll<Customer>(c => c.City == "London", offset: 1).ToList();
 
             var customers = repo.Execute<Customer>("EXEC spDTO_Customer_Retrieve @CustomerID", new ParamList { { "CustomerID", "ALFKI" } });

@@ -99,6 +99,7 @@
     <Compile Include="Reflection\Activator.cs" />
     <Compile Include="Reflection\Mapper.cs" />
     <Compile Include="Reflection\PropertyAccessor.cs" />
+    <Compile Include="Reflection\ReflectedType.cs" />
     <Compile Include="Reflection\ReflectionEmitExtensions.cs" />
     <Compile Include="Specification\AndSpecification.cs" />
     <Compile Include="Specification\CompositeSpecification.cs" />
