@@ -14,13 +14,13 @@ namespace Yarn.Cache
     public class GenerationalCachingRepository<TCache> : CachingStrategy<TCache>, IRepository, ILoadServiceProvider
         where TCache : class, ICacheProvider, new()
     {
-        private IMetaDataProvider _metaData;
-        private IRepository _repository;
-        private IDataContext _context;
+        private readonly IMetaDataProvider _metaData;
+        private readonly IRepository _repository;
+        private readonly IDataContext _context;
         private long? _tenantId;
 
-        private TCache _cache;
-        private List<Action> _delayedCache;
+        private readonly TCache _cache;
+        private readonly List<Action> _delayedCache;
 
         public GenerationalCachingRepository(IRepository repository, TCache cache = null) 
             : base(repository, cache)
@@ -52,14 +52,14 @@ namespace Yarn.Cache
         public T GetById<T, ID>(ID id) where T : class
         {
             var key = CacheKey<T>("GetById", new[] { new { Name = "id", Value = ConvertId(id) } }, false);
-            T item = null;
+            T item;
             if (_cache.Get(key, out item))
             {
                 return item;
             }
 
             item = _repository.GetById<T, ID>(id);
-            SetWriteThroughCache<T>(key, item);
+            SetWriteThroughCache(key, item);
 
             return item;
         }
@@ -72,8 +72,8 @@ namespace Yarn.Cache
             {
                 var key = CacheKey<T>("GetById", new[] { new { Name = "id", Value = ConvertId(id) } }, false);
 
-                T item = null;
-                var cached = _cache.Get<T>(key, out item);
+                T item;
+                var cached = _cache.Get(key, out item);
 
                 if (cached) 
                 {
@@ -96,7 +96,7 @@ namespace Yarn.Cache
                     if (item != null)
                     {
                         items.Add(item);
-                        SetWriteThroughCache<T>(missingId.Key, item);
+                        SetWriteThroughCache(missingId.Key, item);
                     }
                 }
             }
@@ -125,12 +125,12 @@ namespace Yarn.Cache
             if (offset < 0) offset = 0;
             if (limit < 0) limit = 0;
 
-            var key = CacheKey<T>(criteria, offset, limit, orderBy);
+            var key = CacheKey(criteria, offset, limit, orderBy);
             IList<T> items;
-            if (!_cache.Get<IList<T>>(key, out items))
+            if (!_cache.Get(key, out items))
             {
                 items = _repository.FindAll<T>(criteria, offset, limit).ToArray();
-                _cache.Set<IList<T>>(key, items);
+                _cache.Set(key, items);
             }
 
             return items;
@@ -168,7 +168,7 @@ namespace Yarn.Cache
                 var key = CacheKey<T>("GetById", new[] { new { Name = "id", Value = ConvertId(id) } }, false);
                 _delayedCache.Add(() =>
                 {
-                    SetWriteThroughCache<T>(key, entity);
+                    SetWriteThroughCache(key, entity);
                     NextGeneration<T>();
                 });
             }
@@ -217,11 +217,11 @@ namespace Yarn.Cache
             }
             finally
             {
-                var id = _metaData.GetPrimaryKeyValue<T>(entity);
+                var id = _metaData.GetPrimaryKeyValue(entity);
                 var key = CacheKey<T>("GetById", new[] { new { Name = "id", Value = ConvertId(id) } }, false);
                 _delayedCache.Add(() =>
                 {
-                    SetWriteThroughCache<T>(key, entity);
+                    SetWriteThroughCache(key, entity);
                     NextGeneration<T>();
                 });
             }
@@ -234,12 +234,12 @@ namespace Yarn.Cache
 
         public long Count<T>(ISpecification<T> criteria) where T : class
         {
-            return FindAll(criteria).AsQueryable<T>().LongCount();
+            return FindAll(criteria).AsQueryable().LongCount();
         }
 
         public long Count<T>(Expression<Func<T, bool>> criteria) where T : class
         {
-            return FindAll(criteria).AsQueryable<T>().LongCount();
+            return FindAll(criteria).AsQueryable().LongCount();
         }
 
         public IQueryable<T> All<T>() where T : class
@@ -271,9 +271,10 @@ namespace Yarn.Cache
 
         ILoadService<T> ILoadServiceProvider.Load<T>()
         {
-            if (_repository is ILoadServiceProvider)
+            var provider = _repository as ILoadServiceProvider;
+            if (provider != null)
             {
-                return new LoadService<T>(((ILoadServiceProvider)_repository).Load<T>(), this);
+                return new LoadService<T>(provider.Load<T>(), this);
             }
             else
             {
@@ -285,8 +286,8 @@ namespace Yarn.Cache
            where T : class
         {
             ILoadService<T> _service;
-            GenerationalCachingRepository<TCache> _cache;
-            List<Expression> _paths;
+            readonly GenerationalCachingRepository<TCache> _cache;
+            readonly List<Expression> _paths;
 
             public LoadService(ILoadService<T> service, GenerationalCachingRepository<TCache> cache)
             {
@@ -314,7 +315,7 @@ namespace Yarn.Cache
                 if (offset < 0) offset = 0;
                 if (limit < 0) limit = 0;
 
-                var key = _cache.CacheKey<T>(criteria, offset, limit, orderBy, _paths);
+                var key = _cache.CacheKey(criteria, offset, limit, orderBy, _paths);
                 IList<T> items;
                 if (!_cache.Cache.Get(key, out items))
                 {
@@ -344,7 +345,10 @@ namespace Yarn.Cache
                 // Load full graph from the db
                 var loadedEntity = _service.Find(_cache._repository.As<IMetaDataProvider>().BuildPrimaryKeyExpression(entity));
                 // Update entity and cache
-                _cache.Update(entity);
+                if (loadedEntity != null)
+                {
+                    _cache.Update(loadedEntity);
+                }
                 return loadedEntity;
             }
 

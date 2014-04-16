@@ -315,7 +315,10 @@ namespace Yarn.Data.EntityFrameworkProvider
             public T Update(T entity)
             {
                 var loadedEntity = Find(_repository.As<IMetaDataProvider>().BuildPrimaryKeyExpression(entity));
-                _repository.Update(loadedEntity);
+                if (loadedEntity != null)
+                {
+                    _repository.Update(loadedEntity);
+                }
                 return loadedEntity;
             }
 
