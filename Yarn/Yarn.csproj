@@ -68,6 +68,7 @@
     <Compile Include="Adapters\AuditableRepository.cs" />
     <Compile Include="Adapters\MultiTenantRepository.cs" />
     <Compile Include="Adapters\SoftDeleteRepository.cs" />
+    <Compile Include="BulkUpdateOperation.cs" />
     <Compile Include="Extensions\CascadeExtensions.cs" />
     <Compile Include="Extensions\RepositoryExtensions.cs" />
     <Compile Include="IAuditable.cs" />

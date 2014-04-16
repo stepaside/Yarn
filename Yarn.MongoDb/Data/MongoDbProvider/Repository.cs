@@ -300,6 +300,8 @@ namespace Yarn.Data.MongoDbProvider
 
         #endregion
 
+        #region IBulkOperationsProvider Members
+
         public IEnumerable<T> GetById<T, ID>(IEnumerable<ID> ids) where T : class
         {
             var primaryKey = ((IMetaDataProvider)this).GetPrimaryKey<T>().First();
@@ -361,6 +363,11 @@ namespace Yarn.Data.MongoDbProvider
             return result.DocumentsAffected;
         }
 
+        public long Update<T>(params BulkUpdateOperation<T>[] bulkOperations) where T : class
+        {
+            return bulkOperations.Sum(t => Update(t.Criteria, t.Update));
+        }
+
         public long Delete<T>(IEnumerable<T> entities) where T : class
         {
             var ids = entities.Select(GetId);
@@ -374,16 +381,23 @@ namespace Yarn.Data.MongoDbProvider
             return GetCollection<T>().Remove(query).DocumentsAffected;
         }
 
-        public long Delete<T>(Expression<Func<T, bool>> criteria) where T : class
+        public long Delete<T>(params Expression<Func<T, bool>>[] criteria) where T : class
         {
-            var linqQuery = GetCollection<T>().AsQueryable().Where(criteria);
-            var query = ((MongoQueryable<T>)linqQuery).GetMongoQuery();
-            return GetCollection<T>().Remove(query).DocumentsAffected;
+            var count = 0L;
+            for (var i = 0; i < criteria.Length; i++)
+            {
+                var linqQuery = GetCollection<T>().AsQueryable().Where(criteria[i]);
+                var query = ((MongoQueryable<T>)linqQuery).GetMongoQuery();
+                count += GetCollection<T>().Remove(query).DocumentsAffected;
+            }
+            return count;
         }
 
-        public long Delete<T>(ISpecification<T> criteria) where T : class
+        public long Delete<T>(params ISpecification<T>[] criteria) where T : class
         {
-            return Delete(((Specification<T>)criteria).Predicate);
+            return Delete(criteria.Select(spec => ((Specification<T>)spec).Predicate).ToArray());
         }
+
+        #endregion
     }
 }
