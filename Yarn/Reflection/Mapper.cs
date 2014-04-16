@@ -11,7 +11,8 @@ namespace Yarn.Reflection
     public static class Mapper
     {
         public delegate void PropertyMapper(object source, object target);
-        private static ConcurrentDictionary<Tuple<Type, Type>, PropertyMapper> _mappers = new ConcurrentDictionary<Tuple<Type, Type>, PropertyMapper>();
+        private static readonly ConcurrentDictionary<Tuple<Type, Type>, PropertyMapper> _mappers = new ConcurrentDictionary<Tuple<Type, Type>, PropertyMapper>();
+        private static readonly ConcurrentDictionary<Type, HashSet<Type>> _ancestors = new ConcurrentDictionary<Type, HashSet<Type>>();
 
         internal static PropertyMapper CreateDelegate(Type sourceType, Type targetType)
         {
@@ -37,25 +38,55 @@ namespace Yarn.Reflection
                                                     && t.Item2.PropertyType.IsPublic
                                                     && t.Item1.CanRead
                                                     && t.Item2.CanWrite
-                                                    && t.Item1.Name == t.Item2.Name);
+                                                    && t.Item1.Name == t.Item2.Name).ToList();
 
-            var simpleMatchesByType = matches.Where(t => t.Item1.PropertyType == t.Item2.PropertyType);
+            var simpleMatches = matches.Where(t => t.Item1.PropertyType == t.Item2.PropertyType
+                                                    && (t.Item1.PropertyType.IsValueType || t.Item1.PropertyType == typeof(string))
+                                                    && (t.Item2.PropertyType.IsValueType || t.Item2.PropertyType == typeof(string)));
 
-            var objectMatchesByName = matches.Where(t => t.Item1.PropertyType != t.Item2.PropertyType
-                                                    && t.Item1.PropertyType.IsClass
+            var objectMatches = matches.Where(t => t.Item1.PropertyType.IsClass
                                                     && t.Item2.PropertyType.IsClass
                                                     && t.Item1.PropertyType != typeof(string)
                                                     && t.Item2.PropertyType != typeof(string)
                                                     && !typeof(IEnumerable).IsAssignableFrom(t.Item1.PropertyType)
-                                                    && !typeof(IEnumerable).IsAssignableFrom(t.Item2.PropertyType));
+                                                    && !typeof(IEnumerable).IsAssignableFrom(t.Item2.PropertyType)
+                                                    && !HasCycle(sourceType, t.Item1.PropertyType)
+                                                    && !HasCycle(targetType, t.Item2.PropertyType)).ToList();
 
-            var collectionMatchesByName = matches.Where(t => t.Item1.PropertyType != t.Item2.PropertyType
-                                                    && t.Item1.PropertyType.IsGenericType
+            foreach (var match in objectMatches)
+            {
+                if (match.Item1.PropertyType == match.Item2.PropertyType)
+                {
+                    _ancestors.AddOrUpdate(match.Item1.PropertyType, t => new HashSet<Type>(new[] { sourceType, targetType }), (t, h) =>
+                    {
+                        h.Add(sourceType);
+                        h.Add(targetType);
+                        return h;
+                    });
+                }
+            }
+
+            var collectionMatches = matches.Where(t => t.Item1.PropertyType.IsGenericType
                                                     && t.Item2.PropertyType.IsGenericType
-                                                    && typeof(ICollection).IsAssignableFrom(t.Item1.PropertyType)
-                                                    && typeof(ICollection).IsAssignableFrom(t.Item2.PropertyType));
+                                                    && typeof(IEnumerable).IsAssignableFrom(t.Item1.PropertyType)
+                                                    && typeof(IEnumerable).IsAssignableFrom(t.Item2.PropertyType)
+                                                    && !HasCycle(sourceType, t.Item1.PropertyType.GetGenericArguments()[0])
+                                                    && !HasCycle(targetType, t.Item2.PropertyType.GetGenericArguments()[0])).ToList();
 
-            foreach (var match in simpleMatchesByType)
+            foreach (var match in collectionMatches)
+            {
+                if (match.Item1.PropertyType == match.Item2.PropertyType)
+                {
+                    _ancestors.AddOrUpdate(match.Item1.PropertyType.GetGenericArguments()[0], t => new HashSet<Type>(new[] { sourceType, targetType }), (t, h) =>
+                    {
+                        h.Add(sourceType);
+                        h.Add(targetType);
+                        return h;
+                    });
+                }
+            }
+
+            foreach (var match in simpleMatches)
             {
                 il.Emit(OpCodes.Ldarg_1);
                 il.Emit(OpCodes.Castclass, targetType);
@@ -65,7 +96,7 @@ namespace Yarn.Reflection
                 il.Emit(OpCodes.Callvirt, match.Item2.GetSetMethod());
             }
 
-            foreach (var match in objectMatchesByName)
+            foreach (var match in objectMatches)
             {
                 var ifNull = il.DefineLabel();
                 var ifNotNull = il.DefineLabel();
@@ -107,7 +138,7 @@ namespace Yarn.Reflection
                 il.MarkLabel(ifNull);
             }
 
-            foreach (var match in collectionMatchesByName)
+            foreach (var match in collectionMatches)
             {
                 var ifNull = il.DefineLabel();
 
@@ -142,11 +173,21 @@ namespace Yarn.Reflection
             return method;
         }
 
+        private static bool HasCycle(Type childType, Type parentType)
+        {
+            HashSet<Type> ancestors;
+            if (!_ancestors.TryGetValue(childType, out ancestors))
+            {
+                return false;
+            }
+            return ancestors.Contains(parentType) || ancestors.Any(type => HasCycle(parentType, type));
+        }
+
         public static TResult Map<TSource, TResult>(TSource source)
             where TSource : class
             where TResult : class, new()
         {
-            var result = new TResult();// Activator.CreateInstance<TResult>();
+            var result = new TResult();
             var mapper = CreateDelegate(typeof(TSource), typeof(TResult));
             mapper(source, result);
             return result;
@@ -164,13 +205,7 @@ namespace Yarn.Reflection
             where TSource : class
             where TResult : class, new()
         {
-            foreach (var item in source)
-            {
-                //var result = Activator.CreateInstance<TResult>();
-                //Map<TSource, TResult>(item, result);
-                //yield return result;
-                yield return Map<TSource, TResult>(item);
-            }
+            return source.Select(Map<TSource, TResult>);
         }
 
         public static TResult Map<TSource, TResult>(params TSource[] sources)
