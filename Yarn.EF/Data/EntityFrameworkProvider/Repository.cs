@@ -26,6 +26,7 @@ namespace Yarn.Data.EntityFrameworkProvider
         protected readonly string _assemblyNameOrLocation;
         protected readonly Assembly _configurationAssembly;
         protected readonly Type _dbContextType;
+        protected readonly bool _mergeOnUpdate;
 
         public Repository() : this(prefix: null) { }
 
@@ -38,7 +39,8 @@ namespace Yarn.Data.EntityFrameworkProvider
                             string nameOrConnectionString = null,
                             string assemblyNameOrLocation = null,
                             Assembly configurationAssembly = null,
-                            Type dbContextType = null) 
+                            Type dbContextType = null,
+                            bool mergeOnUpdate = false) 
         {
             _prefix = prefix;
             _lazyLoadingEnabled = lazyLoadingEnabled;
@@ -53,6 +55,7 @@ namespace Yarn.Data.EntityFrameworkProvider
                 _assemblyNameOrLocation = assemblyNameOrLocation;
             }
             _dbContextType = dbContextType;
+            _mergeOnUpdate = mergeOnUpdate;
         }
 
         public T GetById<T, ID>(ID id) where T : class
@@ -140,13 +143,23 @@ namespace Yarn.Data.EntityFrameworkProvider
             var dbSet = Table<T>();
             if (entry.State == EntityState.Detached)
             {
-                var attachedEntity = dbSet.Local.FirstOrDefault(this.BuildPrimaryKeyExpression(entity).Compile());
+                var comparer = new EntityEqualityComparer<T>(this);
+                var hash = comparer.GetHashCode(entity);
+                var attachedEntity = dbSet.Local.FirstOrDefault(e => comparer.GetHashCode(e) == hash);
                 if (attachedEntity != null)
                 {
                     // Update only root attributes for lazy loaded entities
-                    var attachedEntry = DbContext.Entry(attachedEntity);
-                    attachedEntry.CurrentValues.SetValues(entity);
-                    entry = attachedEntry;
+                    if (DbContext.Configuration.LazyLoadingEnabled || !_mergeOnUpdate)
+                    {
+                        var attachedEntry = DbContext.Entry(attachedEntity);
+                        attachedEntry.CurrentValues.SetValues(entity);
+                        entry = attachedEntry;
+                    }
+                    else
+                    {
+                        Merge(entity, attachedEntity);
+                        entry = DbContext.Entry(attachedEntity);
+                    }
                 }
                 else
                 {
@@ -209,13 +222,9 @@ namespace Yarn.Data.EntityFrameworkProvider
         {
             get
             {
-                if (_context == null)
-                {
-                    _context = new DataContext(_prefix, _lazyLoadingEnabled, _proxyCreationEnabled,
-                        _autoDetectChangesEnabled, _validateOnSaveEnabled, _migrationEnabled, _nameOrConnectionString,
-                        _assemblyNameOrLocation, _configurationAssembly, _dbContextType);
-                }
-                return _context;
+                return _context ?? (_context = new DataContext(_prefix, _lazyLoadingEnabled, _proxyCreationEnabled,
+                    _autoDetectChangesEnabled, _validateOnSaveEnabled, _migrationEnabled, _nameOrConnectionString,
+                    _assemblyNameOrLocation, _configurationAssembly, _dbContextType));
             }
         }
 
@@ -316,7 +325,7 @@ namespace Yarn.Data.EntityFrameworkProvider
                 var loadedEntity = Find(_repository.As<IMetaDataProvider>().BuildPrimaryKeyExpression(entity));
                 if (loadedEntity != null)
                 {
-                    _repository.Merge(_repository.DbContext, entity, loadedEntity);
+                    _repository.Merge(entity, loadedEntity);
                 }
                 return loadedEntity;
             }
@@ -331,8 +340,9 @@ namespace Yarn.Data.EntityFrameworkProvider
 
         #region Merge Methods
 
-        private void Merge(DbContext context, object source, object target)
+        private void Merge(object source, object target)
         {
+            var context = DbContext;
             var comparer = new EntityEqualityComparer(this);
             var autoDetectChangesEnabled = context.Configuration.AutoDetectChangesEnabled;
             try
@@ -443,21 +453,57 @@ namespace Yarn.Data.EntityFrameworkProvider
                 _repository = repository;
             }
 
-            private object GetPrimaryKey(object entity)
+            private object[] GetPrimaryKey(object entity)
             {
                 var method = typeof(IMetaDataProvider).GetMethod("GetPrimaryKeyValue").MakeGenericMethod(entity.GetType());
-                return string.Join("::", ((object[])method.Invoke(_repository.As<IMetaDataProvider>(), new[] { entity })).Select(v => v + ""));
+                return (object[])method.Invoke(_repository.As<IMetaDataProvider>(), new[] { entity });
             }
             
             public bool Equals(object x, object y)
             {
-                return GetPrimaryKey(x).Equals(GetPrimaryKey(y));
+                return ArraysEqual(GetPrimaryKey(x), GetPrimaryKey(y));
             }
 
             public int GetHashCode(object obj)
             {
-                return GetPrimaryKey(obj).GetHashCode();
+                return string.Join("::", GetPrimaryKey(obj).Select(v => v + "")).GetHashCode();
             }
+        }
+
+        private class EntityEqualityComparer<T> : IEqualityComparer<T>
+            where T : class
+        {
+            private readonly Repository _repository;
+
+            public EntityEqualityComparer(Repository repository)
+            {
+                _repository = repository;
+            }
+
+            private object[] GetPrimaryKey(T entity)
+            {
+                var primaryKey = _repository.As<IMetaDataProvider>().GetPrimaryKeyValue(entity);
+                return primaryKey;
+            }
+
+            public bool Equals(T x, T y)
+            {
+                return ArraysEqual(GetPrimaryKey(x), GetPrimaryKey(y));
+            }
+
+            public int GetHashCode(T obj)
+            {
+                return string.Join("::", GetPrimaryKey(obj).Select(v => v + "")).GetHashCode();
+            }
+        }
+
+        static bool ArraysEqual(object[] x, object[] y)
+        {
+            if (x.Length != y.Length)
+            {
+                return false;
+            }
+            return !x.Where((t, i) => !t.Equals(y[i])).Any();
         }
 
         #endregion
