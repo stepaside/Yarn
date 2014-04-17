@@ -423,8 +423,8 @@ namespace Yarn.Data.EntityFrameworkProvider
 
                 var values = (IEnumerable)PropertyAccessor.Get(target.GetType(), target, property.Name) ?? new object[] { };
                 var newValues = (IEnumerable)PropertyAccessor.Get(source.GetType(), source, property.Name) ?? new object[] { };
-                
-                var updates = values.Cast<object>().Join(newValues.Cast<object>(), comparer.GetHashCode, comparer.GetHashCode, Tuple.Create).ToList();
+
+                var updates = newValues.Cast<object>().Join(values.Cast<object>(), comparer.GetHashCode, comparer.GetHashCode, Tuple.Create).ToList();
                 foreach (var item in updates)
                 {
                     MergeImplementation(context, item.Item1, item.Item2, false, comparer, new HashSet<Type>(ancestors.Concat(new[] { propertyType })));
