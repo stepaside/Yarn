@@ -2,7 +2,7 @@
 <package >
   <metadata>
     <id>Yarn.RavenDb</id>
-    <version>0.7.16</version>
+    <version>0.7.17</version>
     <title>Yarn.RavenDb</title>
     <authors>Max Stepanskiy</authors>
     <owners>Stepaside, Inc.</owners>
@@ -12,7 +12,7 @@
     <copyright>Copyright © Max Stepanskiy 2012-2014</copyright>
     <tags>Raven RavenDB Repository</tags>
     <dependencies>
-      <dependency id="Yarn" version="[0.7.16]" />
+      <dependency id="Yarn" version="[0.7.17]" />
       <dependency id="RavenDB.Client" version="2.5.2870" />
     </dependencies>
   </metadata>

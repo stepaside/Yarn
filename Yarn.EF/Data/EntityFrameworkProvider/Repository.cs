@@ -148,13 +148,15 @@ namespace Yarn.Data.EntityFrameworkProvider
                         }
                         else
                         {
+                            var attachedEntry = DbContext.Entry(attachedEntity);
+                            attachedEntry.CurrentValues.SetValues(entity);
                             Mapper.Map(entity, attachedEntity);
+
                             if (!DbContext.Configuration.AutoDetectChangesEnabled)
                             {
                                 DbContext.ChangeTracker.DetectChanges();
                             }
-                            entry = DbContext.Entry(attachedEntity);
-                            entry.State = EntityState.Modified;
+                            entry = attachedEntry;
                         }
                     }
                     else
