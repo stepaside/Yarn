@@ -2,7 +2,7 @@
 <package >
   <metadata>
     <id>Yarn.InMemory</id>
-    <version>0.7.17</version>
+    <version>0.7.18</version>
     <title>Yarn.InMemory</title>
     <authors>Max Stepanskiy</authors>
     <owners>Stepaside, Inc.</owners>
@@ -12,7 +12,7 @@
     <copyright>Copyright © Max Stepanskiy 2012-2014</copyright>
     <tags>Inmemory In-memory Repository</tags>
     <dependencies>
-      <dependency id="Yarn" version="[0.7.17]" />
+      <dependency id="Yarn" version="[0.7.18]" />
       <dependency id="NDatabase" version="3.8.0" />
     </dependencies>
   </metadata>

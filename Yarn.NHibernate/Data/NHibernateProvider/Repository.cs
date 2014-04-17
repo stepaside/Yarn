@@ -227,11 +227,11 @@ namespace Yarn.Data.NHibernateProvider
         private class LoadService<T> : ILoadService<T>
             where T : class
         {
-            IQueryable<T> _query;
-            IRepository _repository;
-            MethodInfo _fetchMany = typeof(EagerFetchingExtensionMethods).GetMethod("FetchMany");
-            MethodInfo _thenFetchMany = typeof(EagerFetchingExtensionMethods).GetMethod("ThenFetchMany");
-            MethodInfo _thenFetch = typeof(EagerFetchingExtensionMethods).GetMethod("ThenFetch");
+            readonly IQueryable<T> _query;
+            readonly IRepository _repository;
+            readonly MethodInfo _fetchMany = typeof(EagerFetchingExtensionMethods).GetMethod("FetchMany");
+            readonly MethodInfo _thenFetchMany = typeof(EagerFetchingExtensionMethods).GetMethod("ThenFetchMany");
+            readonly MethodInfo _thenFetch = typeof(EagerFetchingExtensionMethods).GetMethod("ThenFetch");
 
             public LoadService(IRepository repository)
             {
@@ -334,11 +334,7 @@ namespace Yarn.Data.NHibernateProvider
             public T Update(T entity)
             {
                 var loadedEntity = Find(_repository.As<IMetaDataProvider>().BuildPrimaryKeyExpression(entity));
-                if (loadedEntity != null)
-                {
-                    _repository.Update(loadedEntity);
-                }
-                return loadedEntity;
+                return loadedEntity != null ? _repository.Update(loadedEntity) : null;
             }
 
             public void Dispose()

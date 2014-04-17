@@ -2,7 +2,7 @@
 <package >
   <metadata>
     <id>Yarn</id>
-    <version>0.7.17</version>
+    <version>0.7.18</version>
     <title>Yarn</title>
     <authors>Max Stepanskiy</authors>
     <owners>Stepaside, Inc.</owners>
@@ -13,8 +13,8 @@
     <tags>Repository Repository-Pattern</tags>
 	  <releaseNotes>
       * Fixed Update method for ILoadService implementations
-      * Fixed Update method in Yarn EF (not a perfect but workable solution)
-      * Updated Mapper
+      * Modified Update method in Yarn EF to handle single entity update only
+      * Implemented auto-merge functionality for Yarn EF when using ILoadService
     </releaseNotes>
   </metadata>
   <files>

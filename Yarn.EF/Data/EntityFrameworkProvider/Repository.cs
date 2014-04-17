@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Data.Entity;
 using System.Data.Entity.Infrastructure;
@@ -131,44 +132,31 @@ namespace Yarn.Data.EntityFrameworkProvider
         public T Update<T>(T entity) where T : class
         {
             var entry = DbContext.Entry(entity);
-            if (entry != null)
+            if (entry == null)
             {
-                var dbSet = Table<T>();
-                if (entry.State == EntityState.Detached)
-                {
-                    var attachedEntity = dbSet.Local.FirstOrDefault(this.BuildPrimaryKeyExpression(entity).Compile());
-                    if (attachedEntity != null)
-                    {
-                        // Update only root attributes for lazy loaded entities
-                        if (DbContext.Configuration.LazyLoadingEnabled)
-                        {
-                            var attachedEntry = DbContext.Entry(attachedEntity);
-                            attachedEntry.CurrentValues.SetValues(entity);
-                            entry = attachedEntry;
-                        }
-                        else
-                        {
-                            var attachedEntry = DbContext.Entry(attachedEntity);
-                            attachedEntry.CurrentValues.SetValues(entity);
-                            Mapper.Map(entity, attachedEntity);
+                return null;
+            }
 
-                            if (!DbContext.Configuration.AutoDetectChangesEnabled)
-                            {
-                                DbContext.ChangeTracker.DetectChanges();
-                            }
-                            entry = attachedEntry;
-                        }
-                    }
-                    else
-                    {
-                        dbSet.Attach(entity);
-                        entry.State = EntityState.Modified;
-                    }
+            var dbSet = Table<T>();
+            if (entry.State == EntityState.Detached)
+            {
+                var attachedEntity = dbSet.Local.FirstOrDefault(this.BuildPrimaryKeyExpression(entity).Compile());
+                if (attachedEntity != null)
+                {
+                    // Update only root attributes for lazy loaded entities
+                    var attachedEntry = DbContext.Entry(attachedEntity);
+                    attachedEntry.CurrentValues.SetValues(entity);
+                    entry = attachedEntry;
                 }
                 else
                 {
+                    dbSet.Attach(entity);
                     entry.State = EntityState.Modified;
                 }
+            }
+            else
+            {
+                entry.State = EntityState.Modified;
             }
 
             return entry.Entity;
@@ -176,7 +164,7 @@ namespace Yarn.Data.EntityFrameworkProvider
         
         public void Attach<T>(T entity) where T : class
         {
-            this.Table<T>().Attach(entity);
+            Table<T>().Attach(entity);
         }
 
         public void Detach<T>(T entity) where T : class
@@ -196,12 +184,12 @@ namespace Yarn.Data.EntityFrameworkProvider
 
         public long Count<T>(ISpecification<T> criteria) where T : class
         {
-            return FindAll<T>(criteria).LongCount();
+            return FindAll(criteria).LongCount();
         }
 
         public long Count<T>(Expression<Func<T, bool>> criteria) where T : class
         {
-            return FindAll<T>(criteria).LongCount();
+            return FindAll(criteria).LongCount();
         }
 
         public DbSet<T> Table<T>() where T : class
@@ -213,7 +201,7 @@ namespace Yarn.Data.EntityFrameworkProvider
         {
             get
             {
-                return ((IDataContext<DbContext>)this.DataContext).Session;
+                return ((IDataContext<DbContext>)DataContext).Session;
             }
         }
 
@@ -281,9 +269,9 @@ namespace Yarn.Data.EntityFrameworkProvider
         private class LoadService<T> : ILoadService<T>
             where T : class
         {
-            Repository _repository;
+            readonly Repository _repository;
             IQueryable<T> _query;
-
+            
             public LoadService(IRepository repository)
             {
                 _repository = (Repository)repository;
@@ -328,7 +316,7 @@ namespace Yarn.Data.EntityFrameworkProvider
                 var loadedEntity = Find(_repository.As<IMetaDataProvider>().BuildPrimaryKeyExpression(entity));
                 if (loadedEntity != null)
                 {
-                    _repository.Update(loadedEntity);
+                    _repository.Merge(_repository.DbContext, entity, loadedEntity);
                 }
                 return loadedEntity;
             }
@@ -336,6 +324,139 @@ namespace Yarn.Data.EntityFrameworkProvider
             public void Dispose()
             {
                 
+            }
+        }
+
+        #endregion
+
+        #region Merge Methods
+
+        private void Merge(DbContext context, object source, object target)
+        {
+            var comparer = new EntityEqualityComparer(this);
+            var autoDetectChangesEnabled = context.Configuration.AutoDetectChangesEnabled;
+            try
+            {
+                context.Configuration.AutoDetectChangesEnabled = false;
+                MergeImplementation(context, source, target, true, comparer, null);
+            }
+            finally
+            {
+                context.Configuration.AutoDetectChangesEnabled = autoDetectChangesEnabled;
+            }
+        }
+
+        private static void MergeImplementation(DbContext context, object source, object target, bool root, IEqualityComparer<object> comparer, HashSet<Type> ancestors)
+        {
+            if (root)
+            {
+                context.Entry(target).CurrentValues.SetValues(source);
+            }
+            else if (target == null && source != null)
+            {
+                context.Set(source.GetType()).Add(source);
+                return;
+            }
+            else if (target != null && source == null)
+            {
+                var entry = context.Entry(target);
+                if (entry.State == EntityState.Unchanged)
+                {
+                    context.Set(target.GetType()).Remove(target);
+                }
+                return;
+            }
+            else if (target != null)
+            {
+                var entry = context.Entry(target);
+                if (entry.State == EntityState.Detached)
+                {
+                    var hash = comparer.GetHashCode(target);
+                    var attachedTarget = context.Set(target.GetType()).Local.Cast<object>().First(e => comparer.GetHashCode(e) == hash);
+                    entry = context.Entry(attachedTarget);
+                    entry.CurrentValues.SetValues(source);
+                }
+                else if (entry.State == EntityState.Unchanged)
+                {
+                    entry.CurrentValues.SetValues(source);
+                }
+            }
+            else
+            {
+                return;
+            }
+
+            (ancestors = ancestors ?? new HashSet<Type>()).Add(source.GetType());
+
+            var properties = source.GetType().GetProperties();
+            
+            foreach (var property in properties.Where(p => p.PropertyType != typeof(string) && p.PropertyType.IsClass && !typeof(IEnumerable).IsAssignableFrom(p.PropertyType)))
+            {
+                if (ancestors.Contains(property.PropertyType))
+                {
+                    continue;
+                }
+
+                var value = PropertyAccessor.Get(target.GetType(), target, property.Name);
+                var newValue = PropertyAccessor.Get(source.GetType(), source, property.Name);
+
+                MergeImplementation(context, newValue, value, false, comparer, new HashSet<Type>(ancestors.Concat(new[] { property.PropertyType })));
+            }
+
+            foreach (var property in properties.Where(p => p.PropertyType != typeof(string) && p.PropertyType.IsGenericType && typeof(IEnumerable).IsAssignableFrom(p.PropertyType)))
+            {
+                var propertyType = property.PropertyType.GetGenericArguments()[0];
+                if (ancestors.Contains(propertyType))
+                {
+                    continue;
+                }
+
+                var values = (IEnumerable)PropertyAccessor.Get(target.GetType(), target, property.Name) ?? new object[] { };
+                var newValues = (IEnumerable)PropertyAccessor.Get(source.GetType(), source, property.Name) ?? new object[] { };
+                
+                var updates = values.Cast<object>().Join(newValues.Cast<object>(), comparer.GetHashCode, comparer.GetHashCode, Tuple.Create).ToList();
+                foreach (var item in updates)
+                {
+                    MergeImplementation(context, item.Item1, item.Item2, false, comparer, new HashSet<Type>(ancestors.Concat(new[] { propertyType })));
+                }
+
+                var deletes = values.Cast<object>().Except(newValues.Cast<object>(), comparer).ToList();
+                foreach (var item in deletes)
+                {
+                    MergeImplementation(context, null, item, false, comparer, new HashSet<Type>(ancestors.Concat(new[] { propertyType })));
+                }
+
+                var inserts = newValues.Cast<object>().Except(values.Cast<object>(), comparer).ToList();
+                foreach (var item in inserts)
+                {
+                    MergeImplementation(context, item, null, false, comparer, new HashSet<Type>(ancestors.Concat(new[] { propertyType })));
+                }
+            }
+        }
+
+        private class EntityEqualityComparer : IEqualityComparer<object>
+        {
+            private readonly Repository _repository;
+
+            public EntityEqualityComparer(Repository repository)
+            {
+                _repository = repository;
+            }
+
+            private object GetPrimaryKey(object entity)
+            {
+                var method = typeof(IMetaDataProvider).GetMethod("GetPrimaryKeyValue").MakeGenericMethod(entity.GetType());
+                return string.Join("::", ((object[])method.Invoke(_repository.As<IMetaDataProvider>(), new[] { entity })).Select(v => v + ""));
+            }
+            
+            public bool Equals(object x, object y)
+            {
+                return GetPrimaryKey(x).Equals(GetPrimaryKey(y));
+            }
+
+            public int GetHashCode(object obj)
+            {
+                return GetPrimaryKey(obj).GetHashCode();
             }
         }
 
