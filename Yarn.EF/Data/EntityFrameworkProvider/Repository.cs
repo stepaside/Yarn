@@ -356,7 +356,7 @@ namespace Yarn.Data.EntityFrameworkProvider
             }
         }
 
-        private static void MergeImplementation(DbContext context, object source, object target, bool root, IEqualityComparer<object> comparer, HashSet<Type> ancestors)
+        private static bool MergeImplementation(DbContext context, object source, object target, bool root, IEqualityComparer<object> comparer, HashSet<Type> ancestors)
         {
             if (root)
             {
@@ -365,7 +365,7 @@ namespace Yarn.Data.EntityFrameworkProvider
             else if (target == null && source != null)
             {
                 context.Set(source.GetType()).Add(source);
-                return;
+                return true;
             }
             else if (target != null && source == null)
             {
@@ -374,7 +374,7 @@ namespace Yarn.Data.EntityFrameworkProvider
                 {
                     context.Set(target.GetType()).Remove(target);
                 }
-                return;
+                return true;
             }
             else if (target != null)
             {
@@ -388,12 +388,19 @@ namespace Yarn.Data.EntityFrameworkProvider
                 }
                 else if (entry.State == EntityState.Unchanged)
                 {
-                    entry.CurrentValues.SetValues(source);
+                    try
+                    {
+                        entry.CurrentValues.SetValues(source);
+                    }
+                    catch
+                    {
+                        return false;
+                    }
                 }
             }
             else
             {
-                return;
+                return true;
             }
 
             (ancestors = ancestors ?? new HashSet<Type>()).Add(source.GetType());
@@ -410,7 +417,14 @@ namespace Yarn.Data.EntityFrameworkProvider
                 var value = PropertyAccessor.Get(target.GetType(), target, property.Name);
                 var newValue = PropertyAccessor.Get(source.GetType(), source, property.Name);
 
-                MergeImplementation(context, newValue, value, false, comparer, new HashSet<Type>(ancestors.Concat(new[] { property.PropertyType })));
+                var success = MergeImplementation(context, newValue, value, false, comparer, new HashSet<Type>(ancestors.Concat(new[] { property.PropertyType })));
+                if (!success)
+                {
+                    // Merge failed as we tried to change the parent
+                    // Now try actually changing the parent
+                    context.Entry(target).Member(property.Name).CurrentValue = newValue;
+                    context.Entry(newValue).State = EntityState.Unchanged;
+                }
             }
 
             foreach (var property in properties.Where(p => p.PropertyType != typeof(string) && p.PropertyType.IsGenericType && typeof(IEnumerable).IsAssignableFrom(p.PropertyType)))
@@ -442,6 +456,8 @@ namespace Yarn.Data.EntityFrameworkProvider
                     MergeImplementation(context, item, null, false, comparer, new HashSet<Type>(ancestors.Concat(new[] { propertyType })));
                 }
             }
+
+            return true;
         }
 
         private class EntityEqualityComparer : IEqualityComparer<object>
