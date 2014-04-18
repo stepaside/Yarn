@@ -351,9 +351,10 @@ namespace Yarn.Data.EntityFrameworkProvider
             var autoDetectChangesEnabled = context.Configuration.AutoDetectChangesEnabled;
             try
             {
-                context.Configuration.AutoDetectChangesEnabled = true;
+                context.Configuration.AutoDetectChangesEnabled = false;
                 context.Entry(target).CurrentValues.SetValues(source);
                 MergeImplementation(context, source, target, comparer, null);
+                context.ChangeTracker.DetectChanges();
             }
             finally
             {
@@ -440,6 +441,7 @@ namespace Yarn.Data.EntityFrameworkProvider
                     if (collection != null)
                     {
                         collection.Remove(item);
+                        context.Entry(item).State = EntityState.Deleted;
                     }
                 }
 
