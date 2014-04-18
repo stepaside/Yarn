@@ -12,8 +12,8 @@ namespace Yarn.Adapters
 {
     public class MultiTenantRepository : IRepository, ILoadServiceProvider, IMetaDataProvider
     {
-        private IRepository _repository;
-        private ITenant _owner;
+        private readonly IRepository _repository;
+        private readonly ITenant _owner;
 
         public MultiTenantRepository(IRepository repository, ITenant owner)
         {
@@ -34,111 +34,77 @@ namespace Yarn.Adapters
         public T GetById<T, ID>(ID id) where T : class
         {
             var result = _repository.GetById<T, ID>(id);
-            if (result is ITenant)
+            var tenant = result as ITenant;
+            if (tenant == null)
             {
-                if (((ITenant)result).TenantId != _owner.TenantId)
-                {
-                    return null;
-                }
+                return result;
             }
-            return result;
+            return tenant.TenantId != _owner.TenantId ? null : result;
         }
 
         public IEnumerable<T> GetByIdList<T, ID>(IList<ID> ids) where T : class
         {
-            if (typeof(ISoftDelete).IsAssignableFrom(typeof(T)))
-            {
-                return _repository.GetByIdList<T, ID>(ids).Where(e => ((ITenant)e).TenantId == _owner.TenantId);
-            }
-            else
-            {
-                return _repository.GetByIdList<T, ID>(ids);
-            }
+            return typeof(ISoftDelete).IsAssignableFrom(typeof(T)) ? _repository.GetByIdList<T, ID>(ids).Where(e => ((ITenant)e).TenantId == _owner.TenantId) : _repository.GetByIdList<T, ID>(ids);
         }
 
         public T Find<T>(ISpecification<T> criteria) where T : class
         {
-            return this.Find<T>(((Specification<T>)criteria).Predicate);
+            return Find(((Specification<T>)criteria).Predicate);
         }
 
-        public T Find<T>(System.Linq.Expressions.Expression<Func<T, bool>> criteria) where T : class
+        public T Find<T>(Expression<Func<T, bool>> criteria) where T : class
         {
-            if (typeof(ITenant).IsAssignableFrom(typeof(T)))
-            {
-                return _repository.All<T>().Where(e => ((ITenant)e).TenantId == _owner.TenantId).FirstOrDefault(criteria);
-            }
-            else
-            {
-                return _repository.Find<T>(criteria);
-            }
+            return typeof(ITenant).IsAssignableFrom(typeof(T)) ? _repository.All<T>().Where(e => ((ITenant)e).TenantId == _owner.TenantId).FirstOrDefault(criteria) : _repository.Find<T>(criteria);
         }
 
         public IEnumerable<T> FindAll<T>(ISpecification<T> criteria, int offset = 0, int limit = 0, Expression<Func<T, object>> orderBy = null) where T : class
         {
-            return this.FindAll<T>(((Specification<T>)criteria).Predicate, offset, limit, orderBy);
+            return FindAll(((Specification<T>)criteria).Predicate, offset, limit, orderBy);
         }
 
-        public IEnumerable<T> FindAll<T>(System.Linq.Expressions.Expression<Func<T, bool>> criteria, int offset = 0, int limit = 0, Expression<Func<T, object>> orderBy = null) where T : class
+        public IEnumerable<T> FindAll<T>(Expression<Func<T, bool>> criteria, int offset = 0, int limit = 0, Expression<Func<T, object>> orderBy = null) where T : class
         {
             if (typeof(ITenant).IsAssignableFrom(typeof(T)))
             {
                 var query = _repository.All<T>().Where(e => ((ITenant)e).TenantId == _owner.TenantId);
-                return this.Page<T>(query, offset, limit, orderBy);
+                return this.Page(query, offset, limit, orderBy);
             }
-            else
-            {
-                return _repository.FindAll<T>(criteria, offset, limit, orderBy);
-            }
+            return _repository.FindAll(criteria, offset, limit, orderBy);
         }
 
         public IList<T> Execute<T>(string command, ParamList parameters) where T : class
         {
-            if (typeof(ITenant).IsAssignableFrom(typeof(T)))
-            {
-                return _repository.Execute<T>(command, parameters).Where(e => ((ITenant)e).TenantId == _owner.TenantId).ToArray();
-            }
-            else
-            {
-                return _repository.Execute<T>(command, parameters);
-            }
+            return typeof(ITenant).IsAssignableFrom(typeof(T)) ? _repository.Execute<T>(command, parameters).Where(e => ((ITenant)e).TenantId == _owner.TenantId).ToArray() : _repository.Execute<T>(command, parameters);
         }
 
         public T Add<T>(T entity) where T : class
         {
-            if (entity is ITenant)
-            {
-                if (((ITenant)entity).TenantId == _owner.TenantId)
-                {
-                    return _repository.Add(entity);
-                }
-                else
-                {
-                    throw new InvalidOperationException();
-                }
-            }
-            else
+            var tenant = entity as ITenant;
+            if (tenant == null)
             {
                 return _repository.Add(entity);
             }
+
+            if (tenant.TenantId == _owner.TenantId)
+            {
+                return _repository.Add(entity);
+            }
+            throw new InvalidOperationException();
         }
 
         public T Remove<T>(T entity) where T : class
         {
-            if (entity is ITenant)
+            var tenant = entity as ITenant;
+            if (tenant == null)
             {
-                if (((ITenant)entity).TenantId == _owner.TenantId)
-                {
-                    return _repository.Remove<T>(entity);
-                }
-                else
-                {
-                    throw new InvalidOperationException();
-                }
+                return _repository.Remove(entity);
             }
-            else
+
+            if (tenant.TenantId == _owner.TenantId)
             {
-                return _repository.Remove<T>(entity);
+                return _repository.Remove(entity);
             }
+            throw new InvalidOperationException();
         }
 
         public T Remove<T, ID>(ID id) where T : class
@@ -148,79 +114,56 @@ namespace Yarn.Adapters
                 var entity = _repository.GetById<T, ID>(id);
                 if (((ITenant)entity).TenantId == _owner.TenantId)
                 {
-                    return _repository.Remove<T>(entity);
+                    return _repository.Remove(entity);
                 }
-                else
-                {
-                    throw new InvalidOperationException();
-                }
+                throw new InvalidOperationException();
             }
-            else
-            {
-                return _repository.Remove<T, ID>(id);
-            }
+            return _repository.Remove<T, ID>(id);
         }
 
         public T Update<T>(T entity) where T : class
         {
-            if (entity is ITenant)
-            {
-                if (((ITenant)entity).TenantId == _owner.TenantId)
-                {
-                    return _repository.Update(entity);
-                }
-                else
-                {
-                    throw new InvalidOperationException();
-                }
-            }
-            else
+            var tenant = entity as ITenant;
+            if (tenant == null)
             {
                 return _repository.Update(entity);
             }
+
+            if (tenant.TenantId == _owner.TenantId)
+            {
+                return _repository.Update(entity);
+            }
+            throw new InvalidOperationException();
         }
 
         public long Count<T>() where T : class
         {
-            if (typeof(ITenant).IsAssignableFrom(typeof(T)))
-            {
-                return _repository.All<T>().LongCount(e => ((ITenant)e).TenantId == _owner.TenantId);
-            }
-            else
-            {
-                return _repository.Count<T>();
-            }
+            return typeof(ITenant).IsAssignableFrom(typeof(T)) ? _repository.All<T>().LongCount(e => ((ITenant)e).TenantId == _owner.TenantId) : _repository.Count<T>();
         }
 
         public long Count<T>(ISpecification<T> criteria) where T : class
         {
-            return FindAll<T>(criteria).LongCount();
+            return FindAll(criteria).LongCount();
         }
 
-        public long Count<T>(System.Linq.Expressions.Expression<Func<T, bool>> criteria) where T : class
+        public long Count<T>(Expression<Func<T, bool>> criteria) where T : class
         {
-            return FindAll<T>(criteria).LongCount();
+            return FindAll(criteria).LongCount();
         }
 
         public IQueryable<T> All<T>() where T : class
         {
-            if (typeof(ITenant).IsAssignableFrom(typeof(T)))
-            {
-                return _repository.All<T>().Where(e => ((ITenant)e).TenantId == _owner.TenantId);
-            }
-            else
-            {
-                return _repository.All<T>();
-            }
+            return typeof(ITenant).IsAssignableFrom(typeof(T)) ? _repository.All<T>().Where(e => ((ITenant)e).TenantId == _owner.TenantId) : _repository.All<T>();
         }
 
         public void Detach<T>(T entity) where T : class
         {
-            if (entity is ITenant)
+            var tenant = entity as ITenant;
+            if (tenant != null)
             {
-                if (((ITenant)entity).TenantId == _owner.TenantId)
+                if (tenant.TenantId == _owner.TenantId)
                 {
-                    _repository.Detach<T>(entity);
+                    _repository.Detach(entity);
                 }
                 else
                 {
@@ -229,17 +172,18 @@ namespace Yarn.Adapters
             }
             else
             {
-                _repository.Detach<T>(entity);
+                _repository.Detach(entity);
             }
         }
 
         public void Attach<T>(T entity) where T : class
         {
-            if (entity is ITenant)
+            var tenant = entity as ITenant;
+            if (tenant != null)
             {
-                if (((ITenant)entity).TenantId == _owner.TenantId)
+                if (tenant.TenantId == _owner.TenantId)
                 {
-                    _repository.Attach<T>(entity);
+                    _repository.Attach(entity);
                 }
                 else
                 {
@@ -248,7 +192,7 @@ namespace Yarn.Adapters
             }
             else
             {
-                _repository.Attach<T>(entity);
+                _repository.Attach(entity);
             }
         }
 
@@ -268,34 +212,27 @@ namespace Yarn.Adapters
             {
                 return ((ILoadServiceProvider)_repository).Load<T>();
             }
-            else
-            {
-                throw new InvalidOperationException();
-            }
+            throw new InvalidOperationException();
         }
 
         string[] IMetaDataProvider.GetPrimaryKey<T>()
         {
-            if (_repository is IMetaDataProvider)
+            var provider = _repository as IMetaDataProvider;
+            if (provider != null)
             {
-                return ((IMetaDataProvider)_repository).GetPrimaryKey<T>();
+                return provider.GetPrimaryKey<T>();
             }
-            else
-            {
-                throw new InvalidOperationException();
-            }
+            throw new InvalidOperationException();
         }
 
         object[] IMetaDataProvider.GetPrimaryKeyValue<T>(T entity)
         {
-            if (_repository is IMetaDataProvider)
+            var provider = _repository as IMetaDataProvider;
+            if (provider != null)
             {
-                return ((IMetaDataProvider)_repository).GetPrimaryKeyValue<T>(entity);
+                return provider.GetPrimaryKeyValue<T>(entity);
             }
-            else
-            {
-                throw new InvalidOperationException();
-            }
+            throw new InvalidOperationException();
         }
 
         public long TenantId

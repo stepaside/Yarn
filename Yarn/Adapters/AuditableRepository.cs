@@ -12,8 +12,8 @@ namespace Yarn.Adapters
 {
     public class AuditableRepository : IRepository, ILoadServiceProvider, IMetaDataProvider
     {
-         private IRepository _repository;
-        private IPrincipal _principal;
+        private readonly IRepository _repository;
+        private readonly IPrincipal _principal;
 
         public AuditableRepository(IRepository repository, IPrincipal principal)
         {
@@ -43,22 +43,22 @@ namespace Yarn.Adapters
 
         public T Find<T>(ISpecification<T> criteria) where T : class
         {
-            return _repository.Find<T>(criteria);
+            return _repository.Find(criteria);
         }
 
-        public T Find<T>(System.Linq.Expressions.Expression<Func<T, bool>> criteria) where T : class
+        public T Find<T>(Expression<Func<T, bool>> criteria) where T : class
         {
-            return _repository.Find<T>(criteria);
+            return _repository.Find(criteria);
         }
 
         public IEnumerable<T> FindAll<T>(ISpecification<T> criteria, int offset = 0, int limit = 0, Expression<Func<T, object>> orderBy = null) where T : class
         {
-            return _repository.FindAll<T>(criteria, offset, limit, orderBy);
+            return _repository.FindAll(criteria, offset, limit, orderBy);
         }
 
-        public IEnumerable<T> FindAll<T>(System.Linq.Expressions.Expression<Func<T, bool>> criteria, int offset = 0, int limit = 0, Expression<Func<T, object>> orderBy = null) where T : class
+        public IEnumerable<T> FindAll<T>(Expression<Func<T, bool>> criteria, int offset = 0, int limit = 0, Expression<Func<T, object>> orderBy = null) where T : class
         {
-            return _repository.FindAll<T>(criteria, offset, limit, orderBy);
+            return _repository.FindAll(criteria, offset, limit, orderBy);
         }
 
         public IList<T> Execute<T>(string command, ParamList parameters) where T : class
@@ -68,20 +68,24 @@ namespace Yarn.Adapters
 
         public T Add<T>(T entity) where T : class
         {
-            if (entity is IAuditable)
+            var auditable = entity as IAuditable;
+            if (auditable != null)
             {
-                ((IAuditable)entity).AuditId = Guid.NewGuid();
-                ((IAuditable)entity).CreateDate = DateTime.UtcNow;
+                auditable.AuditId = Guid.NewGuid();
+                auditable.CreateDate = DateTime.UtcNow;
                 if (_principal != null && _principal.Identity != null)
                 {
-                    ((IAuditable)entity).CreatedBy = _principal.Identity.Name;
+                    auditable.CreatedBy = _principal.Identity.Name;
                 }
                 
-                ((IAuditable)entity).Cascade((root, item) =>
+                auditable.Cascade((root, item) =>
                 {
-                    item.CreateDate = root.CreateDate;
-                    item.CreatedBy = root.CreatedBy;
-                    item.AuditId = root.AuditId;
+                    if (item.CreateDate == DateTime.MinValue || !item.AuditId.HasValue)
+                    {
+                        item.CreateDate = root.CreateDate;
+                        item.CreatedBy = root.CreatedBy;
+                        item.AuditId = root.AuditId;
+                    }
                 });
             }
             return _repository.Add(entity);
@@ -89,7 +93,7 @@ namespace Yarn.Adapters
 
         public T Remove<T>(T entity) where T : class
         {
-            return _repository.Remove<T>(entity);
+            return _repository.Remove(entity);
         }
 
         public T Remove<T, ID>(ID id) where T : class
@@ -99,20 +103,31 @@ namespace Yarn.Adapters
 
         public T Update<T>(T entity) where T : class
         {
-            if (entity is IAuditable)
+            var auditable = entity as IAuditable;
+            if (auditable != null)
             {
-                ((IAuditable)entity).AuditId = Guid.NewGuid();
-                ((IAuditable)entity).UpdateDate = DateTime.UtcNow;
+                auditable.AuditId = Guid.NewGuid();
+                auditable.UpdateDate = DateTime.UtcNow;
                 if (_principal != null && _principal.Identity != null)
                 {
-                    ((IAuditable)entity).UpdatedBy = _principal.Identity.Name;
+                    auditable.UpdatedBy = _principal.Identity.Name;
                 }
 
-                ((IAuditable)entity).Cascade((root, item) =>
+                auditable.Cascade((root, item) =>
                 {
-                    item.UpdateDate = root.UpdateDate;
-                    item.UpdatedBy = root.UpdatedBy;
-                    item.AuditId = root.AuditId;
+                    if (item.CreateDate == DateTime.MinValue || !item.AuditId.HasValue)
+                    {
+                        if (item.CreateDate == DateTime.MinValue)
+                        {
+                            item.CreateDate = DateTime.UtcNow;
+                        }
+                        else
+                        {
+                            auditable.UpdateDate = root.UpdateDate;
+                        }
+                        item.CreatedBy = root.CreatedBy;
+                        item.AuditId = root.AuditId;
+                    }
                 });
             }
             return _repository.Update(entity);
@@ -125,12 +140,12 @@ namespace Yarn.Adapters
 
         public long Count<T>(ISpecification<T> criteria) where T : class
         {
-            return _repository.Count<T>(criteria);
+            return _repository.Count(criteria);
         }
 
-        public long Count<T>(System.Linq.Expressions.Expression<Func<T, bool>> criteria) where T : class
+        public long Count<T>(Expression<Func<T, bool>> criteria) where T : class
         {
-            return _repository.Count<T>(criteria);
+            return _repository.Count(criteria);
         }
 
         public IQueryable<T> All<T>() where T : class
@@ -140,12 +155,12 @@ namespace Yarn.Adapters
 
         public void Detach<T>(T entity) where T : class
         {
-            _repository.Detach<T>(entity);
+            _repository.Detach(entity);
         }
 
         public void Attach<T>(T entity) where T : class
         {
-            _repository.Attach<T>(entity);
+            _repository.Attach(entity);
         }
 
         public IDataContext DataContext
@@ -160,38 +175,113 @@ namespace Yarn.Adapters
 
         ILoadService<T> ILoadServiceProvider.Load<T>()
         {
-            if (_repository is ILoadServiceProvider)
+            var provider = _repository as ILoadServiceProvider;
+            if (provider != null)
             {
-                return ((ILoadServiceProvider)_repository).Load<T>();
+                return new LoadService<T>(this, provider.Load<T>());
             }
-            else
+            throw new InvalidOperationException();
+        }
+
+        private class LoadService<T> : ILoadService<T>
+            where T : class
+        {
+            private readonly AuditableRepository _repository;
+            private readonly ILoadService<T> _service;
+            
+            public LoadService(AuditableRepository repository, ILoadService<T> service)
             {
-                throw new InvalidOperationException();
+                _repository = repository;
+                _service = service;
+            }
+
+            public ILoadService<T> Include<TProperty>(Expression<Func<T, TProperty>> path) where TProperty : class
+            {
+                _service.Include(path);
+                return this;
+            }
+
+            public T Update(T entity)
+            {
+                var auditable = entity as IAuditable;
+                if (auditable != null)
+                {
+                    auditable.AuditId = Guid.NewGuid();
+                    auditable.UpdateDate = DateTime.UtcNow;
+                    if (_repository._principal != null && _repository._principal.Identity != null)
+                    {
+                        auditable.UpdatedBy = _repository._principal.Identity.Name;
+                    }
+
+                    auditable.Cascade((root, item) =>
+                    {
+                        if (item.CreateDate == DateTime.MinValue || !item.AuditId.HasValue)
+                        {
+                            if (item.CreateDate == DateTime.MinValue)
+                            {
+                                item.CreateDate = DateTime.UtcNow;
+                            }
+                            else
+                            {
+                                auditable.UpdateDate = root.UpdateDate;
+                            }
+                            item.CreatedBy = root.CreatedBy;
+                            item.AuditId = root.AuditId;
+                        }
+                    });
+                }
+                return _service.Update(entity);
+            }
+
+            public T Find(Expression<Func<T, bool>> criteria)
+            {
+                return _service.Find(criteria);
+            }
+
+            public IEnumerable<T> FindAll(Expression<Func<T, bool>> criteria, int offset = 0, int limit = 0, Expression<Func<T, object>> orderBy = null)
+            {
+                return _service.FindAll(criteria, offset, limit, orderBy);
+            }
+
+            public T Find(ISpecification<T> criteria)
+            {
+                return _service.Find(criteria);
+            }
+
+            public IEnumerable<T> FindAll(ISpecification<T> criteria, int offset = 0, int limit = 0, Expression<Func<T, object>> orderBy = null)
+            {
+                return _service.FindAll(criteria, offset, limit, orderBy);
+            }
+
+            public IQueryable<T> All()
+            {
+                return _service.All();
+            }
+
+            public void Dispose()
+            {
+                _service.Dispose();
             }
         }
 
         string[] IMetaDataProvider.GetPrimaryKey<T>()
         {
-            if (_repository is IMetaDataProvider)
+            var provider = _repository as IMetaDataProvider;
+            if (provider != null)
             {
-                return ((IMetaDataProvider)_repository).GetPrimaryKey<T>();
+                return provider.GetPrimaryKey<T>();
             }
-            else
-            {
-                throw new InvalidOperationException();
-            }
+            throw new InvalidOperationException();
         }
 
         object[] IMetaDataProvider.GetPrimaryKeyValue<T>(T entity)
         {
-            if (_repository is IMetaDataProvider)
+            var provider = _repository as IMetaDataProvider;
+            if (provider != null)
             {
-                return ((IMetaDataProvider)_repository).GetPrimaryKeyValue<T>(entity);
+                return provider.GetPrimaryKeyValue<T>(entity);
             }
-            else
-            {
-                throw new InvalidOperationException();
-            }
+            throw new InvalidOperationException();
         }
     }
 }

@@ -1,8 +1,12 @@
 ﻿using System;
 using System.Collections;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Data.Entity;
+using System.Data.Entity.Core.Metadata.Edm;
+using System.Data.Entity.Core.Objects.DataClasses;
 using System.Data.Entity.Infrastructure;
+using System.Data.Entity.Migrations;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
@@ -347,8 +351,9 @@ namespace Yarn.Data.EntityFrameworkProvider
             var autoDetectChangesEnabled = context.Configuration.AutoDetectChangesEnabled;
             try
             {
-                context.Configuration.AutoDetectChangesEnabled = false;
-                MergeImplementation(context, source, target, true, comparer, null);
+                context.Configuration.AutoDetectChangesEnabled = true;
+                context.Entry(target).CurrentValues.SetValues(source);
+                MergeImplementation(context, source, target, comparer, null);
             }
             finally
             {
@@ -356,53 +361,8 @@ namespace Yarn.Data.EntityFrameworkProvider
             }
         }
 
-        private static bool MergeImplementation(DbContext context, object source, object target, bool root, IEqualityComparer<object> comparer, HashSet<Type> ancestors)
+        private static void MergeImplementation(DbContext context, object source, object target, IEqualityComparer<object> comparer, HashSet<Type> ancestors)
         {
-            if (root)
-            {
-                context.Entry(target).CurrentValues.SetValues(source);
-            }
-            else if (target == null && source != null)
-            {
-                context.Set(source.GetType()).Add(source);
-                return true;
-            }
-            else if (target != null && source == null)
-            {
-                var entry = context.Entry(target);
-                if (entry.State == EntityState.Unchanged)
-                {
-                    context.Set(target.GetType()).Remove(target);
-                }
-                return true;
-            }
-            else if (target != null)
-            {
-                var entry = context.Entry(target);
-                if (entry.State == EntityState.Detached)
-                {
-                    var hash = comparer.GetHashCode(target);
-                    var attachedTarget = context.Set(target.GetType()).Local.Cast<object>().First(e => comparer.GetHashCode(e) == hash);
-                    entry = context.Entry(attachedTarget);
-                    entry.CurrentValues.SetValues(source);
-                }
-                else if (entry.State == EntityState.Unchanged)
-                {
-                    try
-                    {
-                        entry.CurrentValues.SetValues(source);
-                    }
-                    catch
-                    {
-                        return false;
-                    }
-                }
-            }
-            else
-            {
-                return true;
-            }
-
             (ancestors = ancestors ?? new HashSet<Type>()).Add(source.GetType());
 
             var properties = source.GetType().GetProperties();
@@ -417,19 +377,36 @@ namespace Yarn.Data.EntityFrameworkProvider
                 var value = PropertyAccessor.Get(target.GetType(), target, property.Name);
                 var newValue = PropertyAccessor.Get(source.GetType(), source, property.Name);
 
-                var success = MergeImplementation(context, newValue, value, false, comparer, new HashSet<Type>(ancestors.Concat(new[] { property.PropertyType })));
-                if (!success)
+                if (value == null && newValue != null)
                 {
-                    // Merge failed as we tried to change the parent
-                    // Now try actually changing the parent
                     context.Entry(target).Member(property.Name).CurrentValue = newValue;
-                    context.Entry(newValue).State = EntityState.Unchanged;
+                }
+                else if (newValue == null && value != null)
+                {
+                    context.Entry(target).Member(property.Name).CurrentValue = null;
+                }
+                else if (value != null)
+                {
+                    try
+                    {
+                        context.Entry(value).CurrentValues.SetValues(newValue);
+                    }
+                    catch
+                    {
+                        // Merge failed as we tried to change the parent
+                        // Now try actually changing the parent
+                        context.Entry(target).Member(property.Name).CurrentValue = newValue;
+                        context.Entry(newValue).State = EntityState.Unchanged;
+                    }
+                    MergeImplementation(context, value, newValue, comparer, new HashSet<Type>(ancestors.Concat(new[] { property.PropertyType })));
                 }
             }
 
             foreach (var property in properties.Where(p => p.PropertyType != typeof(string) && p.PropertyType.IsGenericType && typeof(IEnumerable).IsAssignableFrom(p.PropertyType)))
             {
                 var propertyType = property.PropertyType.GetGenericArguments()[0];
+                var collection = context.Entry(target).Collection(property.Name).CurrentValue as IList;
+
                 if (ancestors.Contains(propertyType))
                 {
                     continue;
@@ -441,25 +418,71 @@ namespace Yarn.Data.EntityFrameworkProvider
                 var updates = newValues.Cast<object>().Join(values.Cast<object>(), comparer.GetHashCode, comparer.GetHashCode, Tuple.Create).ToList();
                 foreach (var item in updates)
                 {
-                    MergeImplementation(context, item.Item1, item.Item2, false, comparer, new HashSet<Type>(ancestors.Concat(new[] { propertyType })));
+                    var entry = context.Entry(item.Item2);
+                    if (entry.State == EntityState.Detached)
+                    {
+                        var hash = comparer.GetHashCode(item.Item2);
+                        var attachedTarget = context.Set(item.Item2.GetType()).Local.Cast<object>().First(e => comparer.GetHashCode(e) == hash);
+                        entry = context.Entry(attachedTarget);
+                        entry.CurrentValues.SetValues(item.Item1);
+                    }
+                    else if (entry.State == EntityState.Unchanged)
+                    {
+                        entry.CurrentValues.SetValues(item.Item1);
+                    }
+
+                    MergeImplementation(context, item.Item1, item.Item2, comparer, new HashSet<Type>(ancestors.Concat(new[] { propertyType })));
                 }
 
                 var deletes = values.Cast<object>().Except(newValues.Cast<object>(), comparer).ToList();
                 foreach (var item in deletes)
                 {
-                    MergeImplementation(context, null, item, false, comparer, new HashSet<Type>(ancestors.Concat(new[] { propertyType })));
+                    if (collection != null)
+                    {
+                        collection.Remove(item);
+                    }
                 }
 
                 var inserts = newValues.Cast<object>().Except(values.Cast<object>(), comparer).ToList();
                 foreach (var item in inserts)
                 {
-                    MergeImplementation(context, item, null, false, comparer, new HashSet<Type>(ancestors.Concat(new[] { propertyType })));
+                    if (collection != null)
+                    {
+                        collection.Add(item);
+                        context.Entry(item).State = EntityState.Added;
+                    }
+
+                    var types = new HashSet<Type>(((IObjectContextAdapter)context).ObjectContext.ObjectStateManager.GetObjectStateEntry(item).RelationshipManager.GetAllRelatedEnds()
+                        .Where(end => end.GetType().GetGenericTypeDefinition() == typeof(EntityReference<>)
+                                      && ((end.RelationshipSet.ElementType.RelationshipEndMembers[0].RelationshipMultiplicity == RelationshipMultiplicity.ZeroOrOne && end.RelationshipSet.ElementType.RelationshipEndMembers[1].RelationshipMultiplicity == RelationshipMultiplicity.Many)
+                                          || (end.RelationshipSet.ElementType.RelationshipEndMembers[1].RelationshipMultiplicity == RelationshipMultiplicity.ZeroOrOne && end.RelationshipSet.ElementType.RelationshipEndMembers[0].RelationshipMultiplicity == RelationshipMultiplicity.Many)))
+                        .Select(end => end.GetType().GetGenericArguments()[0]));
+
+                    var entry = context.Entry(item);
+                    var names = item.GetType().GetProperties().Where(p => types.Contains(p.PropertyType)).Select(p => p.Name);
+                    foreach (var name in names)
+                    {
+                        var member = entry.Member(name);
+                        if (member != null && member.EntityEntry.State == EntityState.Added)
+                        {
+                            var hash = comparer.GetHashCode(member.CurrentValue);
+                            var local = context.Set(member.CurrentValue.GetType()).Local.Cast<object>().FirstOrDefault(e => context.Entry(e).State == EntityState.Unchanged
+                                                                                                                            && comparer.GetHashCode(e) == hash);
+                            if (local != null)
+                            {
+                                // Found unchanged locally
+                                // Remove new parent and assign existing one
+                                context.Set(member.CurrentValue.GetType()).Remove(member.CurrentValue);
+                                member.CurrentValue = local;
+                            }
+                            var memberEntry = context.Entry(member.CurrentValue);
+                            memberEntry.State = EntityState.Unchanged;
+                        }
+                    }
                 }
             }
-
-            return true;
         }
-
+        
         private class EntityEqualityComparer : IEqualityComparer<object>
         {
             private readonly Repository _repository;

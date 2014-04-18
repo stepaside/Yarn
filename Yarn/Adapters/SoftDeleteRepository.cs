@@ -12,8 +12,8 @@ namespace Yarn.Adapters
 {
     public class SoftDeleteRepository : IRepository, ILoadServiceProvider, IMetaDataProvider
     {
-        private IRepository _repository;
-        private IPrincipal _principal;
+        private readonly IRepository _repository;
+        private readonly IPrincipal _principal;
 
         public SoftDeleteRepository(IRepository repository, IPrincipal principal)
         {
@@ -47,32 +47,26 @@ namespace Yarn.Adapters
             {
                 return _repository.GetByIdList<T, ID>(ids).Where(e => !((ISoftDelete)e).IsDeleted);
             }
-            else
-            {
-                return _repository.GetByIdList<T, ID>(ids);
-            }
+            return _repository.GetByIdList<T, ID>(ids);
         }
 
         public T Find<T>(ISpecification<T> criteria) where T : class
         {
-            return this.Find<T>(((Specification<T>)criteria).Predicate);
+            return Find(((Specification<T>)criteria).Predicate);
         }
 
-        public T Find<T>(System.Linq.Expressions.Expression<Func<T, bool>> criteria) where T : class
+        public T Find<T>(Expression<Func<T, bool>> criteria) where T : class
         {
             if (typeof(ISoftDelete).IsAssignableFrom(typeof(T)))
             {
                 return _repository.All<T>().Where(e => !((ISoftDelete)e).IsDeleted).FirstOrDefault(criteria);
             }
-            else
-            {
-                return _repository.Find<T>(criteria);
-            }
+            return _repository.Find(criteria);
         }
 
         public IEnumerable<T> FindAll<T>(ISpecification<T> criteria, int offset = 0, int limit = 0, Expression<Func<T, object>> orderBy = null) where T : class
         {
-            return this.FindAll<T>(((Specification<T>)criteria).Predicate, offset, limit);
+            return FindAll(((Specification<T>)criteria).Predicate, offset, limit);
         }
 
         public IEnumerable<T> FindAll<T>(System.Linq.Expressions.Expression<Func<T, bool>> criteria, int offset = 0, int limit = 0, Expression<Func<T, object>> orderBy = null) where T : class
@@ -80,12 +74,9 @@ namespace Yarn.Adapters
             if (typeof(ISoftDelete).IsAssignableFrom(typeof(T)))
             {
                 var query = _repository.All<T>().Where(e => !((ISoftDelete)e).IsDeleted).Where(criteria);
-                return this.Page<T>(query, offset, limit, orderBy);
+                return this.Page(query, offset, limit, orderBy);
             }
-            else
-            {
-                return _repository.FindAll<T>(criteria, offset, limit, orderBy);
-            }
+            return _repository.FindAll(criteria, offset, limit, orderBy);
         }
 
         public IList<T> Execute<T>(string command, ParamList parameters) where T : class
@@ -94,10 +85,7 @@ namespace Yarn.Adapters
             {
                 return _repository.Execute<T>(command, parameters).Where(e => !((ISoftDelete)e).IsDeleted).ToArray();
             }
-            else
-            {
-                return _repository.Execute<T>(command, parameters);
-            }
+            return _repository.Execute<T>(command, parameters);
         }
 
         public T Add<T>(T entity) where T : class
@@ -107,20 +95,18 @@ namespace Yarn.Adapters
 
         public T Remove<T>(T entity) where T : class
         {
-            if (entity is ISoftDelete)
+            var deleted = entity as ISoftDelete;
+            if (deleted != null)
             {
-                ((ISoftDelete)entity).IsDeleted = true;
-                ((ISoftDelete)entity).UpdateDate = DateTime.UtcNow;
+                deleted.IsDeleted = true;
+                deleted.UpdateDate = DateTime.UtcNow;
                 if (_principal != null && _principal.Identity != null)
                 {
-                    ((ISoftDelete)entity).UpdatedBy = _principal.Identity.Name;
+                    deleted.UpdatedBy = _principal.Identity.Name;
                 }
-                return _repository.Update<T>(entity);
+                return _repository.Update(entity);
             }
-            else
-            {
-                return _repository.Remove<T>(entity);
-            }
+            return _repository.Remove(entity);
         }
 
         public T Remove<T, ID>(ID id) where T : class
@@ -134,12 +120,9 @@ namespace Yarn.Adapters
                 {
                     ((ISoftDelete)entity).UpdatedBy = _principal.Identity.Name;
                 }
-                return _repository.Update<T>(entity);
+                return _repository.Update(entity);
             }
-            else
-            {
-                return _repository.Remove<T, ID>(id);
-            }
+            return _repository.Remove<T, ID>(id);
         }
 
         public T Update<T>(T entity) where T : class
@@ -149,24 +132,17 @@ namespace Yarn.Adapters
 
         public long Count<T>() where T : class
         {
-            if (typeof(ISoftDelete).IsAssignableFrom(typeof(T)))
-            {
-                return _repository.All<T>().Where(e => !((ISoftDelete)e).IsDeleted).LongCount();
-            }
-            else
-            {
-                return _repository.Count<T>();
-            }
+            return typeof(ISoftDelete).IsAssignableFrom(typeof(T)) ? _repository.All<T>().Where(e => !((ISoftDelete)e).IsDeleted).LongCount() : _repository.Count<T>();
         }
 
         public long Count<T>(ISpecification<T> criteria) where T : class
         {
-            return FindAll<T>(criteria).LongCount();
+            return FindAll(criteria).LongCount();
         }
 
-        public long Count<T>(System.Linq.Expressions.Expression<Func<T, bool>> criteria) where T : class
+        public long Count<T>(Expression<Func<T, bool>> criteria) where T : class
         {
-            return FindAll<T>(criteria).LongCount();
+            return FindAll(criteria).LongCount();
         }
 
         public IQueryable<T> All<T>() where T : class
@@ -175,20 +151,17 @@ namespace Yarn.Adapters
             {
                 return _repository.All<T>().Where(e => !((ISoftDelete)e).IsDeleted);
             }
-            else
-            {
-                return _repository.All<T>();
-            }
+            return _repository.All<T>();
         }
 
         public void Detach<T>(T entity) where T : class
         {
-            _repository.Detach<T>(entity);
+            _repository.Detach(entity);
         }
 
         public void Attach<T>(T entity) where T : class
         {
-            _repository.Attach<T>(entity);
+            _repository.Attach(entity);
         }
 
         public IDataContext DataContext
@@ -203,38 +176,32 @@ namespace Yarn.Adapters
 
         ILoadService<T> ILoadServiceProvider.Load<T>()
         {
-            if (_repository is ILoadServiceProvider)
+            var provider = _repository as ILoadServiceProvider;
+            if (provider != null)
             {
-                return ((ILoadServiceProvider)_repository).Load<T>();
+                return provider.Load<T>();
             }
-            else
-            {
-                throw new InvalidOperationException();
-            }
+            throw new InvalidOperationException();
         }
-
+        
         string[] IMetaDataProvider.GetPrimaryKey<T>()
         {
-            if (_repository is IMetaDataProvider)
+            var provider = _repository as IMetaDataProvider;
+            if (provider != null)
             {
-                return ((IMetaDataProvider)_repository).GetPrimaryKey<T>();
+                return provider.GetPrimaryKey<T>();
             }
-            else
-            {
-                throw new InvalidOperationException();
-            }
+            throw new InvalidOperationException();
         }
 
         object[] IMetaDataProvider.GetPrimaryKeyValue<T>(T entity)
         {
-            if (_repository is IMetaDataProvider)
+            var provider = _repository as IMetaDataProvider;
+            if (provider != null)
             {
-                return ((IMetaDataProvider)_repository).GetPrimaryKeyValue<T>(entity);
+                return provider.GetPrimaryKeyValue<T>(entity);
             }
-            else
-            {
-                throw new InvalidOperationException();
-            }
+            throw new InvalidOperationException();
         }
     }
 }

@@ -2,7 +2,7 @@
 <package >
   <metadata>
     <id>Yarn</id>
-    <version>0.7.20</version>
+    <version>0.7.21</version>
     <title>Yarn</title>
     <authors>Max Stepanskiy</authors>
     <owners>Stepaside, Inc.</owners>
@@ -12,6 +12,9 @@
     <copyright>Copyright © Max Stepanskiy 2012-2014</copyright>
     <tags>Repository Repository-Pattern</tags>
 	  <releaseNotes>
+      * Modified Attach and Update for Yarn.NHibernate
+      * Modified auto-merge behavior for Yarn.EF
+      * Modified auditable repository adapter to work with object graphs
     </releaseNotes>
   </metadata>
   <files>
