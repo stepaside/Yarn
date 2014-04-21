@@ -470,7 +470,7 @@ namespace Yarn.Data.EntityFrameworkProvider
                             var hash = comparer.GetHashCode(member.CurrentValue);
                             var local = context.Set(member.CurrentValue.GetType()).Local.Cast<object>().FirstOrDefault(e => context.Entry(e).State == EntityState.Unchanged
                                                                                                                             && comparer.GetHashCode(e) == hash);
-                            if (local != null)
+                            if (local != null && local != member.CurrentValue)
                             {
                                 // Found unchanged locally
                                 // Remove new parent and assign existing one
