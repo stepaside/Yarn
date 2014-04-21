@@ -6,7 +6,9 @@ using System.Collections.ObjectModel;
 using System.Data;
 using System.Data.Entity;
 using System.Data.Entity.Core.Metadata.Edm;
+using System.Data.Entity.Core.Objects.DataClasses;
 using System.Data.Entity.Infrastructure;
+using System.Data.Entity.Migrations;
 using System.Data.SqlClient;
 using System.Linq;
 using System.Linq.Expressions;
@@ -36,6 +38,7 @@ namespace Yarn.Data.EntityFrameworkProvider
         protected readonly string _assemblyNameOrLocation;
         protected readonly Assembly _configurationAssembly;
         protected readonly Type _dbContextType;
+        protected readonly bool _mergeOnUpdate;
 
         public Repository() : this(prefix: null) { }
 
@@ -48,7 +51,8 @@ namespace Yarn.Data.EntityFrameworkProvider
                             string nameOrConnectionString = null,
                             string assemblyNameOrLocation = null,
                             Assembly configurationAssembly = null,
-                            Type dbContextType = null) 
+                            Type dbContextType = null,
+                            bool mergeOnUpdate = false) 
         {
             _prefix = prefix;
             _lazyLoadingEnabled = lazyLoadingEnabled;
@@ -63,6 +67,7 @@ namespace Yarn.Data.EntityFrameworkProvider
                 _assemblyNameOrLocation = assemblyNameOrLocation;
             }
             _dbContextType = dbContextType;
+            _mergeOnUpdate = mergeOnUpdate;
         }
 
         public T GetById<T, ID>(ID id) where T : class
@@ -131,17 +136,19 @@ namespace Yarn.Data.EntityFrameworkProvider
             var entry = DbContext.Entry(entity);
             if (entry == null)
             {
-                return entity;
+                return null;
             }
 
             var dbSet = Table<T>();
             if (entry.State == EntityState.Detached)
             {
-                var attachedEntity = dbSet.Local.FirstOrDefault(this.BuildPrimaryKeyExpression(entity).Compile());
+                var comparer = new EntityEqualityComparer<T>(this);
+                var hash = comparer.GetHashCode(entity);
+                var attachedEntity = dbSet.Local.FirstOrDefault(e => comparer.GetHashCode(e) == hash);
                 if (attachedEntity != null)
                 {
                     // Update only root attributes for lazy loaded entities
-                    if (DbContext.Configuration.LazyLoadingEnabled)
+                    if (DbContext.Configuration.LazyLoadingEnabled || !_mergeOnUpdate)
                     {
                         var attachedEntry = DbContext.Entry(attachedEntity);
                         attachedEntry.CurrentValues.SetValues(entity);
@@ -149,13 +156,8 @@ namespace Yarn.Data.EntityFrameworkProvider
                     }
                     else
                     {
-                        Mapper.Map(entity, attachedEntity);
-                        if (!DbContext.Configuration.AutoDetectChangesEnabled)
-                        {
-                            DbContext.ChangeTracker.DetectChanges();
-                        }
+                        Merge(entity, attachedEntity);
                         entry = DbContext.Entry(attachedEntity);
-                        entry.State = EntityState.Modified;
                     }
                 }
                 else
@@ -194,12 +196,12 @@ namespace Yarn.Data.EntityFrameworkProvider
 
         public long Count<T>(ISpecification<T> criteria) where T : class
         {
-            return FindAll<T>(criteria).LongCount();
+            return FindAll(criteria).LongCount();
         }
 
         public long Count<T>(Expression<Func<T, bool>> criteria) where T : class
         {
-            return FindAll<T>(criteria).LongCount();
+            return FindAll(criteria).LongCount();
         }
 
         public DbSet<T> Table<T>() where T : class
@@ -211,7 +213,7 @@ namespace Yarn.Data.EntityFrameworkProvider
         {
             get
             {
-                return ((IDataContext<DbContext>)this.DataContext).Session;
+                return ((IDataContext<DbContext>)DataContext).Session;
             }
         }
 
@@ -277,7 +279,7 @@ namespace Yarn.Data.EntityFrameworkProvider
         {
             readonly Repository _repository;
             IQueryable<T> _query;
-
+            
             public LoadService(IRepository repository)
             {
                 _repository = (Repository)repository;
@@ -322,7 +324,7 @@ namespace Yarn.Data.EntityFrameworkProvider
                 var loadedEntity = Find(_repository.As<IMetaDataProvider>().BuildPrimaryKeyExpression(entity));
                 if (loadedEntity != null)
                 {
-                    _repository.Update(loadedEntity);
+                    _repository.Merge(entity, loadedEntity);
                 }
                 return loadedEntity;
             }
@@ -754,6 +756,211 @@ namespace Yarn.Data.EntityFrameworkProvider
 
                 return new Dictionary<string, string>();
             });
+		}
+
+        #region Merge Methods
+
+        private void Merge(object source, object target)
+        {
+            var context = DbContext;
+            var comparer = new EntityEqualityComparer(this);
+            var autoDetectChangesEnabled = context.Configuration.AutoDetectChangesEnabled;
+            try
+            {
+                context.Configuration.AutoDetectChangesEnabled = false;
+                context.Entry(target).CurrentValues.SetValues(source);
+                MergeImplementation(context, source, target, comparer, null);
+                context.ChangeTracker.DetectChanges();
+            }
+            finally
+            {
+                context.Configuration.AutoDetectChangesEnabled = autoDetectChangesEnabled;
+            }
+        }
+
+        private static void MergeImplementation(DbContext context, object source, object target, IEqualityComparer<object> comparer, HashSet<Type> ancestors)
+        {
+            (ancestors = ancestors ?? new HashSet<Type>()).Add(source.GetType());
+
+            var properties = source.GetType().GetProperties();
+            
+            foreach (var property in properties.Where(p => p.PropertyType != typeof(string) && p.PropertyType.IsClass && !typeof(IEnumerable).IsAssignableFrom(p.PropertyType)))
+            {
+                if (ancestors.Contains(property.PropertyType))
+                {
+                    continue;
+                }
+
+                var value = PropertyAccessor.Get(target.GetType(), target, property.Name);
+                var newValue = PropertyAccessor.Get(source.GetType(), source, property.Name);
+
+                if (value == null && newValue != null)
+                {
+                    context.Entry(target).Member(property.Name).CurrentValue = newValue;
+                }
+                else if (newValue == null && value != null)
+                {
+                    context.Entry(target).Member(property.Name).CurrentValue = null;
+                }
+                else if (value != null)
+                {
+                    try
+                    {
+                        context.Entry(value).CurrentValues.SetValues(newValue);
+                    }
+                    catch
+                    {
+                        // Merge failed as we tried to change the parent
+                        // Now try actually changing the parent
+                        context.Entry(target).Member(property.Name).CurrentValue = newValue;
+                        context.Entry(newValue).State = EntityState.Unchanged;
+                    }
+                    MergeImplementation(context, value, newValue, comparer, new HashSet<Type>(ancestors.Concat(new[] { property.PropertyType })));
+                }
+            }
+
+            foreach (var property in properties.Where(p => p.PropertyType != typeof(string) && p.PropertyType.IsGenericType && typeof(IEnumerable).IsAssignableFrom(p.PropertyType)))
+            {
+                var propertyType = property.PropertyType.GetGenericArguments()[0];
+                var collection = context.Entry(target).Collection(property.Name).CurrentValue as IList;
+
+                if (ancestors.Contains(propertyType))
+                {
+                    continue;
+                }
+
+                var values = (IEnumerable)PropertyAccessor.Get(target.GetType(), target, property.Name) ?? new object[] { };
+                var newValues = (IEnumerable)PropertyAccessor.Get(source.GetType(), source, property.Name) ?? new object[] { };
+
+                var updates = newValues.Cast<object>().Join(values.Cast<object>(), comparer.GetHashCode, comparer.GetHashCode, Tuple.Create).ToList();
+                foreach (var item in updates)
+                {
+                    var entry = context.Entry(item.Item2);
+                    if (entry.State == EntityState.Detached)
+                    {
+                        var hash = comparer.GetHashCode(item.Item2);
+                        var attachedTarget = context.Set(item.Item2.GetType()).Local.Cast<object>().First(e => comparer.GetHashCode(e) == hash);
+                        entry = context.Entry(attachedTarget);
+                        entry.CurrentValues.SetValues(item.Item1);
+                    }
+                    else if (entry.State == EntityState.Unchanged)
+                    {
+                        entry.CurrentValues.SetValues(item.Item1);
+                    }
+
+                    MergeImplementation(context, item.Item1, item.Item2, comparer, new HashSet<Type>(ancestors.Concat(new[] { propertyType })));
+                }
+
+                var deletes = values.Cast<object>().Except(newValues.Cast<object>(), comparer).ToList();
+                foreach (var item in deletes)
+                {
+                    if (collection != null)
+                    {
+                        collection.Remove(item);
+                        context.Entry(item).State = EntityState.Deleted;
+                    }
+                }
+
+                var inserts = newValues.Cast<object>().Except(values.Cast<object>(), comparer).ToList();
+                foreach (var item in inserts)
+                {
+                    if (collection != null)
+                    {
+                        collection.Add(item);
+                        context.Entry(item).State = EntityState.Added;
+                    }
+
+                    var types = new HashSet<Type>(((IObjectContextAdapter)context).ObjectContext.ObjectStateManager.GetObjectStateEntry(item).RelationshipManager.GetAllRelatedEnds()
+                        .Where(end => end.GetType().GetGenericTypeDefinition() == typeof(EntityReference<>)
+                                      && ((end.RelationshipSet.ElementType.RelationshipEndMembers[0].RelationshipMultiplicity == RelationshipMultiplicity.ZeroOrOne && end.RelationshipSet.ElementType.RelationshipEndMembers[1].RelationshipMultiplicity == RelationshipMultiplicity.Many)
+                                          || (end.RelationshipSet.ElementType.RelationshipEndMembers[1].RelationshipMultiplicity == RelationshipMultiplicity.ZeroOrOne && end.RelationshipSet.ElementType.RelationshipEndMembers[0].RelationshipMultiplicity == RelationshipMultiplicity.Many)))
+                        .Select(end => end.GetType().GetGenericArguments()[0]));
+
+                    var entry = context.Entry(item);
+                    var names = item.GetType().GetProperties().Where(p => types.Contains(p.PropertyType)).Select(p => p.Name);
+                    foreach (var name in names)
+                    {
+                        var member = entry.Member(name);
+                        if (member != null && member.EntityEntry.State == EntityState.Added)
+                        {
+                            var hash = comparer.GetHashCode(member.CurrentValue);
+                            var local = context.Set(member.CurrentValue.GetType()).Local.Cast<object>().FirstOrDefault(e => context.Entry(e).State == EntityState.Unchanged
+                                                                                                                            && comparer.GetHashCode(e) == hash);
+                            if (local != null && local != member.CurrentValue)
+                            {
+                                // Found unchanged locally
+                                // Remove new parent and assign existing one
+                                context.Set(member.CurrentValue.GetType()).Remove(member.CurrentValue);
+                                member.CurrentValue = local;
+                            }
+                            var memberEntry = context.Entry(member.CurrentValue);
+                            memberEntry.State = EntityState.Unchanged;
+                        }
+                    }
+                }
+            }
+        }
+        
+        private class EntityEqualityComparer : IEqualityComparer<object>
+        {
+            private readonly Repository _repository;
+
+            public EntityEqualityComparer(Repository repository)
+            {
+                _repository = repository;
+            }
+
+            private object[] GetPrimaryKey(object entity)
+            {
+                var method = typeof(IMetaDataProvider).GetMethod("GetPrimaryKeyValue").MakeGenericMethod(entity.GetType());
+                return (object[])method.Invoke(_repository.As<IMetaDataProvider>(), new[] { entity });
+            }
+            
+            public bool Equals(object x, object y)
+            {
+                return ArraysEqual(GetPrimaryKey(x), GetPrimaryKey(y));
+            }
+
+            public int GetHashCode(object obj)
+            {
+                return string.Join("::", GetPrimaryKey(obj).Select(v => v + "")).GetHashCode();
+            }
+        }
+
+        private class EntityEqualityComparer<T> : IEqualityComparer<T>
+            where T : class
+        {
+            private readonly Repository _repository;
+
+            public EntityEqualityComparer(Repository repository)
+            {
+                _repository = repository;
+            }
+
+            private object[] GetPrimaryKey(T entity)
+            {
+                var primaryKey = _repository.As<IMetaDataProvider>().GetPrimaryKeyValue(entity);
+                return primaryKey;
+            }
+
+            public bool Equals(T x, T y)
+            {
+                return ArraysEqual(GetPrimaryKey(x), GetPrimaryKey(y));
+            }
+
+            public int GetHashCode(T obj)
+            {
+                return string.Join("::", GetPrimaryKey(obj).Select(v => v + "")).GetHashCode();
+            }
+        }
+
+        static bool ArraysEqual(object[] x, object[] y)
+        {
+            if (x.Length != y.Length)
+            {
+                return false;
+            }
+            return !x.Where((t, i) => !t.Equals(y[i])).Any();
         }
 
         #endregion

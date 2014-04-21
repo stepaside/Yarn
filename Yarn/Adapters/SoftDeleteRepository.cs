@@ -40,7 +40,7 @@ namespace Yarn.Adapters
             }
             return entity;
         }
-        
+
         public T Find<T>(ISpecification<T> criteria) where T : class
         {
             return Find(((Specification<T>)criteria).Predicate);
@@ -61,9 +61,9 @@ namespace Yarn.Adapters
             if (typeof(ISoftDelete).IsAssignableFrom(typeof(T)))
             {
                 var query = _repository.All<T>().Where(e => !((ISoftDelete)e).IsDeleted).Where(criteria);
-                return this.Page<T>(query, offset, limit, orderBy);
+                return this.Page(query, offset, limit, orderBy);
             }
-            return _repository.FindAll<T>(criteria, offset, limit, orderBy);
+            return _repository.FindAll(criteria, offset, limit, orderBy);
         }
 
         public IList<T> Execute<T>(string command, ParamList parameters) where T : class
@@ -78,16 +78,16 @@ namespace Yarn.Adapters
 
         public T Remove<T>(T entity) where T : class
         {
-            var delete = entity as ISoftDelete;
-            if (delete == null)
+            var deleted = entity as ISoftDelete;
+            if (deleted == null)
             {
                 return _repository.Remove(entity);
             }
-            delete.IsDeleted = true;
-            delete.UpdateDate = DateTime.UtcNow;
+            deleted.IsDeleted = true;
+            deleted.UpdateDate = DateTime.UtcNow;
             if (_principal != null && _principal.Identity != null)
             {
-                delete.UpdatedBy = _principal.Identity.Name;
+                deleted.UpdatedBy = _principal.Identity.Name;
             }
             return _repository.Update(entity);
         }
@@ -162,21 +162,23 @@ namespace Yarn.Adapters
             }
             throw new InvalidOperationException();
         }
-
+        
         string[] IMetaDataProvider.GetPrimaryKey<T>()
         {
-            if (_repository is IMetaDataProvider)
+            var provider = _repository as IMetaDataProvider;
+            if (provider != null)
             {
-                return ((IMetaDataProvider)_repository).GetPrimaryKey<T>();
+                return provider.GetPrimaryKey<T>();
             }
             throw new InvalidOperationException();
         }
 
         object[] IMetaDataProvider.GetPrimaryKeyValue<T>(T entity)
         {
-            if (_repository is IMetaDataProvider)
+            var provider = _repository as IMetaDataProvider;
+            if (provider != null)
             {
-                return ((IMetaDataProvider)_repository).GetPrimaryKeyValue<T>(entity);
+                return provider.GetPrimaryKeyValue<T>(entity);
             }
             throw new InvalidOperationException();
         }

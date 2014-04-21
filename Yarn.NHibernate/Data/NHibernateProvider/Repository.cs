@@ -4,6 +4,8 @@ using NHibernate.Criterion;
 using NHibernate.Engine;
 using NHibernate.Hql.Ast.ANTLR;
 using NHibernate.Linq;
+using NHibernate.Persister.Entity;
+using NHibernate.Proxy;
 using NHibernate.Transform;
 using System;
 using System.Collections.Generic;
@@ -130,13 +132,17 @@ namespace Yarn.Data.NHibernateProvider
 
         public T Update<T>(T entity) where T : class
         {
-            Session.Update(entity);
+            Session.Merge(entity);
             return entity;
         }
 
         public void Attach<T>(T entity) where T : class
         {
-            Session.Merge(entity);
+            var session = Session;
+            var persister = session.GetSessionImplementation().GetEntityPersister(NHibernateProxyHelper.GuessClass(entity).FullName, entity);
+            var fields = persister.GetPropertyValues(entity, Session.ActiveEntityMode);
+            var id = persister.GetIdentifier(entity, session.ActiveEntityMode);
+            var entry = session.GetSessionImplementation().PersistenceContext.AddEntry(entity, Status.Loaded, fields, null, id, null, LockMode.None, true, persister, true, false);
         }
 
         public void Detach<T>(T entity) where T : class
@@ -227,11 +233,11 @@ namespace Yarn.Data.NHibernateProvider
         private class LoadService<T> : ILoadService<T>
             where T : class
         {
-            IQueryable<T> _query;
-            IRepository _repository;
-            MethodInfo _fetchMany = typeof(EagerFetchingExtensionMethods).GetMethod("FetchMany");
-            MethodInfo _thenFetchMany = typeof(EagerFetchingExtensionMethods).GetMethod("ThenFetchMany");
-            MethodInfo _thenFetch = typeof(EagerFetchingExtensionMethods).GetMethod("ThenFetch");
+            readonly IQueryable<T> _query;
+            readonly IRepository _repository;
+            readonly MethodInfo _fetchMany = typeof(EagerFetchingExtensionMethods).GetMethod("FetchMany");
+            readonly MethodInfo _thenFetchMany = typeof(EagerFetchingExtensionMethods).GetMethod("ThenFetchMany");
+            readonly MethodInfo _thenFetch = typeof(EagerFetchingExtensionMethods).GetMethod("ThenFetch");
 
             public LoadService(IRepository repository)
             {
@@ -334,11 +340,7 @@ namespace Yarn.Data.NHibernateProvider
             public T Update(T entity)
             {
                 var loadedEntity = Find(_repository.As<IMetaDataProvider>().BuildPrimaryKeyExpression(entity));
-                if (loadedEntity != null)
-                {
-                    _repository.Update(loadedEntity);
-                }
-                return loadedEntity;
+                return loadedEntity != null ? _repository.Update(entity) : null;
             }
 
             public void Dispose()

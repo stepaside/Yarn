@@ -207,7 +207,7 @@ namespace Yarn.Reflection
         {
             return source.Select(Map<TSource, TResult>);
         }
-
+        
         public static TResult Map<TSource, TResult>(params TSource[] sources)
             where TSource : class
             where TResult : class, new()

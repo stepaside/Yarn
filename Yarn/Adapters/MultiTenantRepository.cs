@@ -35,16 +35,18 @@ namespace Yarn.Adapters
         {
             var result = _repository.GetById<T, ID>(id);
             var tenant = result as ITenant;
-            if (tenant != null)
+            if (tenant == null)
             {
-                if (tenant.TenantId != _owner.TenantId)
-                {
-                    return null;
-                }
+                return result;
             }
-            return result;
+            return tenant.TenantId != _owner.TenantId ? null : result;
         }
-        
+
+        public IEnumerable<T> GetByIdList<T, ID>(IList<ID> ids) where T : class
+        {
+            return typeof(ISoftDelete).IsAssignableFrom(typeof(T)) ? _repository.GetByIdList<T, ID>(ids).Where(e => ((ITenant)e).TenantId == _owner.TenantId) : _repository.GetByIdList<T, ID>(ids);
+        }
+
         public T Find<T>(ISpecification<T> criteria) where T : class
         {
             return Find(((Specification<T>)criteria).Predicate);
@@ -57,7 +59,7 @@ namespace Yarn.Adapters
 
         public IEnumerable<T> FindAll<T>(ISpecification<T> criteria, int offset = 0, int limit = 0, Expression<Func<T, object>> orderBy = null) where T : class
         {
-            return this.FindAll(((Specification<T>)criteria).Predicate, offset, limit, orderBy);
+            return FindAll(((Specification<T>)criteria).Predicate, offset, limit, orderBy);
         }
 
         public IEnumerable<T> FindAll<T>(Expression<Func<T, bool>> criteria, int offset = 0, int limit = 0, Expression<Func<T, object>> orderBy = null) where T : class
@@ -78,29 +80,31 @@ namespace Yarn.Adapters
         public T Add<T>(T entity) where T : class
         {
             var tenant = entity as ITenant;
-            if (tenant != null)
+            if (tenant == null)
             {
-                if (tenant.TenantId == _owner.TenantId)
-                {
-                    return _repository.Add(entity);
-                }
-                throw new InvalidOperationException();
+                return _repository.Add(entity);
             }
-            return _repository.Add(entity);
+
+            if (tenant.TenantId == _owner.TenantId)
+            {
+                return _repository.Add(entity);
+            }
+            throw new InvalidOperationException();
         }
 
         public T Remove<T>(T entity) where T : class
         {
             var tenant = entity as ITenant;
-            if (tenant != null)
+            if (tenant == null)
             {
-                if (tenant.TenantId == _owner.TenantId)
-                {
-                    return _repository.Remove(entity);
-                }
-                throw new InvalidOperationException();
+                return _repository.Remove(entity);
             }
-            return _repository.Remove(entity);
+
+            if (tenant.TenantId == _owner.TenantId)
+            {
+                return _repository.Remove(entity);
+            }
+            throw new InvalidOperationException();
         }
 
         public T Remove<T, ID>(ID id) where T : class
@@ -120,15 +124,16 @@ namespace Yarn.Adapters
         public T Update<T>(T entity) where T : class
         {
             var tenant = entity as ITenant;
-            if (tenant != null)
+            if (tenant == null)
             {
-                if (tenant.TenantId == _owner.TenantId)
-                {
-                    return _repository.Update(entity);
-                }
-                throw new InvalidOperationException();
+                return _repository.Update(entity);
             }
-            return _repository.Update(entity);
+
+            if (tenant.TenantId == _owner.TenantId)
+            {
+                return _repository.Update(entity);
+            }
+            throw new InvalidOperationException();
         }
 
         public long Count<T>() where T : class

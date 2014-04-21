@@ -345,11 +345,7 @@ namespace Yarn.Cache
                 // Load full graph from the db
                 var loadedEntity = _service.Find(_cache._repository.As<IMetaDataProvider>().BuildPrimaryKeyExpression(entity));
                 // Update entity and cache
-                if (loadedEntity != null)
-                {
-                    _cache.Update(loadedEntity);
-                }
-                return loadedEntity;
+                return loadedEntity != null ? _cache.Update(loadedEntity) : null;
             }
 
             public void Dispose()

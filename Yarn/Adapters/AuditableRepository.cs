@@ -12,7 +12,7 @@ namespace Yarn.Adapters
 {
     public class AuditableRepository : IRepository, ILoadServiceProvider, IMetaDataProvider
     {
-         private readonly IRepository _repository;
+        private readonly IRepository _repository;
         private readonly IPrincipal _principal;
 
         public AuditableRepository(IRepository repository, IPrincipal principal)
@@ -38,7 +38,7 @@ namespace Yarn.Adapters
 
         public T Find<T>(ISpecification<T> criteria) where T : class
         {
-            return _repository.Find<T>(criteria);
+            return _repository.Find(criteria);
         }
 
         public T Find<T>(Expression<Func<T, bool>> criteria) where T : class
@@ -75,9 +75,12 @@ namespace Yarn.Adapters
                 
                 auditable.Cascade((root, item) =>
                 {
-                    item.CreateDate = root.CreateDate;
-                    item.CreatedBy = root.CreatedBy;
-                    item.AuditId = root.AuditId;
+                    if (item.CreateDate == DateTime.MinValue || !item.AuditId.HasValue)
+                    {
+                        item.CreateDate = root.CreateDate;
+                        item.CreatedBy = root.CreatedBy;
+                        item.AuditId = root.AuditId;
+                    }
                 });
             }
             return _repository.Add(entity);
@@ -107,9 +110,19 @@ namespace Yarn.Adapters
 
                 auditable.Cascade((root, item) =>
                 {
-                    item.UpdateDate = root.UpdateDate;
-                    item.UpdatedBy = root.UpdatedBy;
-                    item.AuditId = root.AuditId;
+                    if (item.CreateDate == DateTime.MinValue || !item.AuditId.HasValue)
+                    {
+                        if (item.CreateDate == DateTime.MinValue)
+                        {
+                            item.CreateDate = DateTime.UtcNow;
+                        }
+                        else
+                        {
+                            auditable.UpdateDate = root.UpdateDate;
+                        }
+                        item.CreatedBy = root.CreatedBy;
+                        item.AuditId = root.AuditId;
+                    }
                 });
             }
             return _repository.Update(entity);
@@ -160,9 +173,90 @@ namespace Yarn.Adapters
             var provider = _repository as ILoadServiceProvider;
             if (provider != null)
             {
-                return provider.Load<T>();
+                return new LoadService<T>(this, provider.Load<T>());
             }
             throw new InvalidOperationException();
+        }
+
+        private class LoadService<T> : ILoadService<T>
+            where T : class
+        {
+            private readonly AuditableRepository _repository;
+            private readonly ILoadService<T> _service;
+            
+            public LoadService(AuditableRepository repository, ILoadService<T> service)
+            {
+                _repository = repository;
+                _service = service;
+            }
+
+            public ILoadService<T> Include<TProperty>(Expression<Func<T, TProperty>> path) where TProperty : class
+            {
+                _service.Include(path);
+                return this;
+            }
+
+            public T Update(T entity)
+            {
+                var auditable = entity as IAuditable;
+                if (auditable != null)
+                {
+                    auditable.AuditId = Guid.NewGuid();
+                    auditable.UpdateDate = DateTime.UtcNow;
+                    if (_repository._principal != null && _repository._principal.Identity != null)
+                    {
+                        auditable.UpdatedBy = _repository._principal.Identity.Name;
+                    }
+
+                    auditable.Cascade((root, item) =>
+                    {
+                        if (item.CreateDate == DateTime.MinValue || !item.AuditId.HasValue)
+                        {
+                            if (item.CreateDate == DateTime.MinValue)
+                            {
+                                item.CreateDate = DateTime.UtcNow;
+                            }
+                            else
+                            {
+                                auditable.UpdateDate = root.UpdateDate;
+                            }
+                            item.CreatedBy = root.CreatedBy;
+                            item.AuditId = root.AuditId;
+                        }
+                    });
+                }
+                return _service.Update(entity);
+            }
+
+            public T Find(Expression<Func<T, bool>> criteria)
+            {
+                return _service.Find(criteria);
+            }
+
+            public IEnumerable<T> FindAll(Expression<Func<T, bool>> criteria, int offset = 0, int limit = 0, Expression<Func<T, object>> orderBy = null)
+            {
+                return _service.FindAll(criteria, offset, limit, orderBy);
+            }
+
+            public T Find(ISpecification<T> criteria)
+            {
+                return _service.Find(criteria);
+            }
+
+            public IEnumerable<T> FindAll(ISpecification<T> criteria, int offset = 0, int limit = 0, Expression<Func<T, object>> orderBy = null)
+            {
+                return _service.FindAll(criteria, offset, limit, orderBy);
+            }
+
+            public IQueryable<T> All()
+            {
+                return _service.All();
+            }
+
+            public void Dispose()
+            {
+                _service.Dispose();
+            }
         }
 
         string[] IMetaDataProvider.GetPrimaryKey<T>()
@@ -180,7 +274,7 @@ namespace Yarn.Adapters
             var provider = _repository as IMetaDataProvider;
             if (provider != null)
             {
-                return provider.GetPrimaryKeyValue<T>(entity);
+                return provider.GetPrimaryKeyValue(entity);
             }
             throw new InvalidOperationException();
         }
