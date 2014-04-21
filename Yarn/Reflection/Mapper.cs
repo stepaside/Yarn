@@ -13,7 +13,7 @@ namespace Yarn.Reflection
         public delegate void PropertyMapper(object source, object target);
         private static readonly ConcurrentDictionary<Tuple<Type, Type>, PropertyMapper> _mappers = new ConcurrentDictionary<Tuple<Type, Type>, PropertyMapper>();
         private static readonly ConcurrentDictionary<Type, HashSet<Type>> _ancestors = new ConcurrentDictionary<Type, HashSet<Type>>();
-        
+
         internal static PropertyMapper CreateDelegate(Type sourceType, Type targetType)
         {
             var key = Tuple.Create(sourceType, targetType);
@@ -85,7 +85,7 @@ namespace Yarn.Reflection
                     });
                 }
             }
-            
+
             foreach (var match in simpleMatches)
             {
                 il.Emit(OpCodes.Ldarg_1);
@@ -182,7 +182,7 @@ namespace Yarn.Reflection
             }
             return ancestors.Contains(parentType) || ancestors.Any(type => HasCycle(parentType, type));
         }
-        
+
         public static TResult Map<TSource, TResult>(TSource source)
             where TSource : class
             where TResult : class, new()

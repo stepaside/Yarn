@@ -36,11 +36,6 @@ namespace Yarn.Adapters
             return _repository.GetById<T, ID>(id);
         }
 
-        public IEnumerable<T> GetByIdList<T, ID>(IList<ID> ids) where T : class
-        {
-            return _repository.GetByIdList<T, ID>(ids);
-        }
-
         public T Find<T>(ISpecification<T> criteria) where T : class
         {
             return _repository.Find(criteria);
@@ -279,7 +274,7 @@ namespace Yarn.Adapters
             var provider = _repository as IMetaDataProvider;
             if (provider != null)
             {
-                return provider.GetPrimaryKeyValue<T>(entity);
+                return provider.GetPrimaryKeyValue(entity);
             }
             throw new InvalidOperationException();
         }

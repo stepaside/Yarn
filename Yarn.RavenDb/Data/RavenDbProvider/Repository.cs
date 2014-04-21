@@ -29,7 +29,7 @@ namespace Yarn.Data.RavenDbProvider
             return _context.Session.Load<T>(id.ToString());
         }
 
-        public IEnumerable<T> GetByIdList<T, ID>(IList<ID> ids) where T : class
+        public IEnumerable<T> GetById<T, ID>(IList<ID> ids) where T : class
         {
             return _context.Session.Load<T>(ids.Select(i => i.ToString()));
         }

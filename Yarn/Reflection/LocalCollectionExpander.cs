@@ -3,10 +3,8 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
-using System.Text;
-using System.Threading.Tasks;
 
-namespace Yarn.Cache
+namespace Yarn.Reflection
 {
     /// <summary>
     /// Enables cache key support for local collection values.
@@ -59,7 +57,7 @@ namespace Yarn.Cache
         {
             var value = (IEnumerable)enumerable.Value;
             var printerType = typeof(Printer<>).MakeGenericType(elementType);
-            var printer = Activator.CreateInstance(printerType, value);
+            var printer = System.Activator.CreateInstance(printerType, value);
 
             return Expression.Constant(printer);
         }

@@ -41,15 +41,6 @@ namespace Yarn.Adapters
             return entity;
         }
 
-        public IEnumerable<T> GetByIdList<T, ID>(IList<ID> ids) where T : class
-        {
-            if (typeof(ISoftDelete).IsAssignableFrom(typeof(T)))
-            {
-                return _repository.GetByIdList<T, ID>(ids).Where(e => !((ISoftDelete)e).IsDeleted);
-            }
-            return _repository.GetByIdList<T, ID>(ids);
-        }
-
         public T Find<T>(ISpecification<T> criteria) where T : class
         {
             return Find(((Specification<T>)criteria).Predicate);
@@ -57,11 +48,7 @@ namespace Yarn.Adapters
 
         public T Find<T>(Expression<Func<T, bool>> criteria) where T : class
         {
-            if (typeof(ISoftDelete).IsAssignableFrom(typeof(T)))
-            {
-                return _repository.All<T>().Where(e => !((ISoftDelete)e).IsDeleted).FirstOrDefault(criteria);
-            }
-            return _repository.Find(criteria);
+            return typeof(ISoftDelete).IsAssignableFrom(typeof(T)) ? _repository.All<T>().Where(e => !((ISoftDelete)e).IsDeleted).FirstOrDefault(criteria) : _repository.Find<T>(criteria);
         }
 
         public IEnumerable<T> FindAll<T>(ISpecification<T> criteria, int offset = 0, int limit = 0, Expression<Func<T, object>> orderBy = null) where T : class
@@ -69,7 +56,7 @@ namespace Yarn.Adapters
             return FindAll(((Specification<T>)criteria).Predicate, offset, limit);
         }
 
-        public IEnumerable<T> FindAll<T>(System.Linq.Expressions.Expression<Func<T, bool>> criteria, int offset = 0, int limit = 0, Expression<Func<T, object>> orderBy = null) where T : class
+        public IEnumerable<T> FindAll<T>(Expression<Func<T, bool>> criteria, int offset = 0, int limit = 0, Expression<Func<T, object>> orderBy = null) where T : class
         {
             if (typeof(ISoftDelete).IsAssignableFrom(typeof(T)))
             {
@@ -81,11 +68,7 @@ namespace Yarn.Adapters
 
         public IList<T> Execute<T>(string command, ParamList parameters) where T : class
         {
-            if (typeof(ISoftDelete).IsAssignableFrom(typeof(T)))
-            {
-                return _repository.Execute<T>(command, parameters).Where(e => !((ISoftDelete)e).IsDeleted).ToArray();
-            }
-            return _repository.Execute<T>(command, parameters);
+            return typeof(ISoftDelete).IsAssignableFrom(typeof(T)) ? _repository.Execute<T>(command, parameters).Where(e => !((ISoftDelete)e).IsDeleted).ToArray() : _repository.Execute<T>(command, parameters);
         }
 
         public T Add<T>(T entity) where T : class
@@ -96,33 +79,33 @@ namespace Yarn.Adapters
         public T Remove<T>(T entity) where T : class
         {
             var deleted = entity as ISoftDelete;
-            if (deleted != null)
+            if (deleted == null)
             {
-                deleted.IsDeleted = true;
-                deleted.UpdateDate = DateTime.UtcNow;
-                if (_principal != null && _principal.Identity != null)
-                {
-                    deleted.UpdatedBy = _principal.Identity.Name;
-                }
-                return _repository.Update(entity);
+                return _repository.Remove(entity);
             }
-            return _repository.Remove(entity);
+            deleted.IsDeleted = true;
+            deleted.UpdateDate = DateTime.UtcNow;
+            if (_principal != null && _principal.Identity != null)
+            {
+                deleted.UpdatedBy = _principal.Identity.Name;
+            }
+            return _repository.Update(entity);
         }
 
         public T Remove<T, ID>(ID id) where T : class
         {
-            if (typeof(ISoftDelete).IsAssignableFrom(typeof(T)))
+            if (!typeof(ISoftDelete).IsAssignableFrom(typeof(T)))
             {
-                var entity = _repository.GetById<T, ID>(id);
-                ((ISoftDelete)entity).IsDeleted = true;
-                ((ISoftDelete)entity).UpdateDate = DateTime.UtcNow;
-                if (_principal != null && _principal.Identity != null)
-                {
-                    ((ISoftDelete)entity).UpdatedBy = _principal.Identity.Name;
-                }
-                return _repository.Update(entity);
+                return _repository.Remove<T, ID>(id);
             }
-            return _repository.Remove<T, ID>(id);
+            var entity = _repository.GetById<T, ID>(id);
+            ((ISoftDelete)entity).IsDeleted = true;
+            ((ISoftDelete)entity).UpdateDate = DateTime.UtcNow;
+            if (_principal != null && _principal.Identity != null)
+            {
+                ((ISoftDelete)entity).UpdatedBy = _principal.Identity.Name;
+            }
+            return _repository.Update(entity);
         }
 
         public T Update<T>(T entity) where T : class
@@ -147,11 +130,7 @@ namespace Yarn.Adapters
 
         public IQueryable<T> All<T>() where T : class
         {
-            if (typeof(ISoftDelete).IsAssignableFrom(typeof(T)))
-            {
-                return _repository.All<T>().Where(e => !((ISoftDelete)e).IsDeleted);
-            }
-            return _repository.All<T>();
+            return typeof(ISoftDelete).IsAssignableFrom(typeof(T)) ? _repository.All<T>().Where(e => !((ISoftDelete)e).IsDeleted) : _repository.All<T>();
         }
 
         public void Detach<T>(T entity) where T : class

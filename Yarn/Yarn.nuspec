@@ -2,7 +2,7 @@
 <package >
   <metadata>
     <id>Yarn</id>
-    <version>0.7.21</version>
+    <version>0.8.0</version>
     <title>Yarn</title>
     <authors>Max Stepanskiy</authors>
     <owners>Stepaside, Inc.</owners>
@@ -12,6 +12,10 @@
     <copyright>Copyright © Max Stepanskiy 2012-2014</copyright>
     <tags>Repository Repository-Pattern</tags>
 	  <releaseNotes>
+      * Removed GetByIdList
+      * Added IBulkOperationsProvider interface to support bulk operations
+      * Added bulk operations to EF and MongoDB providers
+      * Fixed Update method for ILoadService implementations
       * Modified Attach and Update for Yarn.NHibernate
       * Modified auto-merge behavior for Yarn.EF
       * Modified auditable repository adapter to work with object graphs

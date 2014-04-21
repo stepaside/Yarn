@@ -24,10 +24,10 @@ namespace Yarn.Data.InMemoryProvider
 
         public T GetById<T, ID>(ID id) where T : class
         {
-            return GetByIdList<T, ID>(new[] { id }).FirstOrDefault();
+            return GetById<T, ID>(new[] { id }).FirstOrDefault();
         }
 
-        public IEnumerable<T> GetByIdList<T, ID>(IList<ID> ids) where T : class
+        public IEnumerable<T> GetById<T, ID>(IList<ID> ids) where T : class
         {
             if (typeof(OID).IsAssignableFrom(typeof(T)))
             {

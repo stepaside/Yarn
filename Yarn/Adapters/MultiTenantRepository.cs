@@ -41,12 +41,7 @@ namespace Yarn.Adapters
             }
             return tenant.TenantId != _owner.TenantId ? null : result;
         }
-
-        public IEnumerable<T> GetByIdList<T, ID>(IList<ID> ids) where T : class
-        {
-            return typeof(ISoftDelete).IsAssignableFrom(typeof(T)) ? _repository.GetByIdList<T, ID>(ids).Where(e => ((ITenant)e).TenantId == _owner.TenantId) : _repository.GetByIdList<T, ID>(ids);
-        }
-
+        
         public T Find<T>(ISpecification<T> criteria) where T : class
         {
             return Find(((Specification<T>)criteria).Predicate);
@@ -54,7 +49,7 @@ namespace Yarn.Adapters
 
         public T Find<T>(Expression<Func<T, bool>> criteria) where T : class
         {
-            return typeof(ITenant).IsAssignableFrom(typeof(T)) ? _repository.All<T>().Where(e => ((ITenant)e).TenantId == _owner.TenantId).FirstOrDefault(criteria) : _repository.Find<T>(criteria);
+            return typeof(ITenant).IsAssignableFrom(typeof(T)) ? _repository.All<T>().Where(e => ((ITenant)e).TenantId == _owner.TenantId).FirstOrDefault(criteria) : _repository.Find(criteria);
         }
 
         public IEnumerable<T> FindAll<T>(ISpecification<T> criteria, int offset = 0, int limit = 0, Expression<Func<T, object>> orderBy = null) where T : class
@@ -208,9 +203,10 @@ namespace Yarn.Adapters
 
         ILoadService<T> ILoadServiceProvider.Load<T>()
         {
-            if (_repository is ILoadServiceProvider)
+            var provider = _repository as ILoadServiceProvider;
+            if (provider != null)
             {
-                return ((ILoadServiceProvider)_repository).Load<T>();
+                return provider.Load<T>();
             }
             throw new InvalidOperationException();
         }
@@ -230,7 +226,7 @@ namespace Yarn.Adapters
             var provider = _repository as IMetaDataProvider;
             if (provider != null)
             {
-                return provider.GetPrimaryKeyValue<T>(entity);
+                return provider.GetPrimaryKeyValue(entity);
             }
             throw new InvalidOperationException();
         }

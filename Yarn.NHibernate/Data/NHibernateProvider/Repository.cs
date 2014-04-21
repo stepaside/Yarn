@@ -48,7 +48,7 @@ namespace Yarn.Data.NHibernateProvider
             return session.Get<T>(id);
         }
 
-        public IEnumerable<T> GetByIdList<T, ID>(IList<ID> ids) where T : class
+        public IEnumerable<T> GetById<T, ID>(IList<ID> ids) where T : class
         {
             var session = Session;
             var criteria = session.CreateCriteria<T>();
