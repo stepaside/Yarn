@@ -41,12 +41,7 @@ namespace Yarn.Adapters
             }
             return tenant.TenantId != _owner.TenantId ? null : result;
         }
-
-        public IEnumerable<T> GetByIdList<T, ID>(IList<ID> ids) where T : class
-        {
-            return typeof(ISoftDelete).IsAssignableFrom(typeof(T)) ? _repository.GetByIdList<T, ID>(ids).Where(e => ((ITenant)e).TenantId == _owner.TenantId) : _repository.GetByIdList<T, ID>(ids);
-        }
-
+        
         public T Find<T>(ISpecification<T> criteria) where T : class
         {
             return Find(((Specification<T>)criteria).Predicate);

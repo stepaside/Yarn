@@ -24,7 +24,7 @@ namespace Yarn.Data.EntityFrameworkProvider
 {
     public class Repository : IRepository, IMetaDataProvider, ILoadServiceProvider, IBulkOperationsProvider
     {
-        private static ConcurrentDictionary<Type, Dictionary<string, string>> _columnMappings = new ConcurrentDictionary<Type, Dictionary<string, string>>();
+        private static readonly ConcurrentDictionary<Type, Dictionary<string, string>> _columnMappings = new ConcurrentDictionary<Type, Dictionary<string, string>>();
         
         protected IDataContext<DbContext> _context;
 
@@ -757,6 +757,8 @@ namespace Yarn.Data.EntityFrameworkProvider
                 return new Dictionary<string, string>();
             });
 		}
+
+        #endregion
 
         #region Merge Methods
 

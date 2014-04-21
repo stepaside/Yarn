@@ -16,8 +16,6 @@
       * Added IBulkOperationsProvider interface to support bulk operations
       * Added bulk operations to EF and MongoDB providers
       * Fixed Update method for ILoadService implementations
-      * Fixed Update method in Yarn EF (not a perfect but workable solution)
-      * Updated Mapper
       * Modified Attach and Update for Yarn.NHibernate
       * Modified auto-merge behavior for Yarn.EF
       * Modified auditable repository adapter to work with object graphs
