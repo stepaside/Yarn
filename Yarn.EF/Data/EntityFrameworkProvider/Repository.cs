@@ -196,12 +196,12 @@ namespace Yarn.Data.EntityFrameworkProvider
 
         public long Count<T>(ISpecification<T> criteria) where T : class
         {
-            return FindAll(criteria).LongCount();
+            return Count(((Specification<T>)criteria).Predicate);
         }
 
         public long Count<T>(Expression<Func<T, bool>> criteria) where T : class
         {
-            return FindAll(criteria).LongCount();
+            return Table<T>().LongCount(criteria);
         }
 
         public DbSet<T> Table<T>() where T : class

@@ -114,12 +114,12 @@ namespace Yarn.Data.MongoDbProvider
 
         public long Count<T>(Expression<Func<T, bool>> criteria) where T : class
         {
-            return FindAll(criteria).LongCount();
+            return All<T>().LongCount(criteria);
         }
 
         public long Count<T>(ISpecification<T> criteria) where T : class
         {
-            return FindAll(criteria).LongCount();
+            return Count(((Specification<T>)criteria).Predicate);
         }
 
         public IList<T> Execute<T>(string command, ParamList parameters) where T : class

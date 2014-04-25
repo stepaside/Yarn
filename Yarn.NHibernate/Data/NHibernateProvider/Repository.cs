@@ -162,19 +162,19 @@ namespace Yarn.Data.NHibernateProvider
 
         public long Count<T>(ISpecification<T> criteria) where T : class
         {
-            return FindAll<T>(criteria).LongCount();
+            return Count(((Specification<T>)criteria).Predicate);
         }
 
         public long Count<T>(Expression<Func<T, bool>> criteria) where T : class
         {
-            return FindAll<T>(criteria).LongCount();
+            return All<T>().LongCount(criteria);
         }
 
         protected ISession Session
         {
             get
             {
-                return ((IDataContext<ISession>)this.DataContext).Session;
+                return ((IDataContext<ISession>)DataContext).Session;
             }
         }
 

@@ -49,23 +49,23 @@ namespace Yarn.Data.InMemoryProvider
 
         public T Find<T>(ISpecification<T> criteria) where T : class
         {
-            return FindAll<T>(criteria).FirstOrDefault();
+            return FindAll(criteria).FirstOrDefault();
         }
 
-        public T Find<T>(System.Linq.Expressions.Expression<Func<T, bool>> criteria) where T : class
+        public T Find<T>(Expression<Func<T, bool>> criteria) where T : class
         {
-            return FindAll<T>(criteria).FirstOrDefault();
+            return FindAll(criteria).FirstOrDefault();
         }
 
         public IEnumerable<T> FindAll<T>(ISpecification<T> criteria, int offset = 0, int limit = 0, Expression<Func<T, object>> orderBy = null) where T : class
         {
-            return FindAll<T>(((Specification<T>)criteria).Predicate, offset, limit, orderBy);
+            return FindAll(((Specification<T>)criteria).Predicate, offset, limit, orderBy);
         }
 
-        public IEnumerable<T> FindAll<T>(System.Linq.Expressions.Expression<Func<T, bool>> criteria, int offset = 0, int limit = 0, Expression<Func<T, object>> orderBy = null) where T : class
+        public IEnumerable<T> FindAll<T>(Expression<Func<T, bool>> criteria, int offset = 0, int limit = 0, Expression<Func<T, object>> orderBy = null) where T : class
         {
-            var query = this.All<T>().Where(criteria);
-            return this.Page<T>(query, offset, limit, orderBy);
+            var query = All<T>().Where(criteria);
+            return this.Page(query, offset, limit, orderBy);
         }
 
         public IList<T> Execute<T>(string command, ParamList parameters) where T : class
@@ -112,7 +112,7 @@ namespace Yarn.Data.InMemoryProvider
 
         public long Count<T>() where T : class
         {
-            return this.All<T>().LongCount();
+            return All<T>().LongCount();
         }
 
         public long Count<T>(ISpecification<T> criteria) where T : class
@@ -120,9 +120,9 @@ namespace Yarn.Data.InMemoryProvider
             return Count(((Specification<T>)criteria).Predicate);
         }
 
-        public long Count<T>(System.Linq.Expressions.Expression<Func<T, bool>> criteria) where T : class
+        public long Count<T>(Expression<Func<T, bool>> criteria) where T : class
         {
-            return this.All<T>().LongCount(criteria);
+            return All<T>().LongCount(criteria);
         }
 
         public IQueryable<T> All<T>() where T : class
@@ -132,19 +132,19 @@ namespace Yarn.Data.InMemoryProvider
 
         public void Detach<T>(T entity) where T : class
         {
-            Remove<T>(entity);
+            Remove(entity);
         }
 
         public void Attach<T>(T entity) where T : class
         {
-            Update<T>(entity); 
+            Update(entity); 
         }
 
         protected IOdb Database
         {
             get
             {
-                return ((IDataContext<IOdb>)this.DataContext).Session;
+                return ((IDataContext<IOdb>)DataContext).Session;
             }
         }
 
