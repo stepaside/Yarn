@@ -11,13 +11,11 @@ namespace Yarn.Extensions
     public static class CascadeExtensions
     {
         public static void Cascade<T>(this T root, Action<T, T> action)
-            where T : class
         {
             CascadeImplementation(root, action, null);
         }
 
         private static void CascadeImplementation<T>(T root, Action<T, T> action, HashSet<T> ancestors)
-            where T : class
         {
             ancestors = ancestors ?? new HashSet<T>();
             ancestors.Add(root);
@@ -31,11 +29,11 @@ namespace Yarn.Extensions
 
             foreach (var property in objectProperties)
             {
-                var item = (T)PropertyAccessor.Get(root.GetType(), root, property.Name);
-                if (item != null && !ancestors.Contains(item))
+                var item = PropertyAccessor.Get(root.GetType(), root, property.Name);
+                if (item is T && !ancestors.Contains((T)item))
                 {
-                    action(root, item);
-                    CascadeImplementation(item, action, ancestors);
+                    action(root, (T)item);
+                    CascadeImplementation((T)item, action, ancestors);
                 }
             }
 
@@ -44,12 +42,12 @@ namespace Yarn.Extensions
                 var items = (IEnumerable)PropertyAccessor.Get(root.GetType(), root, property.Name);
                 if (items != null)
                 {
-                    foreach (var item in items.Cast<T>())
+                    foreach (var item in items)
                     {
-                        if (item != null && !ancestors.Contains(item))
+                        if (item is T && !ancestors.Contains((T)item))
                         {
-                            action(root, item);
-                            CascadeImplementation(item, action, ancestors);
+                            action(root, (T)item);
+                            CascadeImplementation((T)item, action, ancestors);
                         }
                     }
                 }
