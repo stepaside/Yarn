@@ -27,16 +27,28 @@ namespace Yarn.Data.EntityFrameworkProvider
         public string[] GetPrimaryKey<T>(DbContext context) 
             where T : class
         {
-            return _keys.GetOrAdd(typeof(T), t => GetPrimaryKeyImplemenation(t, context));
+            return _keys.GetOrAdd(typeof(T), t => GetPrimaryKeyFromTypeHierarchy(t, context));
         }
 
-        private string[] GetPrimaryKeyImplemenation(Type type, DbContext context)
+        private string[] GetPrimaryKeyFromTypeHierarchy(Type type, DbContext context)
         {
-            while (type.BaseType != typeof(object))
+            do
             {
-                type = type.BaseType;
-            }
+                try
+                {
+                    return GetPrimaryKeyFromType(type, context);
+                }
+                catch
+                {
+                    type = type.BaseType;
+                }
+            } while (type != typeof(object));
 
+            return new string[] { };
+        }
+
+        private string[] GetPrimaryKeyFromType(Type type, DbContext context)
+        {
             var objectContext = ((IObjectContextAdapter)context).ObjectContext;
 
             var method = typeof(ObjectContext).GetMethod("CreateObjectSet", Type.EmptyTypes).MakeGenericMethod(type);
