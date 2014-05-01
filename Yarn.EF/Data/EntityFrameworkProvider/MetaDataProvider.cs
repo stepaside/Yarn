@@ -30,7 +30,7 @@ namespace Yarn.Data.EntityFrameworkProvider
             return _keys.GetOrAdd(typeof(T), t => GetPrimaryKeyFromTypeHierarchy(t, context));
         }
 
-        private string[] GetPrimaryKeyFromTypeHierarchy(Type type, DbContext context)
+        private static string[] GetPrimaryKeyFromTypeHierarchy(Type type, DbContext context)
         {
             do
             {
@@ -47,7 +47,7 @@ namespace Yarn.Data.EntityFrameworkProvider
             return new string[] { };
         }
 
-        private string[] GetPrimaryKeyFromType(Type type, DbContext context)
+        private static string[] GetPrimaryKeyFromType(Type type, DbContext context)
         {
             var objectContext = ((IObjectContextAdapter)context).ObjectContext;
 

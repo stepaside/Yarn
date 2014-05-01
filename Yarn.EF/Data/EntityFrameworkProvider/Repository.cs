@@ -906,10 +906,15 @@ namespace Yarn.Data.EntityFrameworkProvider
 
             private object[] GetPrimaryKey(object entity)
             {
+                if (entity == null)
+                {
+                    return new object[] { };
+                }
+
                 var method = typeof(IMetaDataProvider).GetMethod("GetPrimaryKeyValue").MakeGenericMethod(entity.GetType());
                 return (object[])method.Invoke(_repository.As<IMetaDataProvider>(), new[] { entity });
             }
-            
+
             public bool Equals(object x, object y)
             {
                 return ArraysEqual(GetPrimaryKey(x), GetPrimaryKey(y));
