@@ -249,20 +249,12 @@ namespace Yarn.Data.EntityFrameworkProvider
 
         string[] IMetaDataProvider.GetPrimaryKey<T>()
         {
-            return ((IObjectContextAdapter)this.DbContext)
-                    .ObjectContext.CreateObjectSet<T>()
-                    .EntitySet.ElementType.KeyMembers.Select(k => k.Name).ToArray();
+            return MetaDataProvider.Current.GetPrimaryKey<T>(DbContext);
         }
 
         object[] IMetaDataProvider.GetPrimaryKeyValue<T>(T entity)
         {
-            var primaryKey = ((IMetaDataProvider)this).GetPrimaryKey<T>();
-            var values = new object[primaryKey.Length];
-            for (var i = 0; i < primaryKey.Length; i++)
-            {
-                values[i] = PropertyAccessor.Get(entity, primaryKey[i]);
-            }
-            return values;
+            return MetaDataProvider.Current.GetPrimaryKeyValue(entity, DbContext);
         }
 
         #endregion

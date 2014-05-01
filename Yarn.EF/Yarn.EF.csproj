@@ -61,6 +61,7 @@
     <Compile Include="Data\EntityFrameworkProvider\Migrations\ScriptGeneratorMigrationInitializer.cs" />
     <Compile Include="Data\EntityFrameworkProvider\Repository.cs" />
     <Compile Include="Data\EntityFrameworkProvider\SqlClient\SqlFullTextProvider.cs" />
+    <Compile Include="Data\EntityFrameworkProvider\MetaDataProvider.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>
