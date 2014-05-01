@@ -774,7 +774,7 @@ namespace Yarn.Data.EntityFrameworkProvider
 
         private static void MergeImplementation(DbContext context, object source, object target, IEqualityComparer<object> comparer, HashSet<Type> ancestors)
         {
-            if (source == null) return;
+            if (source == null || target == null) return;
 
             (ancestors = ancestors ?? new HashSet<Type>()).Add(source.GetType());
 
