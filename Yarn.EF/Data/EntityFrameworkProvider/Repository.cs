@@ -877,7 +877,7 @@ namespace Yarn.Data.EntityFrameworkProvider
                     foreach (var name in names)
                     {
                         var member = entry.Member(name);
-                        if (member != null && member.EntityEntry.State == EntityState.Added)
+                        if (member != null && member.EntityEntry.State == EntityState.Added && member.CurrentValue != null)
                         {
                             var hash = comparer.GetHashCode(member.CurrentValue);
                             var local = context.Set(member.CurrentValue.GetType()).Local.Cast<object>().FirstOrDefault(e => context.Entry(e).State == EntityState.Unchanged
