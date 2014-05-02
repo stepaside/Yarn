@@ -2,7 +2,7 @@
 <package >
   <metadata>
     <id>Yarn.EF</id>
-    <version>0.8.2.6</version>
+    <version>0.8.3</version>
     <title>Yarn.EF</title>
     <authors>Max Stepanskiy</authors>
     <owners>Stepaside, Inc.</owners>
@@ -15,7 +15,7 @@
       * Fixed Merge implementation
     </releaseNotes>
     <dependencies>
-      <dependency id="Yarn" version="[0.8.2]" />
+      <dependency id="Yarn" version="[0.8.3]" />
       <dependency id="EntityFramework" version="6.0.2" />
     </dependencies>
   </metadata>
