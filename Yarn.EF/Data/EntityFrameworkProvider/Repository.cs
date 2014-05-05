@@ -818,7 +818,7 @@ namespace Yarn.Data.EntityFrameworkProvider
             foreach (var property in properties.Where(p => p.PropertyType != typeof(string) && p.PropertyType.IsGenericType && typeof(IEnumerable).IsAssignableFrom(p.PropertyType)))
             {
                 var propertyType = property.PropertyType.GetGenericArguments()[0];
-                var collection = context.Entry(target).Collection(property.Name).CurrentValue as IList;
+                var collection = !propertyType.IsAbstract ? context.Entry(target).Collection(property.Name).CurrentValue as IList :  context.Entry(target).ComplexProperty(property.Name).CurrentValue as IList;
 
                 if (ancestors.Contains(propertyType))
                 {
