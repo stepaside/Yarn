@@ -772,23 +772,24 @@ namespace Yarn.Data.EntityFrameworkProvider
             }
         }
 
-        private static void MergeImplementation(DbContext context, object source, object target, IEqualityComparer<object> comparer, HashSet<Type> ancestors)
+        private static void MergeImplementation(DbContext context, object source, object target, IEqualityComparer<object> comparer, HashSet<object> ancestors)
         {
             if (source == null || target == null) return;
 
-            (ancestors = ancestors ?? new HashSet<Type>()).Add(source.GetType());
+            (ancestors = ancestors ?? new HashSet<object>()).Add(source);
+            
 
             var properties = source.GetType().GetProperties();
             
             foreach (var property in properties.Where(p => p.PropertyType != typeof(string) && p.PropertyType.IsClass && !typeof(IEnumerable).IsAssignableFrom(p.PropertyType)))
             {
-                if (ancestors.Contains(property.PropertyType))
+                var value = PropertyAccessor.Get(target.GetType(), target, property.Name);
+                var newValue = PropertyAccessor.Get(source.GetType(), source, property.Name);
+
+                if (ancestors.Contains(newValue))
                 {
                     continue;
                 }
-
-                var value = PropertyAccessor.Get(target.GetType(), target, property.Name);
-                var newValue = PropertyAccessor.Get(source.GetType(), source, property.Name);
 
                 if (value == null && newValue != null)
                 {
@@ -811,7 +812,7 @@ namespace Yarn.Data.EntityFrameworkProvider
                         context.Entry(target).Member(property.Name).CurrentValue = newValue;
                         context.Entry(newValue).State = EntityState.Unchanged;
                     }
-                    MergeImplementation(context, value, newValue, comparer, new HashSet<Type>(ancestors.Concat(new[] { property.PropertyType })));
+                    MergeImplementation(context, newValue, value, comparer, new HashSet<object>(ancestors));
                 }
             }
 
@@ -820,17 +821,17 @@ namespace Yarn.Data.EntityFrameworkProvider
                 var propertyType = property.PropertyType.GetGenericArguments()[0];
                 var collection = !propertyType.IsAbstract ? context.Entry(target).Collection(property.Name).CurrentValue as IList : PropertyAccessor.Get(target.GetType(), target, property.Name) as IList;
 
-                if (ancestors.Contains(propertyType))
-                {
-                    continue;
-                }
-
                 var values = (IEnumerable)PropertyAccessor.Get(target.GetType(), target, property.Name) ?? new object[] { };
                 var newValues = (IEnumerable)PropertyAccessor.Get(source.GetType(), source, property.Name) ?? new object[] { };
 
                 var updates = newValues.Cast<object>().Join(values.Cast<object>(), comparer.GetHashCode, comparer.GetHashCode, Tuple.Create).ToList();
                 foreach (var item in updates)
                 {
+                    if (ancestors.Contains(item))
+                    {
+                        continue;
+                    }
+
                     var entry = context.Entry(item.Item2);
                     if (entry.State == EntityState.Detached)
                     {
@@ -844,12 +845,17 @@ namespace Yarn.Data.EntityFrameworkProvider
                         entry.CurrentValues.SetValues(item.Item1);
                     }
 
-                    MergeImplementation(context, item.Item1, item.Item2, comparer, new HashSet<Type>(ancestors.Concat(new[] { propertyType })));
+                    MergeImplementation(context, item.Item1, item.Item2, comparer, new HashSet<object>(ancestors));
                 }
 
                 var deletes = values.Cast<object>().Except(newValues.Cast<object>(), comparer).ToList();
                 foreach (var item in deletes)
                 {
+                    if (ancestors.Contains(item))
+                    {
+                        continue;
+                    }
+
                     if (collection != null)
                     {
                         collection.Remove(item);
@@ -860,6 +866,11 @@ namespace Yarn.Data.EntityFrameworkProvider
                 var inserts = newValues.Cast<object>().Except(values.Cast<object>(), comparer).ToList();
                 foreach (var item in inserts)
                 {
+                    if (ancestors.Contains(item))
+                    {
+                        continue;
+                    }
+
                     if (collection != null)
                     {
                         collection.Add(item);
