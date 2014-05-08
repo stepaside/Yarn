@@ -821,10 +821,10 @@ namespace Yarn.Data.EntityFrameworkProvider
                 var propertyType = property.PropertyType.GetGenericArguments()[0];
                 var collection = !propertyType.IsAbstract ? context.Entry(target).Collection(property.Name).CurrentValue as IList : PropertyAccessor.Get(target.GetType(), target, property.Name) as IList;
 
-                var values = (IEnumerable)PropertyAccessor.Get(target.GetType(), target, property.Name) ?? new object[] { };
-                var newValues = (IEnumerable)PropertyAccessor.Get(source.GetType(), source, property.Name) ?? new object[] { };
+                var values = ((IEnumerable)PropertyAccessor.Get(target.GetType(), target, property.Name) ?? new object[] { }).Cast<object>().ToList();
+                var newValues = ((IEnumerable)PropertyAccessor.Get(source.GetType(), source, property.Name) ?? new object[] { }).Cast<object>().ToList();
 
-                var updates = newValues.Cast<object>().Join(values.Cast<object>(), comparer.GetHashCode, comparer.GetHashCode, Tuple.Create).ToList();
+                var updates = newValues.Join(values, comparer.GetHashCode, comparer.GetHashCode, Tuple.Create).ToList();
                 foreach (var item in updates)
                 {
                     if (ancestors.Contains(item))
@@ -848,7 +848,7 @@ namespace Yarn.Data.EntityFrameworkProvider
                     MergeImplementation(context, item.Item1, item.Item2, comparer, new HashSet<object>(ancestors));
                 }
 
-                var deletes = values.Cast<object>().Except(newValues.Cast<object>(), comparer).ToList();
+                var deletes = values.Except(newValues, comparer).ToList();
                 foreach (var item in deletes)
                 {
                     if (ancestors.Contains(item))
@@ -863,7 +863,7 @@ namespace Yarn.Data.EntityFrameworkProvider
                     }
                 }
 
-                var inserts = newValues.Cast<object>().Except(values.Cast<object>(), comparer).ToList();
+                var inserts = newValues.Where(e => !values.Any(f => comparer.Equals(e, f))).ToList();
                 foreach (var item in inserts)
                 {
                     if (ancestors.Contains(item))
