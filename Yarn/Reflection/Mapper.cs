@@ -50,6 +50,8 @@ namespace Yarn.Reflection
                                                     && t.Item2.PropertyType != typeof(string)
                                                     && !typeof(IEnumerable).IsAssignableFrom(t.Item1.PropertyType)
                                                     && !typeof(IEnumerable).IsAssignableFrom(t.Item2.PropertyType)
+                                                    && !t.Item1.PropertyType.IsAbstract
+                                                    && !t.Item2.PropertyType.IsAbstract
                                                     && !HasCycle(sourceType, t.Item1.PropertyType)
                                                     && !HasCycle(targetType, t.Item2.PropertyType)).ToList();
 

@@ -2,7 +2,7 @@
 <package >
   <metadata>
     <id>Yarn</id>
-    <version>0.8.4</version>
+    <version>0.8.5</version>
     <title>Yarn</title>
     <authors>Max Stepanskiy</authors>
     <owners>Stepaside, Inc.</owners>
@@ -11,10 +11,7 @@
     <description>Yet Another Repository for .Net</description>
     <copyright>Copyright © Max Stepanskiy 2012-2014</copyright>
     <tags>Repository Repository-Pattern</tags>
-	  <releaseNotes>
-      * Fixed Merge implementation in EF Repository
-      * Updated dependencies
-    </releaseNotes>
+	  <releaseNotes/>
   </metadata>
   <files>
     <file src="Yarn.dll" target="lib\net40" />
