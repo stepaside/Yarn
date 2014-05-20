@@ -828,8 +828,7 @@ namespace Yarn.Data.EntityFrameworkProvider
 
             foreach (var property in properties.Where(p => p.PropertyType != typeof(string) && p.PropertyType.IsGenericType && typeof(IEnumerable).IsAssignableFrom(p.PropertyType)))
             {
-                var propertyType = property.PropertyType.GetGenericArguments()[0];
-                var collection = !propertyType.IsAbstract ? context.Entry(target).Collection(property.Name).CurrentValue as IList : PropertyAccessor.Get(target.GetType(), target, property.Name) as IList;
+                var collection = context.Entry(target).Collection(property.Name).CurrentValue as IList;
 
                 var values = ((IEnumerable)PropertyAccessor.Get(target.GetType(), target, property.Name) ?? new object[] { }).Cast<object>().ToList();
                 var newValues = ((IEnumerable)PropertyAccessor.Get(source.GetType(), source, property.Name) ?? new object[] { }).Cast<object>().ToList();
@@ -869,7 +868,6 @@ namespace Yarn.Data.EntityFrameworkProvider
                     if (collection != null)
                     {
                         collection.Remove(item);
-                        context.Entry(item).State = EntityState.Deleted;
                     }
                 }
 
@@ -884,7 +882,6 @@ namespace Yarn.Data.EntityFrameworkProvider
                     if (collection != null)
                     {
                         collection.Add(item);
-                        context.Entry(item).State = EntityState.Added;
                     }
 
                     var types = new HashSet<Type>(((IObjectContextAdapter)context).ObjectContext.ObjectStateManager.GetObjectStateEntry(item).RelationshipManager.GetAllRelatedEnds()
@@ -901,8 +898,7 @@ namespace Yarn.Data.EntityFrameworkProvider
                         if (member != null && member.EntityEntry.State == EntityState.Added && member.CurrentValue != null)
                         {
                             var hash = comparer.GetHashCode(member.CurrentValue);
-                            var local = context.Set(member.CurrentValue.GetType()).Local.Cast<object>().FirstOrDefault(e => context.Entry(e).State == EntityState.Unchanged
-                                                                                                                            && comparer.GetHashCode(e) == hash);
+                            var local = context.Set(member.CurrentValue.GetType()).Local.Cast<object>().FirstOrDefault(e => context.Entry(e).State == EntityState.Unchanged && comparer.GetHashCode(e) == hash);
                             if (local != null && local != member.CurrentValue)
                             {
                                 // Found unchanged locally
