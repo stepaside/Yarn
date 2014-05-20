@@ -290,8 +290,7 @@ namespace Yarn.Data.NHibernateProvider
 
                             var propertyType = property.PropertyType;
                             var parameter = Expression.Parameter(current);
-                            var body = Expression.Convert(Expression.PropertyOrField(parameter, properties[i]),
-                                propertyType);
+                            var body = Expression.Convert(Expression.PropertyOrField(parameter, properties[i]), propertyType);
                             var selector = Expression.Lambda(body, parameter);
 
                             if (typeof(IEnumerable).IsAssignableFrom(propertyType))

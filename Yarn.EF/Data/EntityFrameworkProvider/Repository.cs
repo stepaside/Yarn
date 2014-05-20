@@ -156,7 +156,7 @@ namespace Yarn.Data.EntityFrameworkProvider
                     }
                     else
                     {
-                        Merge(entity, attachedEntity);
+                        Merge(entity, attachedEntity, null);
                         entry = DbContext.Entry(attachedEntity);
                     }
                 }
@@ -271,17 +271,23 @@ namespace Yarn.Data.EntityFrameworkProvider
         {
             readonly Repository _repository;
             IQueryable<T> _query;
+            readonly List<string[]> _paths;
             
             public LoadService(IRepository repository)
             {
                 _repository = (Repository)repository;
                 _query = repository.All<T>();
+                _paths = new List<string[]>();
             }
 
-            public ILoadService<T> Include<TProperty>(Expression<Func<T, TProperty>> path) 
+            public ILoadService<T> Include<TProperty>(Expression<Func<T, TProperty>> path)
                 where TProperty : class
             {
                 _query = _query.Include(path);
+
+                var properties = path.Body.ToString().Split('.').Where(p => !p.StartsWith("Select")).Select(p => p.TrimEnd(')')).Skip(1).ToArray();
+                _paths.Add(properties);
+
                 return this;
             }
 
@@ -316,7 +322,7 @@ namespace Yarn.Data.EntityFrameworkProvider
                 var loadedEntity = Find(_repository.As<IMetaDataProvider>().BuildPrimaryKeyExpression(entity));
                 if (loadedEntity != null)
                 {
-                    _repository.Merge(entity, loadedEntity);
+                    _repository.Merge(entity, loadedEntity, _paths);
                 }
                 return loadedEntity;
             }
@@ -754,7 +760,7 @@ namespace Yarn.Data.EntityFrameworkProvider
 
         #region Merge Methods
 
-        private void Merge(object source, object target)
+        private void Merge(object source, object target, IReadOnlyCollection<string[]> paths)
         {
             var context = DbContext;
             var comparer = new EntityEqualityComparer(this);
@@ -763,7 +769,7 @@ namespace Yarn.Data.EntityFrameworkProvider
             {
                 context.Configuration.AutoDetectChangesEnabled = false;
                 context.Entry(target).CurrentValues.SetValues(source);
-                MergeImplementation(context, source, target, comparer, null);
+                MergeImplementation(context, source, target, comparer, null, paths, 0);
                 context.ChangeTracker.DetectChanges();
             }
             finally
@@ -772,14 +778,18 @@ namespace Yarn.Data.EntityFrameworkProvider
             }
         }
 
-        private static void MergeImplementation(DbContext context, object source, object target, IEqualityComparer<object> comparer, HashSet<object> ancestors)
+        private static void MergeImplementation(DbContext context, object source, object target, IEqualityComparer<object> comparer, HashSet<object> ancestors, IReadOnlyCollection<string[]> paths, int level)
         {
             if (source == null || target == null) return;
 
             (ancestors = ancestors ?? new HashSet<object>()).Add(source);
             
-
             var properties = source.GetType().GetProperties();
+            if (paths != null && paths.Count > 0)
+            {
+                var set = new HashSet<string>(paths.Select(p => p.ElementAtOrDefault(level)).Where(p => p != null));
+                properties = properties.Where(p => set.Contains(p.Name)).ToArray();
+            }
             
             foreach (var property in properties.Where(p => p.PropertyType != typeof(string) && p.PropertyType.IsClass && !typeof(IEnumerable).IsAssignableFrom(p.PropertyType)))
             {
@@ -812,7 +822,7 @@ namespace Yarn.Data.EntityFrameworkProvider
                         context.Entry(target).Member(property.Name).CurrentValue = newValue;
                         context.Entry(newValue).State = EntityState.Unchanged;
                     }
-                    MergeImplementation(context, newValue, value, comparer, new HashSet<object>(ancestors));
+                    MergeImplementation(context, newValue, value, comparer, new HashSet<object>(ancestors), paths, level + 1);
                 }
             }
 
@@ -845,7 +855,7 @@ namespace Yarn.Data.EntityFrameworkProvider
                         entry.CurrentValues.SetValues(item.Item1);
                     }
 
-                    MergeImplementation(context, item.Item1, item.Item2, comparer, new HashSet<object>(ancestors));
+                    MergeImplementation(context, item.Item1, item.Item2, comparer, new HashSet<object>(ancestors), paths, level + 1);
                 }
 
                 var deletes = values.Except(newValues, comparer).ToList();
