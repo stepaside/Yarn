@@ -868,6 +868,7 @@ namespace Yarn.Data.EntityFrameworkProvider
                     if (collection != null)
                     {
                         collection.Remove(item);
+                        context.Entry(item).State = EntityState.Deleted;
                     }
                 }
 
@@ -882,6 +883,7 @@ namespace Yarn.Data.EntityFrameworkProvider
                     if (collection != null)
                     {
                         collection.Add(item);
+                        context.Entry(item).State = EntityState.Added;
                     }
 
                     var types = new HashSet<Type>(((IObjectContextAdapter)context).ObjectContext.ObjectStateManager.GetObjectStateEntry(item).RelationshipManager.GetAllRelatedEnds()
