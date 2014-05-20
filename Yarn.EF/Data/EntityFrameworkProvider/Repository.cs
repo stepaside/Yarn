@@ -815,12 +815,23 @@ namespace Yarn.Data.EntityFrameworkProvider
                     {
                         context.Entry(value).CurrentValues.SetValues(newValue);
                     }
-                    catch
+                    catch(Exception ex)
                     {
                         // Merge failed as we tried to change the parent
                         // Now try actually changing the parent
-                        context.Entry(target).Member(property.Name).CurrentValue = newValue;
-                        context.Entry(newValue).State = EntityState.Unchanged;
+                        var hash = comparer.GetHashCode(newValue);
+                        var local = context.Set(newValue.GetType()).Local.Cast<object>().FirstOrDefault(e => comparer.GetHashCode(e) == hash);
+                        if (local != null && local != newValue)
+                        {
+                            // Found unchanged locally
+                            // Assign existing parent
+                            PropertyAccessor.Set(target.GetType(), target, property.Name, local);
+                        }
+                        else
+                        {
+                            PropertyAccessor.Set(target.GetType(), target, property.Name, newValue);
+                            context.Entry(newValue).State = EntityState.Unchanged;
+                        }
                     }
                     MergeImplementation(context, newValue, value, comparer, new HashSet<object>(ancestors), paths, level + 1);
                 }
@@ -883,34 +894,28 @@ namespace Yarn.Data.EntityFrameworkProvider
                     if (collection != null)
                     {
                         collection.Add(item);
-                        context.Entry(item).State = EntityState.Added;
-                    }
 
-                    var types = new HashSet<Type>(((IObjectContextAdapter)context).ObjectContext.ObjectStateManager.GetObjectStateEntry(item).RelationshipManager.GetAllRelatedEnds()
-                        .Where(end => end.GetType().GetGenericTypeDefinition() == typeof(EntityReference<>)
-                                      && ((end.RelationshipSet.ElementType.RelationshipEndMembers[0].RelationshipMultiplicity == RelationshipMultiplicity.ZeroOrOne && end.RelationshipSet.ElementType.RelationshipEndMembers[1].RelationshipMultiplicity == RelationshipMultiplicity.Many)
-                                          || (end.RelationshipSet.ElementType.RelationshipEndMembers[1].RelationshipMultiplicity == RelationshipMultiplicity.ZeroOrOne && end.RelationshipSet.ElementType.RelationshipEndMembers[0].RelationshipMultiplicity == RelationshipMultiplicity.Many)))
-                        .Select(end => end.GetType().GetGenericArguments()[0]));
-
-                    var entry = context.Entry(item);
-                    var names = item.GetType().GetProperties().Where(p => types.Contains(p.PropertyType)).Select(p => p.Name);
-                    foreach (var name in names)
-                    {
-                        var member = entry.Member(name);
-                        if (member != null && member.EntityEntry.State == EntityState.Added && member.CurrentValue != null)
+                        var entry = context.Entry(item);
+                        
+                        var objectProperties = item.GetType().GetProperties().Where(p => p.PropertyType.IsClass && p.PropertyType != typeof (string));
+                        
+                        foreach (var objectProperty in objectProperties)
                         {
-                            var hash = comparer.GetHashCode(member.CurrentValue);
-                            var local = context.Set(member.CurrentValue.GetType()).Local.Cast<object>().FirstOrDefault(e => context.Entry(e).State == EntityState.Unchanged && comparer.GetHashCode(e) == hash);
-                            if (local != null && local != member.CurrentValue)
+                            var member = entry.Member(objectProperty.Name);
+                            if (member != null && member.EntityEntry.State == EntityState.Detached && member.CurrentValue != null)
                             {
-                                // Found unchanged locally
-                                // Remove new parent and assign existing one
-                                context.Set(member.CurrentValue.GetType()).Remove(member.CurrentValue);
-                                member.CurrentValue = local;
+                                var hash = comparer.GetHashCode(member.CurrentValue);
+                                var local = context.Set(member.CurrentValue.GetType()).Local.Cast<object>().FirstOrDefault(e => comparer.GetHashCode(e) == hash);
+                                if (local != null && local != member.CurrentValue)
+                                {
+                                    // Found unchanged locally
+                                    // Assign existing parent
+                                    PropertyAccessor.Set(item.GetType(), item, objectProperty.Name, local);
+                                }
                             }
-                            var memberEntry = context.Entry(member.CurrentValue);
-                            memberEntry.State = EntityState.Unchanged;
                         }
+
+                        entry.State = EntityState.Added;
                     }
                 }
             }
