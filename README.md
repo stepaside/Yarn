@@ -200,6 +200,25 @@ var customer = repo.As<ILoadServiceProvider>()
                   .Find(c => c.CustomerID == "ALFKI");
 ```
 
+###Object graph merging with IRepository###
+
+```c#
+// Bind IRepository to specific implementation (this should happen during application startup)
+ObjectContainer.Current.Register<IRepository, Yarn.Data.EntityFrameworkProvider.Repository>();
+
+// Resolve IRepository (this may happen anywhere within application)
+var repo = ObjectContainer.Current.Resolve<IRepository>();
+
+// Merge customer changes with customer data from the database
+// Yarn will attempt to merge only the changes specified by the navigation paths
+// Note: currently only EF and Nhibernate providers implement this functionality
+var mergedCustomer = repo.As<ILoadServiceProvider>()
+                  .Load<Customer>()
+                  .Include(c => c.Orders)
+                  .Include(c => c.Orders.Select(o => o.Order_Details))
+                  .Update(customer);
+```
+
 ###Repository adapters###
 
 ```c#
@@ -222,4 +241,29 @@ var repo = ObjectContainer.Current.Resolve<IRepository>().WithMultiTenancy((ITen
 // Note: IPrincipal parameter is optional for soft-delete and auditable adapters
 var repo = ObjectContainer.Current.Resolve<IRepository>().WithSoftDelete().WihAudit();
 
+```
+
+###Bulk operations###
+
+```c#
+// Bind IRepository to specific implementation (this should happen during application startup)
+ObjectContainer.Current.Register<IRepository, Yarn.Data.EntityFrameworkProvider.Repository>();
+
+// Resolve IRepository (this may happen anywhere within application)
+var repo = ObjectContainer.Current.Resolve<IRepository>();
+
+// As of now bulk operations are implemented by EF and Mongo providers only
+var bulk = repo.As<IBulkOperationsProvider>();
+
+// Bulk retrieve
+var customers = bulk.GetById<Customer, string>(new[] { "ALFKI", "ANTON"  });
+
+// Bulk delete by id
+bulk.Delete<Customer, string>(new[] { "ALFKI", "ANTON"  });
+
+// Bulk delete
+bulk.Delete<Customer>(c => c.City == "London");
+
+// Bulk update
+bulk.Delete<Customer>(c => c.City == "New York", c => new Customer { City = c.City + " City" });
 ```
