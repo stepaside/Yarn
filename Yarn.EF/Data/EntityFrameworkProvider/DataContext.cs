@@ -22,11 +22,9 @@ namespace Yarn.Data.EntityFrameworkProvider
             public ConstructorInfo DbContextConstructor { get; set; }
         }
 
-        private static readonly ConcurrentDictionary<string, ModelInfo> DbModelBuilders =
-            new ConcurrentDictionary<string, ModelInfo>();
+        private static readonly ConcurrentDictionary<string, ModelInfo> DbModelBuilders = new ConcurrentDictionary<string, ModelInfo>();
 
-        private static readonly ScriptGeneratorMigrationInitializer<DbContext> DbInitializer =
-            new ScriptGeneratorMigrationInitializer<DbContext>();
+        private static readonly ScriptGeneratorMigrationInitializer<DbContext> DbInitializer = new ScriptGeneratorMigrationInitializer<DbContext>();
 
         protected readonly string _prefix;
         private readonly bool _lazyLoadingEnabled;
@@ -41,6 +39,7 @@ namespace Yarn.Data.EntityFrameworkProvider
 
         private bool? _codeFirst;
         private string _key;
+        private string _source;
 
         protected Lazy<DbContext> _context = null;
 
@@ -77,7 +76,9 @@ namespace Yarn.Data.EntityFrameworkProvider
 
         private DbContext InitializeDbContext()
         {
-            return _prefix == null ? GetDefaultDbContext() : CreateDbContext(_prefix);
+            var context = _prefix == null ? GetDefaultDbContext() : CreateDbContext(_prefix);
+            _source = context.Database.Connection.ConnectionString;
+            return context;
         }
 
         internal static DbConnection CreateConnection(string nameOrConnectionString)
@@ -242,7 +243,14 @@ namespace Yarn.Data.EntityFrameworkProvider
 
         public string Source
         {
-            get { return Session.Database.Connection.ConnectionString; }
+            get
+            {
+                if (_source == null)
+                {
+                    return Session.Database.Connection.ConnectionString;
+                }
+                return _source;
+            }
         }
 
         public Stream BuildSchema()

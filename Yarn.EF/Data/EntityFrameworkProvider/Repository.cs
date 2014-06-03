@@ -104,7 +104,7 @@ namespace Yarn.Data.EntityFrameworkProvider
 
         protected DbRawSqlQuery<T> PrepareSqlQuery<T>(string command, ParamList parameters) where T : class
         {
-            var connection = DbContext.Database.Connection;
+            var connection = ((IObjectContextAdapter)DbContext).ObjectContext.Connection;
             var query = parameters != null
                 ? DbContext.Database.SqlQuery<T>(command, parameters.Select(p => DbFactory.CreateParameter(connection, p.Key, p.Value)).ToArray())
                 : DbContext.Database.SqlQuery<T>(command);

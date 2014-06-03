@@ -17,29 +17,26 @@ namespace Yarn.Data
 
         public static string GetProviderInvariantNameByConnectionString(string connectionString)
         {
-            for (int i = 0; i < ConfigurationManager.ConnectionStrings.Count; i++)
+            var pos1 = connectionString.IndexOf("provider=", StringComparison.OrdinalIgnoreCase);
+            if (pos1 > -1)
+            {
+                var pos2 = connectionString.IndexOf(";", pos1);
+                return pos2 > -1 ? connectionString.Substring(pos1 + 9, pos2 - pos1 - 9) : connectionString.Substring(pos1 + 9);
+            }
+
+            for (var i = 0; i < ConfigurationManager.ConnectionStrings.Count; i++)
             {
                 var config = ConfigurationManager.ConnectionStrings[i];
                 if (string.Equals(config.ConnectionString, connectionString, StringComparison.OrdinalIgnoreCase))
                 {
                     return config.ProviderName;
                 }
-                else if (config.ConnectionString.IndexOf(connectionString, StringComparison.OrdinalIgnoreCase) > -1)
-                {
-                    var pos1 = config.ConnectionString.IndexOf("provider=", StringComparison.OrdinalIgnoreCase);
-                    if (pos1 > -1)
-                    {
-                        var pos2 = config.ConnectionString.IndexOf(";", pos1);
-                        if (pos2 > -1)
-                        {
-                            return config.ConnectionString.Substring(pos1 + 9, pos2 - pos1 - 9);
-                        }
-                        else
-                        {
-                            return config.ConnectionString.Substring(pos1 + 9);
-                        }
-                    }
-                }
+
+                if (config.ConnectionString.IndexOf(connectionString, StringComparison.OrdinalIgnoreCase) < 0) continue;
+                pos1 = config.ConnectionString.IndexOf("provider=", StringComparison.OrdinalIgnoreCase);
+                if (pos1 < 0) continue;
+                var pos2 = config.ConnectionString.IndexOf(";", pos1);
+                return pos2 > -1 ? config.ConnectionString.Substring(pos1 + 9, pos2 - pos1 - 9) : config.ConnectionString.Substring(pos1 + 9);
             }
             return null;
         }
