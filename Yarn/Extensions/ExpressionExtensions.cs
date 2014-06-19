@@ -68,5 +68,17 @@ namespace Yarn.Extensions
             var predicate = idSelector.BuildOrExpression(new[] { primaryKeyValue });
             return predicate;
         }
+
+        public static Expression<Func<T, bool>> BuildPrimaryKeyExpression<T, ID>(this IMetaDataProvider repository, ID id)
+            where T : class
+        {
+            var primaryKey = repository.GetPrimaryKey<T>().First();
+
+            var parameter = Expression.Parameter(typeof(T));
+            var body = Expression.Convert(Expression.PropertyOrField(parameter, primaryKey), typeof(ID));
+            var idSelector = Expression.Lambda<Func<T, ID>>(body, parameter);
+            var predicate = idSelector.BuildOrExpression(new[] { id });
+            return predicate;
+        }
     }
 }

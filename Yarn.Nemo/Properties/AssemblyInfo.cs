@@ -5,12 +5,12 @@ using System.Runtime.InteropServices;
 // General Information about an assembly is controlled through the following 
 // set of attributes. Change these attribute values to modify the information
 // associated with an assembly.
-[assembly: AssemblyTitle("Yarn.Cache")]
+[assembly: AssemblyTitle("Yarn.Nemo")]
 [assembly: AssemblyDescription("")]
 [assembly: AssemblyConfiguration("")]
-[assembly: AssemblyCompany("Stepaside, Inc.")]
-[assembly: AssemblyProduct("Yarn.Cache")]
-[assembly: AssemblyCopyright("Copyright © Max Stepanskiy 2014")]
+[assembly: AssemblyCompany("Advertising Specialty Institute, Inc.")]
+[assembly: AssemblyProduct("Yarn.Nemo")]
+[assembly: AssemblyCopyright("Copyright © Advertising Specialty Institute, Inc. 2014")]
 [assembly: AssemblyTrademark("")]
 [assembly: AssemblyCulture("")]
 
@@ -20,7 +20,7 @@ using System.Runtime.InteropServices;
 [assembly: ComVisible(false)]
 
 // The following GUID is for the ID of the typelib if this project is exposed to COM
-[assembly: Guid("e48aa6ee-1ce9-4270-9457-fb19006e8fe8")]
+[assembly: Guid("99b49181-9bd2-4566-9703-c659e6ca1306")]
 
 // Version information for an assembly consists of the following four values:
 //
