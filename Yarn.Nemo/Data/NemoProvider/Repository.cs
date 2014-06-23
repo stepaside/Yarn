@@ -256,7 +256,7 @@ namespace Yarn.Nemo.Data.NemoProvider
                 else
                 {
                     var queries = new List<IEnumerable<T>>();
-                    var args = new object[] { criteria, null, null, limit > 0 ? offset/limit + 1 : 0, limit, null, new[] { Tuple.Create(orderBy, SortingOrder.Ascending) } };
+                    var args = new object[] { criteria, null, null, limit > 0 ? offset/limit + 1 : 0, limit, null, SelectOption.All, new[] { Tuple.Create(orderBy, SortingOrder.Ascending) } };
                     foreach (var types in _types)
                     {
                         MethodInfo method = null;
@@ -324,7 +324,7 @@ namespace Yarn.Nemo.Data.NemoProvider
                 else
                 {
                     var queries = new List<IEnumerable<T>>();
-                    var args = new object[] { null, null, null, 0, 0, null, new Tuple<Expression<Func<T, object>>, SortingOrder>[] { } };
+                    var args = new object[] { null, null, null, 0, 0, null, SelectOption.All, new Tuple<Expression<Func<T, object>>, SortingOrder>[] { } };
                     foreach (var types in _types)
                     {
                         MethodInfo method = null;
