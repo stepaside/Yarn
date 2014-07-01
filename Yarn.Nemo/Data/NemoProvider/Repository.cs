@@ -157,19 +157,18 @@ namespace Yarn.Nemo.Data.NemoProvider
             where T : class
         {
             private readonly Repository _repository;
-            private readonly List<IList<Type>> _types;
+            private readonly List<Tuple<Type[], LambdaExpression[]>> _types;
 
-            private readonly static MethodInfo _unionMethod = typeof(ObjectFactory).GetMethod("Union");
-            private readonly static MethodInfo _selectMethod1 = typeof(ObjectFactory).GetMethods().First(m => m.Name == "Select" && m.GetGenericArguments().Length == 1);
-            private readonly static MethodInfo _selectMethod2 = typeof(ObjectFactory).GetMethods().First(m => m.Name == "Select" && m.GetGenericArguments().Length == 2);
-            private readonly static MethodInfo _selectMethod3 = typeof(ObjectFactory).GetMethods().First(m => m.Name == "Select" && m.GetGenericArguments().Length == 3);
-            private readonly static MethodInfo _selectMethod4 = typeof(ObjectFactory).GetMethods().First(m => m.Name == "Select" && m.GetGenericArguments().Length == 4);
-            private readonly static MethodInfo _selectMethod5 = typeof(ObjectFactory).GetMethods().First(m => m.Name == "Select" && m.GetGenericArguments().Length == 5);
+            private readonly static MethodInfo _selectMethod = typeof(ObjectFactory).GetMethods().First(m => m.Name == "Select" && m.GetGenericArguments().Length == 1);
+            private readonly static MethodInfo _includeMethod2 = typeof(ObjectFactory).GetMethods().First(m => m.Name == "Include" && m.GetGenericArguments().Length == 2);
+            private readonly static MethodInfo _includeMethod3 = typeof(ObjectFactory).GetMethods().First(m => m.Name == "Include" && m.GetGenericArguments().Length == 3);
+            private readonly static MethodInfo _includeMethod4 = typeof(ObjectFactory).GetMethods().First(m => m.Name == "Include" && m.GetGenericArguments().Length == 4);
+            private readonly static MethodInfo _includeMethod5 = typeof(ObjectFactory).GetMethods().First(m => m.Name == "Include" && m.GetGenericArguments().Length == 5);
 
             public LoadService(Repository repository)
             {
                 _repository = repository;
-                _types = new List<IList<Type>>();
+                _types = new List<Tuple<Type[], LambdaExpression[]>>();
             }
 
             public ILoadService<T> Include<TProperty>(Expression<Func<T, TProperty>> path) where TProperty : class
@@ -178,14 +177,40 @@ namespace Yarn.Nemo.Data.NemoProvider
 
                 var type = typeof(T);
                 var list = new List<Type> { type };
+                var lambdas = new List<LambdaExpression>();
 
                 foreach (var property in properties.Select(t => Reflector.GetProperty(type, t)).TakeWhile(property => property != null))
                 {
+                    var parent = type;
+                    var pk1 = Reflector.GetPropertyMap(parent).Values.Where(p => p.IsPrimaryKey).ToList();
+                    
                     type = Reflector.GetElementType(property.PropertyType) ?? property.PropertyType;
                     list.Add(type);
+
+                    var pk2Candidates = Reflector.GetPropertyMap(type).Values.Where(p => p.Parent != null).GroupBy(p =>p.Parent).ToDictionary(g => g.Key, g => g.ToList());
+
+                    List<ReflectedProperty> pk2;
+
+                    if (!pk2Candidates.TryGetValue(parent, out pk2))
+                    {
+                        list.Clear();
+                        break;
+                    }
+
+                    var a1 = Expression.Parameter(parent);
+                    var a2 = Expression.Parameter(type);
+
+                    var equals = pk1.Join(pk2, x => x.Position, y => y.Position, (p1, p2) => Expression.Equal(Expression.PropertyOrField(a1, p1.PropertyName), Expression.PropertyOrField(a2, p2.PropertyName)));
+
+                    var body = equals.Aggregate(Expression.And);
+                    var join = Expression.Lambda(body, a1, a2);
+                    lambdas.Add(join);
                 }
 
-                _types.Add(list);
+                if (list.Count > 0)
+                {
+                    _types.Add(Tuple.Create(list.ToArray(), lambdas.ToArray()));
+                }
 
                 return this;
             }
@@ -196,7 +221,7 @@ namespace Yarn.Nemo.Data.NemoProvider
                 {
                     var property = _repository.As<IMetaDataProvider>().GetPrimaryKey<T>().First();
                     var value = _repository.As<IMetaDataProvider>().GetPrimaryKeyValue<T>(entity).First();
-                    var response = ObjectFactory.Execute<T>(new OperationRequest { Operation = "GetById", OperationType = OperationType.StoredProcedure, Types = _types.Flatten().Distinct().ToArray(), Parameters = new[] { new Param { Name = property, Value = value } } });
+                    var response = ObjectFactory.Execute<T>(new OperationRequest { Operation = "GetById", OperationType = OperationType.StoredProcedure, Types = _types.Select(t => t.Item1).Flatten().Distinct().ToArray(), Parameters = new[] { new Param { Name = property, Value = value } } });
                     var item = ObjectFactory.Translate<T>(response).FirstOrDefault();
                     using (ObjectScope.New(item))
                     {
@@ -215,7 +240,7 @@ namespace Yarn.Nemo.Data.NemoProvider
 
             public IEnumerable<T> FindAll(Expression<Func<T, bool>> criteria, int offset = 0, int limit = 0, Expression<Func<T, object>> orderBy = null)
             {
-                var typeCount = _types.Sum(t => t.Count);
+                var typeCount = _types.Sum(t => t.Item1.Length);
                 
                 if (typeCount == 0)
                 {
@@ -250,42 +275,39 @@ namespace Yarn.Nemo.Data.NemoProvider
                         }
                     }
 
-                    var response = ObjectFactory.Execute<T>(new OperationRequest { Operation = "FindAll", OperationType = OperationType.StoredProcedure, Types = _types.Flatten().Distinct().ToArray(), Parameters = parameters });
+                    var response = ObjectFactory.Execute<T>(new OperationRequest { Operation = "FindAll", OperationType = OperationType.StoredProcedure, Types = _types.Select(t => t.Item1).Flatten().Distinct().ToArray(), Parameters = parameters });
                     return ObjectFactory.Translate<T>(response);
                 }
                 else
                 {
-                    var queries = new List<IEnumerable<T>>();
-                    var args = new object[] { criteria, null, null, limit > 0 ? offset/limit + 1 : 0, limit, null, SelectOption.All, new[] { Tuple.Create(orderBy, SortingOrder.Ascending) } };
+                    var result = ObjectFactory.Select(criteria, page: limit > 0 ? offset / limit + 1 : 0, pageSize: limit, orderBy: new[] { Tuple.Create(orderBy, SortingOrder.Ascending) });
+
                     foreach (var types in _types)
                     {
                         MethodInfo method = null;
-                        switch (types.Count)
+                        switch (types.Item1.Length)
                         {
-                            case 1:
-                                method = _selectMethod1;
-                                break;
                             case 2:
-                                method = _selectMethod2;
+                                method = _includeMethod2;
                                 break;
                             case 3:
-                                method = _selectMethod3;
+                                method = _includeMethod3;
                                 break;
                             case 4:
-                                method = _selectMethod4;
+                                method = _includeMethod4;
                                 break;
                             case 5:
-                                method = _selectMethod5;
+                                method = _includeMethod5;
                                 break;
                         }
 
                         if (method != null)
                         {
-                            queries.Add((IEnumerable<T>)method.MakeGenericMethod(types.ToArray()).Invoke(null, args));
+                            result = (IEnumerable<T>)method.MakeGenericMethod(types.Item1.ToArray()).Invoke(null, new object[] { result }.Concat(types.Item2).ToArray());
                         }
                     }
 
-                    return (IEnumerable<T>)_unionMethod.Invoke(null, new object[] { queries.ToArray() });
+                    return result;
                 }
             }
 
@@ -301,7 +323,7 @@ namespace Yarn.Nemo.Data.NemoProvider
 
             public IQueryable<T> All()
             {
-                var typeCount = _types.Sum(t => t.Count);
+                var typeCount = _types.Sum(t => t.Item1.Length);
 
                 if (typeCount == 0)
                 {
@@ -317,43 +339,40 @@ namespace Yarn.Nemo.Data.NemoProvider
                 {
                     return LinqExtensions.Defer(() =>
                     {
-                        var response = ObjectFactory.Execute<T>(new OperationRequest { Operation = "GetAll", OperationType = OperationType.StoredProcedure, Types = _types.Flatten().Distinct().ToArray() });
+                        var response = ObjectFactory.Execute<T>(new OperationRequest { Operation = "GetAll", OperationType = OperationType.StoredProcedure, Types = _types.Select(t => t.Item1).Flatten().Distinct().ToArray() });
                         return ObjectFactory.Translate<T>(response);
                     }).AsQueryable();
                 }
                 else
                 {
-                    var queries = new List<IEnumerable<T>>();
-                    var args = new object[] { null, null, null, 0, 0, null, SelectOption.All, new Tuple<Expression<Func<T, object>>, SortingOrder>[] { } };
+                    var result = ObjectFactory.Select<T>();
+
                     foreach (var types in _types)
                     {
                         MethodInfo method = null;
-                        switch (types.Count)
+                        switch (types.Item1.Length)
                         {
-                            case 1:
-                                method = _selectMethod1;
-                                break;
                             case 2:
-                                method = _selectMethod2;
+                                method = _includeMethod2;
                                 break;
                             case 3:
-                                method = _selectMethod3;
+                                method = _includeMethod3;
                                 break;
                             case 4:
-                                method = _selectMethod4;
+                                method = _includeMethod4;
                                 break;
                             case 5:
-                                method = _selectMethod5;
+                                method = _includeMethod5;
                                 break;
                         }
 
                         if (method != null)
                         {
-                            queries.Add((IEnumerable<T>)method.MakeGenericMethod(types.ToArray()).Invoke(null, args));
+                            result = (IEnumerable<T>)method.MakeGenericMethod(types.Item1.ToArray()).Invoke(null, new object[] { result }.Concat(types.Item2).ToArray());
                         }
                     }
 
-                    return LinqExtensions.Defer(() => (IEnumerable<T>)_unionMethod.Invoke(null, new object[] { queries.ToArray() })).AsQueryable();
+                    return result.AsQueryable();
                 }
             }
 

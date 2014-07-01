@@ -52,7 +52,7 @@ namespace Yarn.Extensions
             }
 
             var equals = values.Select(value => (Expression)Expression.Equal(valueSelector.Body, Expression.Constant(value, typeof(ID))));
-            var body = @equals.Aggregate((accumulate, equal) => Expression.Or(accumulate, equal));
+            var body = @equals.Aggregate(Expression.Or);
             return Expression.Lambda<Func<T, bool>>(body, p);
         }
 
