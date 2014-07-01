@@ -183,7 +183,7 @@ ObjectContainer.Current.Register<IDataContext>(
                                                               configurationAssembly: typeof(Customer).Assembly));
 ```
 
-###Eager loading with IRepository###
+###Eager loading###
 
 ```c#
 // Bind IRepository to specific implementation (this should happen during application startup)
@@ -200,7 +200,7 @@ var customer = repo.As<ILoadServiceProvider>()
                   .Find(c => c.CustomerID == "ALFKI");
 ```
 
-###Object graph merging with IRepository###
+###Object graph merging###
 
 ```c#
 // Bind IRepository to specific implementation (this should happen during application startup)
@@ -211,7 +211,7 @@ var repo = ObjectContainer.Current.Resolve<IRepository>();
 
 // Merge customer changes with customer data from the database
 // Yarn will attempt to merge only the changes specified by the navigation paths
-// Note: currently only EF and Nhibernate providers implement this functionality
+// Note: currently only EF, NHibernate and Nemo providers implement this functionality
 var mergedCustomer = repo.As<ILoadServiceProvider>()
                   .Load<Customer>()
                   .Include(c => c.Orders)
