@@ -85,7 +85,7 @@ namespace Yarn.Adapters
             }
             deleted.IsDeleted = true;
             deleted.UpdateDate = DateTime.UtcNow;
-            if (_principal != null && _principal.Identity != null)
+            if (_principal != null)
             {
                 deleted.UpdatedBy = _principal.Identity.Name;
             }
@@ -101,7 +101,7 @@ namespace Yarn.Adapters
             var entity = _repository.GetById<T, ID>(id);
             ((ISoftDelete)entity).IsDeleted = true;
             ((ISoftDelete)entity).UpdateDate = DateTime.UtcNow;
-            if (_principal != null && _principal.Identity != null)
+            if (_principal != null)
             {
                 ((ISoftDelete)entity).UpdatedBy = _principal.Identity.Name;
             }

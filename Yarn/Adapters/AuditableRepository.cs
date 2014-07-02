@@ -68,7 +68,7 @@ namespace Yarn.Adapters
             {
                 auditable.AuditId = Guid.NewGuid();
                 auditable.CreateDate = DateTime.UtcNow;
-                if (_principal != null && _principal.Identity != null)
+                if (_principal != null)
                 {
                     auditable.CreatedBy = _principal.Identity.Name;
                 }
@@ -103,26 +103,24 @@ namespace Yarn.Adapters
             {
                 auditable.AuditId = Guid.NewGuid();
                 auditable.UpdateDate = DateTime.UtcNow;
-                if (_principal != null && _principal.Identity != null)
+                if (_principal != null)
                 {
                     auditable.UpdatedBy = _principal.Identity.Name;
                 }
 
                 auditable.Cascade((root, item) =>
                 {
-                    if (item.CreateDate == DateTime.MinValue || !item.AuditId.HasValue)
+                    if (item.CreateDate == DateTime.MinValue)
                     {
-                        if (item.CreateDate == DateTime.MinValue)
-                        {
-                            item.CreateDate = DateTime.UtcNow;
-                        }
-                        else
-                        {
-                            auditable.UpdateDate = root.UpdateDate;
-                        }
+                        item.CreateDate = DateTime.UtcNow;
                         item.CreatedBy = root.CreatedBy;
-                        item.AuditId = root.AuditId;
                     }
+                    else
+                    {
+                        auditable.UpdateDate = root.UpdateDate;
+                        auditable.UpdatedBy = root.UpdatedBy;
+                    }
+                    item.AuditId = root.AuditId;
                 });
             }
             return _repository.Update(entity);
@@ -210,19 +208,17 @@ namespace Yarn.Adapters
 
                     auditable.Cascade((root, item) =>
                     {
-                        if (item.CreateDate == DateTime.MinValue || !item.AuditId.HasValue)
+                        if (item.CreateDate == DateTime.MinValue)
                         {
-                            if (item.CreateDate == DateTime.MinValue)
-                            {
-                                item.CreateDate = DateTime.UtcNow;
-                            }
-                            else
-                            {
-                                auditable.UpdateDate = root.UpdateDate;
-                            }
+                            item.CreateDate = DateTime.UtcNow;
                             item.CreatedBy = root.CreatedBy;
-                            item.AuditId = root.AuditId;
                         }
+                        else
+                        {
+                            auditable.UpdateDate = root.UpdateDate;
+                            auditable.UpdatedBy = root.UpdatedBy;
+                        }
+                        item.AuditId = root.AuditId;
                     });
                 }
                 return _service.Update(entity);
