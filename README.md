@@ -16,7 +16,7 @@ Here is what it currently supports:
 - RavenDB
 - MongoDB
 - In-memory object storage
-- Nemo (micro-ORM library)
+- [Nemo](https://github.com/stepaside/Nemo) (micro-ORM library)
 
 ###Quick example of the pattern usage###
 
