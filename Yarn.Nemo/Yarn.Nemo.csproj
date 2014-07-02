@@ -37,7 +37,7 @@
     </Reference>
     <Reference Include="Nemo, Version=2.1.0.0, Culture=neutral, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\packages\Nemo.2.1.0-rc003\lib\net45\Nemo.dll</HintPath>
+      <HintPath>..\packages\Nemo.2.1.0-rc004\lib\net45\Nemo.dll</HintPath>
     </Reference>
     <Reference Include="System" />
     <Reference Include="System.Core" />

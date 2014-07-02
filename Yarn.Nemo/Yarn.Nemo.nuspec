@@ -13,7 +13,7 @@
     <tags>Nemo Repository</tags>
     <dependencies>
       <dependency id="Yarn" version="[0.8.8]" />
-      <dependency id="Nemo" version="2.1.0-rc003" />
+      <dependency id="Nemo" version="2.1.0-rc004" />
     </dependencies>
   </metadata>
   <files>
