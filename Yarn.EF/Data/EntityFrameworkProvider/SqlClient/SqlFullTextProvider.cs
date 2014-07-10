@@ -13,10 +13,9 @@ namespace Yarn.Data.EntityFrameworkProvider.SqlClient
 {
     public class SqlFullTextProvider : FullTextProvider
     {
-        private string[] _fields = null;
+        private readonly string[] _fields;
 
         public SqlFullTextProvider(params string[] fields)
-            : base()
         {
             _fields = fields;
         }
