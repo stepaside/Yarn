@@ -266,5 +266,5 @@ bulk.Delete<Customer, string>(new[] { "ALFKI", "ANTON"  });
 bulk.Delete<Customer>(c => c.City == "London");
 
 // Bulk update
-bulk.Delete<Customer>(c => c.City == "New York", c => new Customer { City = c.City + " City" });
+bulk.Update<Customer>(c => c.City == "New York", c => new Customer { City = c.City + " City" });
 ```
