@@ -7,7 +7,7 @@
     <ProjectGuid>{27CF3400-FAAB-458A-8800-C3276D4282F4}</ProjectGuid>
     <OutputType>Library</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
-    <RootNamespace>Yarn.Nemo</RootNamespace>
+    <RootNamespace>Yarn</RootNamespace>
     <AssemblyName>Yarn.Nemo</AssemblyName>
     <TargetFrameworkVersion>v4.5</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
@@ -37,7 +37,7 @@
     </Reference>
     <Reference Include="Nemo, Version=2.1.0.0, Culture=neutral, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\packages\Nemo.2.1.0-rc004\lib\net45\Nemo.dll</HintPath>
+      <HintPath>..\packages\Nemo.2.1.0-rc005\lib\net45\Nemo.dll</HintPath>
     </Reference>
     <Reference Include="System" />
     <Reference Include="System.Core" />
