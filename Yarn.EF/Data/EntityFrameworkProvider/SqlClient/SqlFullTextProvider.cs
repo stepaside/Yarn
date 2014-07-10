@@ -22,7 +22,7 @@ namespace Yarn.Data.EntityFrameworkProvider.SqlClient
 
         public override IList<T> Search<T>(string searchTerms)
         {
-            var dbContext = ((IDataContext<DbContext>)this.DataContext).Session;
+            var dbContext = ((IDataContext<DbContext>)DataContext).Session;
             var objectContext = ((IObjectContextAdapter)dbContext).ObjectContext;
             var tableName = objectContext.GetTableName<T>();
 
