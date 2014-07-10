@@ -17,27 +17,62 @@ namespace Yarn.Data
 
         public static string GetProviderInvariantNameByConnectionString(string connectionString)
         {
-            var pos1 = connectionString.IndexOf("provider=", StringComparison.OrdinalIgnoreCase);
-            if (pos1 > -1)
+
+            if (connectionString == null) return null;
+
+            var builder = new DbConnectionStringBuilder { ConnectionString = connectionString };
+
+            object providerValue;
+            if (builder.TryGetValue("provider", out providerValue))
             {
-                var pos2 = connectionString.IndexOf(";", pos1);
-                return pos2 > -1 ? connectionString.Substring(pos1 + 9, pos2 - pos1 - 9) : connectionString.Substring(pos1 + 9);
+                return providerValue.ToString();
             }
 
-            for (var i = 0; i < ConfigurationManager.ConnectionStrings.Count; i++)
+            var persistSecurityInfo = false;
+            object persistSecurityInfoValue;
+            if (builder.TryGetValue("persist security info", out persistSecurityInfoValue))
             {
-                var config = ConfigurationManager.ConnectionStrings[i];
-                if (string.Equals(config.ConnectionString, connectionString, StringComparison.OrdinalIgnoreCase))
+                persistSecurityInfo = Convert.ToBoolean(persistSecurityInfoValue);
+            }
+
+            var lostPassword = !persistSecurityInfo && !builder.ContainsKey("pwd") && !builder.ContainsKey("password");
+
+            if (!lostPassword)
+            {
+                for (var i = 0; i < ConfigurationManager.ConnectionStrings.Count; i++)
                 {
-                    return config.ProviderName;
+                    var config = ConfigurationManager.ConnectionStrings[i];
+                    if (string.Equals(config.ConnectionString, connectionString, StringComparison.OrdinalIgnoreCase))
+                    {
+                        return config.ProviderName;
+                    }
                 }
-
-                if (config.ConnectionString.IndexOf(connectionString, StringComparison.OrdinalIgnoreCase) < 0) continue;
-                pos1 = config.ConnectionString.IndexOf("provider=", StringComparison.OrdinalIgnoreCase);
-                if (pos1 < 0) continue;
-                var pos2 = config.ConnectionString.IndexOf(";", pos1);
-                return pos2 > -1 ? config.ConnectionString.Substring(pos1 + 9, pos2 - pos1 - 9) : config.ConnectionString.Substring(pos1 + 9);
             }
+            else
+            {
+                for (var i = 0; i < ConfigurationManager.ConnectionStrings.Count; i++)
+                {
+                    var config = ConfigurationManager.ConnectionStrings[i];
+
+                    var otherBuilder = new DbConnectionStringBuilder { ConnectionString = config.ConnectionString };
+                    otherBuilder.Remove("pwd");
+                    otherBuilder.Remove("password");
+
+                    if (otherBuilder.Count != builder.Count) continue;
+
+                    var equivalenCount = builder.Cast<KeyValuePair<string, object>>().Select(p =>
+                    {
+                        object value;
+                        return otherBuilder.TryGetValue(p.Key, out value) && string.Equals(Convert.ToString(value), Convert.ToString(p.Value), StringComparison.OrdinalIgnoreCase) ? 1 : 0;
+                    }).Sum();
+
+                    if (equivalenCount == builder.Count)
+                    {
+                        return config.ProviderName;
+                    }
+                }
+            }
+
             return null;
         }
 
@@ -45,7 +80,10 @@ namespace Yarn.Data
         {
             var factory = DbProviderFactories.GetFactory(providerName);
             var connection = factory.CreateConnection();
-            connection.ConnectionString = connectionString;
+            if (connection != null)
+            {
+                connection.ConnectionString = connectionString;
+            }
             return connection;
         }
 
@@ -54,18 +92,17 @@ namespace Yarn.Data
             var config = ConfigurationManager.ConnectionStrings[connectionName];
             var factory = DbProviderFactories.GetFactory(config.ProviderName);
             var connection = factory.CreateConnection();
-            connection.ConnectionString = config.ConnectionString;
+            if (connection != null)
+            {
+                connection.ConnectionString = config.ConnectionString;
+            }
             return connection;
         }
 
         public static DbDataAdapter CreateDataAdapter(DbConnection connection)
         {
             var providerName = GetProviderInvariantNameByConnectionString(connection.ConnectionString);
-            if (providerName != null)
-            {
-                return DbProviderFactories.GetFactory(providerName).CreateDataAdapter();
-            }
-            return null;
+            return providerName != null ? DbProviderFactories.GetFactory(providerName).CreateDataAdapter() : null;
         }
 
         public static DbParameter CreateParameter(DbConnection connection, string name, object value)
