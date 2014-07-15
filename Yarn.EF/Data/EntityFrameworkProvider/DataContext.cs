@@ -38,7 +38,8 @@ namespace Yarn.Data.EntityFrameworkProvider
         private readonly Type _dbContextType;
 
         private bool? _codeFirst;
-        private string _key;
+        private string _contextKey;
+        private string _modelKey;
         private string _source;
 
         protected Lazy<DbContext> _context = null;
@@ -92,13 +93,13 @@ namespace Yarn.Data.EntityFrameworkProvider
         {
             var nameOrConnectionString = _nameOrConnectionString ?? prefix + ".Connection";
 
-            _key = nameOrConnectionString;
+            _contextKey = _modelKey = nameOrConnectionString;
             if (_dbContextType != null)
             {
-                _key = _dbContextType.FullName;
+                _modelKey = _dbContextType.FullName;
             }
             
-            var dbContext = (DbContext)DataContextCache.Current.Get(_key);
+            var dbContext = (DbContext)DataContextCache.Current.Get(_contextKey);
             if (dbContext != null && dbContext.Database.Connection.State != ConnectionState.Broken)
             {
                 return dbContext;
@@ -110,7 +111,7 @@ namespace Yarn.Data.EntityFrameworkProvider
             }
             dbContext = null;
 
-            var modelInfo = DbModelBuilders.GetOrAdd(_key, k => ConfigureDbModel(prefix));
+            var modelInfo = DbModelBuilders.GetOrAdd(_modelKey, k => ConfigureDbModel(prefix));
 
             if (modelInfo.DbContextType != null)
             {
@@ -172,7 +173,7 @@ namespace Yarn.Data.EntityFrameworkProvider
                 }
             }
 
-            DataContextCache.Current.Set(_key, dbContext);
+            DataContextCache.Current.Set(_contextKey, dbContext);
             return dbContext;
         }
 
@@ -295,9 +296,9 @@ namespace Yarn.Data.EntityFrameworkProvider
 
             if (_context == null) return;
             
-            if (_key != null)
+            if (_contextKey != null)
             {
-                DataContextCache.Current.Cleanup(_key);
+                DataContextCache.Current.Cleanup(_contextKey);
             }
             _context.Value.Dispose();
             _context = null;
