@@ -4,7 +4,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
 
-namespace Yarn.Reflection
+namespace Yarn.Linq.Expressions
 {
     /// <summary>
     /// Enables cache key support for local collection values.
@@ -12,7 +12,7 @@ namespace Yarn.Reflection
     /// From https://github.com/SharpRepository/SharpRepository/blob/develop/SharpRepository.Repository/Caching/Hash/LocalCollectionExpander.cs
     /// </remarks>
     /// </summary>
-    public class LocalCollectionExpander : ExpressionVisitor
+    public class LocalCollectionExpander : System.Linq.Expressions.ExpressionVisitor
     {
         public static Expression Rewrite(Expression expression)
         {

@@ -1,10 +1,7 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
+﻿using System.Collections.Generic;
 using System.Linq.Expressions;
-using System.Text;
 
-namespace Yarn.Extensions
+namespace Yarn.Linq.Expressions
 {
     internal class ParameterRebinder : ExpressionVisitor
     {

@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.Linq.Expressions;
 
-namespace Yarn.Reflection
+namespace Yarn.Linq.Expressions
 {
     /// <summary>
     /// Enables the partial evaluation of queries.

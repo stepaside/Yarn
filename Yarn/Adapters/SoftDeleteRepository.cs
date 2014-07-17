@@ -6,6 +6,7 @@ using System.Security.Principal;
 using System.Text;
 using System.Threading.Tasks;
 using Yarn.Extensions;
+using Yarn.Linq.Expressions;
 using Yarn.Specification;
 
 namespace Yarn.Adapters
@@ -48,7 +49,8 @@ namespace Yarn.Adapters
 
         public T Find<T>(Expression<Func<T, bool>> criteria) where T : class
         {
-            return typeof(ISoftDelete).IsAssignableFrom(typeof(T)) ? _repository.All<T>().Where(e => !((ISoftDelete)e).IsDeleted).FirstOrDefault(criteria) : _repository.Find<T>(criteria);
+            Expression<Func<T, bool>> filter = e => !((ISoftDelete)e).IsDeleted;
+            return typeof(ISoftDelete).IsAssignableFrom(typeof(T)) ? _repository.All<T>().Where(CastRemoverVisitor<ISoftDelete>.Convert(filter)).FirstOrDefault(criteria) : _repository.Find<T>(criteria);
         }
 
         public IEnumerable<T> FindAll<T>(ISpecification<T> criteria, int offset = 0, int limit = 0, Expression<Func<T, object>> orderBy = null) where T : class
@@ -60,7 +62,8 @@ namespace Yarn.Adapters
         {
             if (typeof(ISoftDelete).IsAssignableFrom(typeof(T)))
             {
-                var query = _repository.All<T>().Where(e => !((ISoftDelete)e).IsDeleted).Where(criteria);
+                Expression<Func<T, bool>> filter = e => !((ISoftDelete)e).IsDeleted;
+                var query = _repository.All<T>().Where(CastRemoverVisitor<ISoftDelete>.Convert(filter)).Where(criteria);
                 return this.Page(query, offset, limit, orderBy);
             }
             return _repository.FindAll(criteria, offset, limit, orderBy);
@@ -68,7 +71,8 @@ namespace Yarn.Adapters
 
         public IList<T> Execute<T>(string command, ParamList parameters) where T : class
         {
-            return typeof(ISoftDelete).IsAssignableFrom(typeof(T)) ? _repository.Execute<T>(command, parameters).Where(e => !((ISoftDelete)e).IsDeleted).ToArray() : _repository.Execute<T>(command, parameters);
+            Expression<Func<T, bool>> filter = e => !((ISoftDelete)e).IsDeleted;
+            return typeof(ISoftDelete).IsAssignableFrom(typeof(T)) ? _repository.Execute<T>(command, parameters).Where(CastRemoverVisitor<ISoftDelete>.Convert(filter).Compile()).ToArray() : _repository.Execute<T>(command, parameters);
         }
 
         public T Add<T>(T entity) where T : class
@@ -115,7 +119,8 @@ namespace Yarn.Adapters
 
         public long Count<T>() where T : class
         {
-            return typeof(ISoftDelete).IsAssignableFrom(typeof(T)) ? _repository.All<T>().Where(e => !((ISoftDelete)e).IsDeleted).LongCount() : _repository.Count<T>();
+            Expression<Func<T, bool>> filter = e => !((ISoftDelete)e).IsDeleted;
+            return typeof(ISoftDelete).IsAssignableFrom(typeof(T)) ? _repository.All<T>().Where(CastRemoverVisitor<ISoftDelete>.Convert(filter)).LongCount() : _repository.Count<T>();
         }
 
         public long Count<T>(ISpecification<T> criteria) where T : class
@@ -130,7 +135,8 @@ namespace Yarn.Adapters
 
         public IQueryable<T> All<T>() where T : class
         {
-            return typeof(ISoftDelete).IsAssignableFrom(typeof(T)) ? _repository.All<T>().Where(e => !((ISoftDelete)e).IsDeleted) : _repository.All<T>();
+            Expression<Func<T, bool>> filter = e => !((ISoftDelete)e).IsDeleted;
+            return typeof(ISoftDelete).IsAssignableFrom(typeof(T)) ? _repository.All<T>().Where(CastRemoverVisitor<ISoftDelete>.Convert(filter)) : _repository.All<T>();
         }
 
         public void Detach<T>(T entity) where T : class

@@ -14,6 +14,7 @@ using Nemo.Linq;
 using Nemo.Reflection;
 using Nemo.UnitOfWork;
 using Yarn.Extensions;
+using Yarn.Linq.Expressions;
 using Yarn.Reflection;
 using Yarn.Specification;
 using PList = Nemo.ParamList;

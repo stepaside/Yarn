@@ -6,6 +6,7 @@ using System.Linq.Expressions;
 using System.Text;
 using Yarn.Adapters;
 using Yarn.Extensions;
+using Yarn.Linq.Expressions;
 using Yarn.Reflection;
 using Yarn.Specification;
 

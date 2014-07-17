@@ -17,6 +17,7 @@ using System.Text;
 using System.Text.RegularExpressions;
 using System.Transactions;
 using Yarn.Extensions;
+using Yarn.Linq.Expressions;
 using Yarn.Reflection;
 using Yarn.Specification;
 
