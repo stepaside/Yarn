@@ -55,18 +55,28 @@ namespace Yarn.Adapters
 
         public IEnumerable<T> FindAll<T>(ISpecification<T> criteria, int offset = 0, int limit = 0, Expression<Func<T, object>> orderBy = null) where T : class
         {
-            return FindAll(((Specification<T>)criteria).Predicate, offset, limit);
+            if (!typeof(ISoftDelete).IsAssignableFrom(typeof(T)))
+            {
+                return _repository.FindAll(criteria, offset, limit, orderBy);
+            }
+
+            Expression<Func<T, bool>> filter = e => !((ISoftDelete)e).IsDeleted;
+            var spec = ((Specification<T>)criteria).And(CastRemoverVisitor<ISoftDelete>.Convert(filter));
+            var query = _repository.All<T>().Where(spec.Predicate);
+            return this.Page(query, offset, limit, orderBy);
         }
 
         public IEnumerable<T> FindAll<T>(Expression<Func<T, bool>> criteria, int offset = 0, int limit = 0, Expression<Func<T, object>> orderBy = null) where T : class
         {
-            if (typeof(ISoftDelete).IsAssignableFrom(typeof(T)))
+            if (!typeof(ISoftDelete).IsAssignableFrom(typeof(T)))
             {
-                Expression<Func<T, bool>> filter = e => !((ISoftDelete)e).IsDeleted;
-                var query = _repository.All<T>().Where(CastRemoverVisitor<ISoftDelete>.Convert(filter)).Where(criteria);
-                return this.Page(query, offset, limit, orderBy);
+                return _repository.FindAll(criteria, offset, limit, orderBy);
             }
-            return _repository.FindAll(criteria, offset, limit, orderBy);
+
+            Expression<Func<T, bool>> filter = e => !((ISoftDelete)e).IsDeleted;
+            var spec = new Specification<T>(CastRemoverVisitor<ISoftDelete>.Convert(filter)).And(criteria);
+            var query = _repository.All<T>().Where(spec.Predicate);
+            return this.Page(query, offset, limit, orderBy);
         }
 
         public IList<T> Execute<T>(string command, ParamList parameters) where T : class
@@ -125,12 +135,12 @@ namespace Yarn.Adapters
 
         public long Count<T>(ISpecification<T> criteria) where T : class
         {
-            return FindAll(criteria).LongCount();
+            return FindAll(criteria).AsQueryable().LongCount();
         }
 
         public long Count<T>(Expression<Func<T, bool>> criteria) where T : class
         {
-            return FindAll(criteria).LongCount();
+            return FindAll(criteria).AsQueryable().LongCount();
         }
 
         public IQueryable<T> All<T>() where T : class
