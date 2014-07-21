@@ -2,7 +2,7 @@
 <package >
   <metadata>
     <id>Yarn.Cache</id>
-    <version>0.8.9</version>
+    <version>0.8.10</version>
     <title>Yarn.Cache</title>
     <authors>Max Stepanskiy</authors>
     <owners>Stepaside, Inc.</owners>
@@ -12,7 +12,7 @@
     <copyright>Copyright © Max Stepanskiy 2012-2014</copyright>
     <tags>Cache Repository</tags>
     <dependencies>
-      <dependency id="Yarn" version="[0.8.9]" />
+      <dependency id="Yarn" version="[0.8.10]" />
     </dependencies>
   </metadata>
   <files>
