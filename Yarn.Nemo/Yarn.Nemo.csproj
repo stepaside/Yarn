@@ -35,8 +35,9 @@
     <Reference Include="log4net">
       <HintPath>..\packages\log4net.2.0.3\lib\net40-full\log4net.dll</HintPath>
     </Reference>
-    <Reference Include="Nemo">
-      <HintPath>..\packages\Nemo.2.1.0-rc006\lib\net45\Nemo.dll</HintPath>
+    <Reference Include="Nemo, Version=2.1.0.0, Culture=neutral, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\packages\Nemo.2.1.0\lib\net40\Nemo.dll</HintPath>
     </Reference>
     <Reference Include="System" />
     <Reference Include="System.Core" />
