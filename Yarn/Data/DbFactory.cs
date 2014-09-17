@@ -50,6 +50,13 @@ namespace Yarn.Data
             }
             else
             {
+                object uid;
+                if (builder.TryGetValue("uid", out uid))
+                {
+                    builder.Remove("uid");
+                    builder["user id"] = uid;
+                }
+
                 for (var i = 0; i < ConfigurationManager.ConnectionStrings.Count; i++)
                 {
                     var config = ConfigurationManager.ConnectionStrings[i];
@@ -57,6 +64,13 @@ namespace Yarn.Data
                     var otherBuilder = new DbConnectionStringBuilder { ConnectionString = config.ConnectionString };
                     otherBuilder.Remove("pwd");
                     otherBuilder.Remove("password");
+
+                    object otherUid;
+                    if (otherBuilder.TryGetValue("uid", out otherUid))
+                    {
+                        otherBuilder.Remove("uid");
+                        otherBuilder["user id"] = otherUid;
+                    }
 
                     if (otherBuilder.Count != builder.Count) continue;
 

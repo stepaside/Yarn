@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Yarn.Ioc
+namespace Yarn.IoC
 {
     public class DefaultContainer : IContainer
     {
@@ -20,7 +20,7 @@ namespace Yarn.Ioc
             where TConcrete : class, TAbstract, new()
         {
             Func<TAbstract> createInstance = () => new TConcrete();
-            Register<TAbstract>(createInstance, instanceName);
+            Register(createInstance, instanceName);
         }
 
         public void Register<TAbstract, TConcrete>(TConcrete instance, string instanceName = null)
@@ -28,7 +28,7 @@ namespace Yarn.Ioc
             where TConcrete : class, TAbstract
         {
             Func<TAbstract> createInstance = () => instance;
-            Register<TAbstract>(createInstance, instanceName);
+            Register(createInstance, instanceName);
         }
 
         public void Register<TAbstract>(Func<TAbstract> createInstanceFactory, string instanceName = null) 
@@ -71,6 +71,11 @@ namespace Yarn.Ioc
 
             const string errorMessageFormat = "Could not find mapping for type '{0}'";
             throw new InvalidOperationException(string.Format(errorMessageFormat, typeof(TAbstract).FullName));
+        }
+
+        public void Dispose()
+        {
+            _mappings.Clear();
         }
     }
 }

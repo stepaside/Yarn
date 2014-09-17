@@ -353,17 +353,16 @@ namespace Yarn.Data.EntityFrameworkProvider
 
         public long Insert<T>(IEnumerable<T> entities) where T : class
         {
-            using (var dbContext = new DbContext(DbContext.Database.Connection.ConnectionString))
+            using (var dataContext = new DataContext(_prefix, _lazyLoadingEnabled, _proxyCreationEnabled,
+                _autoDetectChangesEnabled, _validateOnSaveEnabled, _migrationEnabled, _nameOrConnectionString,
+                _assemblyNameOrLocation, _configurationAssembly, _dbContextType))
             {
-                dbContext.Configuration.LazyLoadingEnabled = false;
-                dbContext.Configuration.AutoDetectChangesEnabled = false;
+                dataContext.Session.Set<T>().AddRange(entities);
 
-                dbContext.Set<T>().AddRange(entities);
-
-                return dbContext.SaveChanges();
+                return dataContext.Session.SaveChanges();
             }
         }
-        
+
         public long Update<T>(Expression<Func<T, bool>> criteria, Expression<Func<T, T>> update) where T : class
         {
             return Update<T>(new BulkUpdateOperation<T> { Criteria = criteria, Update = update });

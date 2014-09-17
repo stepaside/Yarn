@@ -7,29 +7,30 @@ using System.Threading.Tasks;
 
 namespace Yarn.IoC.StructureMap
 {
-    public class StructureMapContainer : Yarn.Ioc.IContainer
+    public class StructureMapContainer : IContainer
     {
+        private readonly Container _container;
+
+        public StructureMapContainer()
+        {
+            _container = new Container();
+            _container.Name = "YarnContainer-" + _container.Name;
+        }
+
         public bool IsRegistered<TAbstract>(string instanceName = null) where TAbstract : class
         {
-            if (instanceName == null)
-            {
-                return ObjectFactory.Container.TryGetInstance<TAbstract>() != null;
-            }
-            else
-            {
-                return ObjectFactory.Container.GetInstance<TAbstract>(instanceName) != null;
-            }
+            return instanceName == null ? _container.TryGetInstance<TAbstract>() != null : _container.GetInstance<TAbstract>(instanceName) != null;
         }
 
         public void Register<TAbstract>(Func<TAbstract> createInstanceFactory, string instanceName = null) where TAbstract : class
         {
             if (instanceName == null)
             {
-                ObjectFactory.Container.Configure(c => c.For<TAbstract>().Use(createInstanceFactory));
+                _container.Configure(c => c.For<TAbstract>().Use(() => createInstanceFactory()));
             }
             else
             {
-                ObjectFactory.Container.Configure(c => c.For<TAbstract>().Use(createInstanceFactory).Named(instanceName));
+                _container.Configure(c => c.For<TAbstract>().Use(() => createInstanceFactory()).Named(instanceName));
             }
         }
 
@@ -39,11 +40,11 @@ namespace Yarn.IoC.StructureMap
         {
             if (instanceName == null)
             {
-                ObjectFactory.Container.Configure(c => c.For<TAbstract>().Use(instance));
+                _container.Configure(c => c.For<TAbstract>().Use(instance));
             }
             else
             {
-                ObjectFactory.Container.Configure(c => c.For<TAbstract>().Use(instance).Named(instanceName));
+                _container.Configure(c => c.For<TAbstract>().Use(instance).Named(instanceName));
             }
         }
 
@@ -53,24 +54,22 @@ namespace Yarn.IoC.StructureMap
         {
             if (instanceName == null)
             {
-                ObjectFactory.Container.Configure(c => c.For<TAbstract>().Use<TConcrete>());
+                _container.Configure(c => c.For<TAbstract>().Use<TConcrete>());
             }
             else
             {
-                ObjectFactory.Container.Configure(c => c.For<TAbstract>().Use<TConcrete>().Named(instanceName));
+                _container.Configure(c => c.For<TAbstract>().Use<TConcrete>().Named(instanceName));
             }
         }
 
         public TAbstract Resolve<TAbstract>(string instanceName = null) where TAbstract : class
         {
-            if (instanceName == null)
-            {
-                return ObjectFactory.Container.GetInstance<TAbstract>();
-            }
-            else
-            {
-                return ObjectFactory.Container.GetInstance<TAbstract>(instanceName);
-            }
+            return instanceName == null ? _container.GetInstance<TAbstract>() : _container.GetInstance<TAbstract>(instanceName);
+        }
+
+        public void Dispose()
+        {
+            _container.Dispose();
         }
     }
 }

@@ -4,9 +4,9 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Yarn.Ioc
+namespace Yarn.IoC
 {
-    public interface IContainer
+    public interface IContainer : IDisposable
     {
         void Register<TAbstract, TConcrete>(string instanceName = null) 
             where TAbstract : class

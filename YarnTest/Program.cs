@@ -38,6 +38,7 @@ namespace YarnTest
             else
             {
                 var session = ((IDataContext<DbContext>)dctx).Session;
+                var tableName = session.GetTableName<Customer>();
                 //repo.As<IBulkOperationsProvider>().Update<Customer>(c => c.CustomerID.Length > 12, c => new Customer { ContactName = c.ContactName + " 2" });
                 //repo.As<IBulkOperationsProvider>().Delete<Customer>(c => c.CustomerID.Length > 12, c => c.CustomerID.StartsWith("AL"));
             }

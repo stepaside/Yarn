@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
-using Yarn.Ioc;
+using Yarn.IoC;
 
 namespace Yarn
 {
