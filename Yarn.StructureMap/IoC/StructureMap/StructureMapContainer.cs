@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 
 namespace Yarn.IoC.StructureMap
 {
-    public class StructureMapContainer : IContainer
+    public class StructureMapContainer : IContainerAdapter<Container>
     {
         private readonly Container _container;
 
@@ -70,6 +70,11 @@ namespace Yarn.IoC.StructureMap
         public void Dispose()
         {
             _container.Dispose();
+        }
+
+        public Container Container
+        {
+            get { return _container; }
         }
     }
 }
