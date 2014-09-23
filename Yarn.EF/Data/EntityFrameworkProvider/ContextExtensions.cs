@@ -2,11 +2,13 @@
 using System.Collections.Generic;
 using System.Data.Entity;
 using System.Data.Entity.Core.EntityClient;
+using System.Data.Entity.Core.Mapping;
 using System.Data.Entity.Core.Metadata.Edm;
 using System.Data.Entity.Core.Objects;
 using System.Data.Entity.Core.Objects.DataClasses;
 using System.Data.Entity.Infrastructure;
 using System.Linq;
+using System.Reflection;
 using System.Text;
 using System.Text.RegularExpressions;
 using System.Data.Entity.Core.Metadata.Edm;
@@ -19,6 +21,12 @@ namespace Yarn.Data.EntityFrameworkProvider
         {
             var objectContext = ((IObjectContextAdapter)context).ObjectContext;
             return objectContext.GetTableName<T>();
+        }
+
+        internal static string GetTableName(this DbContext context, Type type)
+        {
+            var objectContext = ((IObjectContextAdapter)context).ObjectContext;
+            return objectContext.GetTableName(type);
         }
 
         //public static string GetTableName<T>(this ObjectContext context) where T : class
@@ -35,7 +43,7 @@ namespace Yarn.Data.EntityFrameworkProvider
         //{
         //    var objectContext = ((IObjectContextAdapter)context).ObjectContext;
         //    var tableName = objectContext.GetTableName<T>();
-            
+
         //    var itemCollection = objectContext.MetadataWorkspace.GetItemCollection(DataSpace.CSSpace);
         //    GlobalItem i;
         //    if (itemCollection == null)
@@ -46,11 +54,18 @@ namespace Yarn.Data.EntityFrameworkProvider
         //    return null;
         //}
 
+        private const BindingFlags Bindings = BindingFlags.Public | BindingFlags.Instance | BindingFlags.NonPublic;
+
         public static string GetTableName<T>(this ObjectContext context) where T : class
         {
-            var container = context.MetadataWorkspace.GetEntityContainer(context.DefaultContainerName, DataSpace.CSpace);
-            var sets = container.BaseEntitySets.Where(e => e.BuiltInTypeKind == BuiltInTypeKind.EntitySet);
-            return sets.Cast<EntitySet>().Where(e => e.ElementType.Name == typeof(T).Name).Select(e => e.Name).FirstOrDefault();
+            return context.GetTableName(typeof(T));
+        }
+
+        internal static string GetTableName(this ObjectContext context, Type type)
+        {
+            var ocModel = context.MetadataWorkspace.GetItemCollection(DataSpace.OCSpace);
+            var ocItem = ocModel.FirstOrDefault(o => o.GetType().Name == "ObjectTypeMapping" && ((EdmType)o.GetType().GetProperty("ClrType", Bindings).GetValue(o)).FullName == type.FullName);
+            return ocItem != null ? ((EdmType)ocItem.GetType().GetProperty("EdmType", Bindings).GetValue(ocItem)).Name : "";
         }
     }
 }

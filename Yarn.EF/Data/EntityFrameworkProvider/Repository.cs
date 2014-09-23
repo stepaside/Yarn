@@ -26,7 +26,7 @@ namespace Yarn.Data.EntityFrameworkProvider
     public class Repository : IRepository, IMetaDataProvider, ILoadServiceProvider, IBulkOperationsProvider
     {
         private static readonly ConcurrentDictionary<Type, Dictionary<string, string>> _columnMappings = new ConcurrentDictionary<Type, Dictionary<string, string>>();
-        
+
         protected IDataContext<DbContext> _context;
 
         protected readonly string _prefix;
@@ -41,19 +41,21 @@ namespace Yarn.Data.EntityFrameworkProvider
         protected readonly Type _dbContextType;
         protected readonly bool _mergeOnUpdate;
 
-        public Repository() : this(prefix: null) { }
+        public Repository() : this(prefix: null)
+        {
+        }
 
-        public Repository(string prefix = null, 
-                            bool lazyLoadingEnabled = true,
-                            bool proxyCreationEnabled = true,
-                            bool autoDetectChangesEnabled = false,
-                            bool validateOnSaveEnabled = true,
-                            bool migrationEnabled = false,
-                            string nameOrConnectionString = null,
-                            string assemblyNameOrLocation = null,
-                            Assembly configurationAssembly = null,
-                            Type dbContextType = null,
-                            bool mergeOnUpdate = false) 
+        public Repository(string prefix = null,
+            bool lazyLoadingEnabled = true,
+            bool proxyCreationEnabled = true,
+            bool autoDetectChangesEnabled = false,
+            bool validateOnSaveEnabled = true,
+            bool migrationEnabled = false,
+            string nameOrConnectionString = null,
+            string assemblyNameOrLocation = null,
+            Assembly configurationAssembly = null,
+            Type dbContextType = null,
+            bool mergeOnUpdate = false)
         {
             _prefix = prefix;
             _lazyLoadingEnabled = lazyLoadingEnabled;
@@ -75,7 +77,7 @@ namespace Yarn.Data.EntityFrameworkProvider
         {
             return Table<T>().Find(id);
         }
-        
+
         public T Find<T>(Expression<Func<T, bool>> criteria) where T : class
         {
             return Table<T>().FirstOrDefault(criteria);
@@ -85,7 +87,7 @@ namespace Yarn.Data.EntityFrameworkProvider
         {
             return FindAll(criteria).FirstOrDefault();
         }
-        
+
         public IEnumerable<T> FindAll<T>(Expression<Func<T, bool>> criteria, int offset = 0, int limit = 0, Expression<Func<T, object>> orderBy = null) where T : class
         {
             var query = Table<T>().Where(criteria);
@@ -173,7 +175,7 @@ namespace Yarn.Data.EntityFrameworkProvider
             }
             return entry.Entity;
         }
-        
+
         public void Attach<T>(T entity) where T : class
         {
             // TODO: revise attach to be smarter (e.g., support for object graphs)
@@ -212,10 +214,7 @@ namespace Yarn.Data.EntityFrameworkProvider
 
         protected DbContext DbContext
         {
-            get
-            {
-                return ((IDataContext<DbContext>)DataContext).Session;
-            }
+            get { return ((IDataContext<DbContext>)DataContext).Session; }
         }
 
         public virtual IDataContext DataContext
@@ -270,10 +269,10 @@ namespace Yarn.Data.EntityFrameworkProvider
         private class LoadService<T> : ILoadService<T>
             where T : class
         {
-            readonly Repository _repository;
-            IQueryable<T> _query;
-            readonly List<string[]> _paths;
-            
+            private readonly Repository _repository;
+            private IQueryable<T> _query;
+            private readonly List<string[]> _paths;
+
             public LoadService(IRepository repository)
             {
                 _repository = (Repository)repository;
@@ -330,7 +329,7 @@ namespace Yarn.Data.EntityFrameworkProvider
 
             public void Dispose()
             {
-                
+
             }
         }
 
@@ -385,9 +384,11 @@ namespace Yarn.Data.EntityFrameworkProvider
 
                     using (var command = connection.CreateCommand())
                     {
-                        var mappings = ExtractColumnMappings<T>(DbContext);
+                        Dictionary<string, string> mappings = null;
 
-                        var regex = new Regex("FROM\\s+(?<table>.*)\\s+AS\\s+(?<as>.*)\\s+WHERE\\s+(?<criteria>.*)");
+                        var regexWhere = new Regex(@"(?<=WHERE\s+)(?<criteria>.*)");
+                        var regexAsClause = new Regex(@"(?<=FROM\s+.*?AS\s+)(?<as>.*?)(?=(\s+|$))");
+
                         var builder = new StringBuilder();
                         var notFirst = false;
 
@@ -404,11 +405,17 @@ namespace Yarn.Data.EntityFrameworkProvider
                             criteriaExpression = LocalCollectionExpander.Rewrite(criteriaExpression);
 
                             var sql = All<T>().Where((Expression<Func<T, bool>>)criteriaExpression).ToString();
-                            
-                            var match = regex.Match(sql);
 
-                            var asClause = match.Groups["as"].Value.Trim();
-                            var whereClause = match.Groups["criteria"].Value;
+                            if (mappings == null)
+                            {
+                                mappings = ExtractColumnMappings<T>(DbContext);
+                            }
+
+                            var matchWhere = regexWhere.Match(sql);
+                            var matchAsClause = regexAsClause.Match(sql);
+
+                            var asClause = matchAsClause.Groups["as"].Value.Trim();
+                            var whereClause = matchWhere.Groups["criteria"].Value;
                             whereClause = whereClause.Replace(asClause + ".", "");
 
                             var updateBody = (MemberInitExpression)bulkOperation.Update.Body;
@@ -586,6 +593,7 @@ namespace Yarn.Data.EntityFrameworkProvider
 
                     using (var command = connection.CreateCommand())
                     {
+                        var sql = All<T>().ToString();
                         var mappings = ExtractColumnMappings<T>(DbContext);
 
                         var builder = new StringBuilder();
@@ -634,7 +642,9 @@ namespace Yarn.Data.EntityFrameworkProvider
 
                     using (var command = connection.CreateCommand())
                     {
-                        var regex = new Regex("FROM\\s+(?<table>.*)\\s+AS\\s+(?<as>.*)\\s+WHERE\\s+(?<criteria>.*)");
+                        var regexWhere = new Regex(@"(?<=WHERE\s+)(?<criteria>.*)");
+                        var regexAsClause = new Regex(@"(?<=FROM\s+.*?AS\s+)(?<as>.*?)(?=(\s+|$))");
+
                         var builder = new StringBuilder();
                         var notFirst = false;
 
@@ -651,18 +661,41 @@ namespace Yarn.Data.EntityFrameworkProvider
                             expression = LocalCollectionExpander.Rewrite(expression);
 
                             var sql = All<T>().Where((Expression<Func<T, bool>>)expression).ToString();
-                            var match = regex.Match(sql);
 
-                            var asClause = match.Groups["as"].Value.Trim();
-                            var whereClause = match.Groups["criteria"].Value;
+                            var matchWhere = regexWhere.Match(sql);
+                            var matchAsClause = regexAsClause.Match(sql);
+
+                            var asClause = matchAsClause.Groups["as"].Value.Trim();
+                            var whereClause = matchWhere.Groups["criteria"].Value;
                             whereClause = whereClause.Replace(asClause + ".", "");
 
-                            builder.Append("DELETE FROM ");
-                            builder.Append(DbContext.GetTableName<T>());
-                            builder.AppendLine();
-                            builder.Append("WHERE ");
-                            builder.Append(whereClause);
-                            notFirst = true;
+                            var notFirstType = false;
+                            foreach (var type in GetTypeHierarchy(typeof(T)))
+                            {
+                                var tableName = DbContext.GetTableName(type);
+                                if (string.IsNullOrEmpty(tableName))
+                                {
+                                    break;
+                                }
+
+                                if (notFirstType)
+                                {
+                                    builder.Append(";");
+                                    builder.AppendLine();
+                                }
+
+                                builder.Append("DELETE FROM ");
+                                builder.Append(tableName);
+                                builder.AppendLine();
+                                builder.Append("WHERE ");
+                                builder.Append(whereClause);
+                                notFirstType = true;
+                            }
+
+                            if (notFirstType)
+                            {
+                                notFirst = true;
+                            }
                         }
 
                         command.CommandTimeout = 0;
@@ -692,69 +725,40 @@ namespace Yarn.Data.EntityFrameworkProvider
         {
             const BindingFlags bindings = BindingFlags.Public | BindingFlags.Instance | BindingFlags.NonPublic;
 
-            return _columnMappings.GetOrAdd(typeof(T), type =>
+            return _columnMappings.GetOrAdd(typeof(T), t =>
             {
+                var result = new Dictionary<string, string>();
+
                 var objectContext = ((IObjectContextAdapter)context).ObjectContext;
 
-                var csModel = objectContext.MetadataWorkspace.GetItemCollection(DataSpace.CSSpace);
-                var csItem = csModel.FirstOrDefault();
-
-                if (csItem == null)
-                {
-                    return new Dictionary<string, string>();
-                }
-
                 var ocModel = objectContext.MetadataWorkspace.GetItemCollection(DataSpace.OCSpace);
-                var ocItem = ocModel.FirstOrDefault(o => o.GetType().Name == "ObjectTypeMapping" && ((EdmType)o.GetType().GetProperty("ClrType", bindings).GetValue(o)).FullName == type.FullName);
+                var ocItem = ocModel.FirstOrDefault(o => o.GetType().Name == "ObjectTypeMapping" && ((EdmType)o.GetType().GetProperty("ClrType", bindings).GetValue(o)).FullName == t.FullName);
 
                 if (ocItem == null)
                 {
-                    return new Dictionary<string, string>();
+                    return result;
                 }
 
-                var edmType = (EdmType)ocItem.GetType().GetProperty("EdmType", bindings).GetValue(ocItem);
-
-                var entitySetMaps = (IList)csItem.GetType().GetProperty("EntitySetMaps", bindings).GetValue(csItem);
-
-                foreach (var entitySetMap in entitySetMaps)
+                var getMemberMapForClrMember = ocItem.GetType().GetMethod("GetMemberMapForClrMember", bindings);
+                var clrType = (EdmType)ocItem.GetType().GetProperty("ClrType", bindings).GetValue(ocItem);
+                var properties = (IList)clrType.GetType().GetProperty("Properties", bindings).GetValue(clrType);
+                foreach (var property in properties.Cast<EdmProperty>())
                 {
-                    var typeMappings = entitySetMap.GetType().GetProperty("TypeMappings", bindings).GetValue(entitySetMap) as IList;
-                    if (typeMappings == null || typeMappings.Count == 0)
-                    {
-                        continue;
-                    }
-
-                    var typeMappingsType = typeMappings[0].GetType();
-                    var types = typeMappingsType.GetProperty("Types", bindings).GetValue(typeMappings[0]) as ReadOnlyCollection<EdmType>;
-                    if (types == null || types.Count == 0)
-                    {
-                        continue;
-                    }
-
-                    if (types[0].FullName == edmType.FullName)
-                    {
-                        var result = new Dictionary<string, string>();
-                        var mappingFragments = typeMappingsType.GetProperty("MappingFragments", bindings).GetValue(typeMappings[0]) as IList;
-                        if (mappingFragments != null && mappingFragments.Count > 0)
-                        {
-                            var properties = mappingFragments[0].GetType().GetProperty("Properties", bindings).GetValue(mappingFragments[0]) as IList;
-                            if (properties != null)
-                            {
-                                foreach (var propertyMap in properties)
-                                {
-                                    var property = (EdmProperty)propertyMap.GetType().GetProperty("EdmProperty", bindings).GetValue(propertyMap);
-                                    var column = (EdmProperty)propertyMap.GetType().GetProperty("ColumnProperty", bindings).GetValue(propertyMap);
-                                    result[property.Name] = column.Name;
-                                }
-                            }
-                        }
-                        return result;
-                    }
+                    var mapping = getMemberMapForClrMember.Invoke(ocItem, new object[] { property.Name, false });
+                    var edmMember = mapping.GetType().GetProperty("EdmMember", bindings);
+                    result[property.Name] = ((EdmMember)edmMember.GetValue(mapping)).Name;
                 }
 
-                return new Dictionary<string, string>();
+                return result;
+
             });
-		}
+        }
+
+        private static IEnumerable<Type> GetTypeHierarchy (Type type)
+        {
+            for (var current = type; current != null; current = current.BaseType)
+                yield return current;
+        }
 
         #endregion
 
@@ -783,14 +787,14 @@ namespace Yarn.Data.EntityFrameworkProvider
             if (source == null || target == null) return;
 
             (ancestors = ancestors ?? new HashSet<object>()).Add(source);
-            
+
             var properties = source.GetType().GetProperties();
             if (paths != null && paths.Count > 0)
             {
                 var set = new HashSet<string>(paths.Select(p => p.ElementAtOrDefault(level)).Where(p => p != null));
                 properties = properties.Where(p => set.Contains(p.Name)).ToArray();
             }
-            
+
             foreach (var property in properties.Where(p => p.PropertyType != typeof(string) && p.PropertyType.IsClass && !typeof(IEnumerable).IsAssignableFrom(p.PropertyType)))
             {
                 var value = PropertyAccessor.Get(target.GetType(), target, property.Name);
@@ -815,7 +819,7 @@ namespace Yarn.Data.EntityFrameworkProvider
                     {
                         context.Entry(value).CurrentValues.SetValues(newValue);
                     }
-                    catch(Exception ex)
+                    catch (Exception ex)
                     {
                         // Merge failed as we tried to change the parent
                         // Now try actually changing the parent
@@ -896,9 +900,9 @@ namespace Yarn.Data.EntityFrameworkProvider
                         collection.Add(item);
 
                         var entry = context.Entry(item);
-                        
-                        var objectProperties = item.GetType().GetProperties().Where(p => p.PropertyType.IsClass && p.PropertyType != typeof (string));
-                        
+
+                        var objectProperties = item.GetType().GetProperties().Where(p => p.PropertyType.IsClass && p.PropertyType != typeof(string));
+
                         foreach (var objectProperty in objectProperties)
                         {
                             var member = entry.Member(objectProperty.Name);
@@ -920,7 +924,7 @@ namespace Yarn.Data.EntityFrameworkProvider
                 }
             }
         }
-        
+
         private class EntityEqualityComparer : IEqualityComparer<object>
         {
             private readonly Repository _repository;
@@ -979,7 +983,7 @@ namespace Yarn.Data.EntityFrameworkProvider
             }
         }
 
-        static bool ArraysEqual(object[] x, object[] y)
+        private static bool ArraysEqual(object[] x, object[] y)
         {
             if (x.Length != y.Length)
             {
