@@ -12,12 +12,18 @@ namespace Yarn.Data
         public static string GetProviderInvariantName(string connectionName)
         {
             var config = ConfigurationManager.ConnectionStrings[connectionName];
-            return config.ProviderName;
+            return config != null ? config.ProviderName : null;
+        }
+
+        public static string GetProviderInvariantName(string connectionName, out string connectionString)
+        {
+            var config = ConfigurationManager.ConnectionStrings[connectionName];
+            connectionString = config != null ? config.ConnectionString : null;
+            return config != null ? config.ProviderName : null;
         }
 
         public static string GetProviderInvariantNameByConnectionString(string connectionString)
         {
-
             if (connectionString == null) return null;
 
             var builder = new DbConnectionStringBuilder { ConnectionString = connectionString };
@@ -103,12 +109,15 @@ namespace Yarn.Data
 
         public static DbConnection CreateConnection(string connectionName)
         {
-            var config = ConfigurationManager.ConnectionStrings[connectionName];
-            var factory = DbProviderFactories.GetFactory(config.ProviderName);
+            string connectionString;
+            var providerName = GetProviderInvariantName(connectionName, out connectionString);
+            if (providerName == null) return null;
+
+            var factory = DbProviderFactories.GetFactory(providerName);
             var connection = factory.CreateConnection();
             if (connection != null)
             {
-                connection.ConnectionString = config.ConnectionString;
+                connection.ConnectionString = connectionString;
             }
             return connection;
         }

@@ -84,8 +84,7 @@ namespace Yarn.Data.EntityFrameworkProvider
 
         internal static DbConnection CreateConnection(string nameOrConnectionString)
         {
-            var providerName = DbFactory.GetProviderInvariantNameByConnectionString(nameOrConnectionString);
-            var connection = providerName == null ? DbFactory.CreateConnection(nameOrConnectionString) : DbFactory.CreateConnection(nameOrConnectionString, providerName);
+            var connection = DbFactory.CreateConnection(nameOrConnectionString) ?? DbFactory.CreateConnection(nameOrConnectionString, DbFactory.GetProviderInvariantNameByConnectionString(nameOrConnectionString));
             return connection;
         }
 

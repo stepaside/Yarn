@@ -2,7 +2,7 @@
 <package >
   <metadata>
     <id>Yarn.Nemo</id>
-    <version>0.8.12</version>
+    <version>0.8.13</version>
     <title>Yarn.Nemo</title>
     <authors>Max Stepanskiy</authors>
     <owners>Stepaside, Inc.</owners>
@@ -12,7 +12,7 @@
     <copyright>Copyright © Max Stepanskiy 2012-2014</copyright>
     <tags>Nemo Repository</tags>
     <dependencies>
-      <dependency id="Yarn" version="[0.8.12]" />
+      <dependency id="Yarn" version="[0.8.13]" />
       <dependency id="Nemo" version="2.1.4" />
     </dependencies>
   </metadata>
