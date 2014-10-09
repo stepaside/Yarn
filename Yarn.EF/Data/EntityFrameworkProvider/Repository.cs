@@ -562,7 +562,7 @@ namespace Yarn.Data.EntityFrameworkProvider
             {
                 if (destroyConnection)
                 {
-                    connection.Dispose();
+                    connection.Close();
                 }
             }
             return count;
@@ -619,7 +619,7 @@ namespace Yarn.Data.EntityFrameworkProvider
             {
                 if (destroyConnection)
                 {
-                    connection.Dispose();
+                    connection.Close();
                 }
             }
             return count;
@@ -710,7 +710,7 @@ namespace Yarn.Data.EntityFrameworkProvider
             {
                 if (destroyConnection)
                 {
-                    connection.Dispose();
+                    connection.Close();
                 }
             }
             return count;
