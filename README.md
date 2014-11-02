@@ -238,6 +238,12 @@ var repo = ObjectContainer.Current.Resolve<IRepository>().WithSoftDelete(Thread.
 // Note: the following example assumes Thread.CurrentPrincipal implements ITenant interface
 var repo = ObjectContainer.Current.Resolve<IRepository>().WithMultiTenancy((ITenant)Thread.CurrentPrincipal);
 
+// Fail-over adapter can use an alternative repository if one becomes unavailable
+// Once the fail-over happens, the repo adapter will stick to that one until it becomes unavailable
+// Updates however are sent to both repositories
+// Note: one can use it with more than two repository implementations by chaining
+var repo = ObjectContainer.Current.Resolve<IRepository>().WithFailover(ObjectContainer.Current.Resolve<IRepository>("no-sql"));
+
 // It is also possible to chain the adapters
 // Note: IPrincipal parameter is optional for soft-delete and auditable adapters
 var repo = ObjectContainer.Current.Resolve<IRepository>().WithSoftDelete().WihAudit();
