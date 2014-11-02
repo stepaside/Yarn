@@ -50,6 +50,11 @@ namespace Yarn.Extensions
             return new MultiTenantRepository(repository, tenant);
         }
 
+        public static IRepository WithFailover(this IRepository repository, IRepository otherRepository)
+        {
+            return new FailoverRepostiory(repository, otherRepository);
+        }
+
         public static T As<T>(this IRepository repository)
         {
             if (repository is T)

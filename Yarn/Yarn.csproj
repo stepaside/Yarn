@@ -66,7 +66,9 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Adapters\AuditableRepository.cs" />
+    <Compile Include="Adapters\FailoverRepostiory.cs" />
     <Compile Include="Adapters\MultiTenantRepository.cs" />
+    <Compile Include="Adapters\RepositoryAdapter.cs" />
     <Compile Include="Adapters\SoftDeleteRepository.cs" />
     <Compile Include="BulkUpdateOperation.cs" />
     <Compile Include="Extensions\CascadeExtensions.cs" />

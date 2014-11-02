@@ -10,58 +10,21 @@ using Yarn.Extensions;
 
 namespace Yarn.Adapters
 {
-    public class AuditableRepository : IRepository, ILoadServiceProvider, IMetaDataProvider
+    public class AuditableRepository : RepositoryAdapter
     {
-        private readonly IRepository _repository;
         private readonly IPrincipal _principal;
 
-        public AuditableRepository(IRepository repository, IPrincipal principal)
+        public AuditableRepository(IRepository repository, IPrincipal principal) 
+            : base(repository)
         {
-            if (repository == null)
-            {
-                throw new ArgumentNullException("repository");
-            }
-
             if (principal == null)
             {
                 throw new ArgumentNullException("principal");
             }
-
-            _repository = repository;
             _principal = principal;
         }
 
-        public T GetById<T, ID>(ID id) where T : class
-        {
-            return _repository.GetById<T, ID>(id);
-        }
-
-        public T Find<T>(ISpecification<T> criteria) where T : class
-        {
-            return _repository.Find(criteria);
-        }
-
-        public T Find<T>(Expression<Func<T, bool>> criteria) where T : class
-        {
-            return _repository.Find(criteria);
-        }
-
-        public IEnumerable<T> FindAll<T>(ISpecification<T> criteria, int offset = 0, int limit = 0, Expression<Func<T, object>> orderBy = null) where T : class
-        {
-            return _repository.FindAll(criteria, offset, limit, orderBy);
-        }
-
-        public IEnumerable<T> FindAll<T>(Expression<Func<T, bool>> criteria, int offset = 0, int limit = 0, Expression<Func<T, object>> orderBy = null) where T : class
-        {
-            return _repository.FindAll(criteria, offset, limit, orderBy);
-        }
-
-        public IList<T> Execute<T>(string command, ParamList parameters) where T : class
-        {
-            return _repository.Execute<T>(command, parameters);
-        }
-
-        public T Add<T>(T entity) where T : class
+        public override T Add<T>(T entity)
         {
             var auditable = entity as IAuditable;
             if (auditable != null)
@@ -86,17 +49,13 @@ namespace Yarn.Adapters
             return _repository.Add(entity);
         }
 
-        public T Remove<T>(T entity) where T : class
+        public override T Update<T>(T entity)
         {
-            return _repository.Remove(entity);
+            BeforeUpdate(entity);
+            return _repository.Update(entity);
         }
 
-        public T Remove<T, ID>(ID id) where T : class
-        {
-            return _repository.Remove<T, ID>(id);
-        }
-
-        public T Update<T>(T entity) where T : class
+        private void BeforeUpdate<T>(T entity) where T : class
         {
             var auditable = entity as IAuditable;
             if (auditable != null)
@@ -123,50 +82,9 @@ namespace Yarn.Adapters
                     item.AuditId = root.AuditId;
                 });
             }
-            return _repository.Update(entity);
         }
 
-        public long Count<T>() where T : class
-        {
-            return _repository.Count<T>();
-        }
-
-        public long Count<T>(ISpecification<T> criteria) where T : class
-        {
-            return _repository.Count(criteria);
-        }
-
-        public long Count<T>(Expression<Func<T, bool>> criteria) where T : class
-        {
-            return _repository.Count(criteria);
-        }
-
-        public IQueryable<T> All<T>() where T : class
-        {
-            return _repository.All<T>();
-        }
-
-        public void Detach<T>(T entity) where T : class
-        {
-            _repository.Detach(entity);
-        }
-
-        public void Attach<T>(T entity) where T : class
-        {
-            _repository.Attach(entity);
-        }
-
-        public IDataContext DataContext
-        {
-            get { return _repository.DataContext; }
-        }
-
-        public void Dispose()
-        {
-            _repository.Dispose();
-        }
-
-        ILoadService<T> ILoadServiceProvider.Load<T>()
+        public override ILoadService<T> Load<T>()
         {
             var provider = _repository as ILoadServiceProvider;
             if (provider != null)
@@ -196,31 +114,7 @@ namespace Yarn.Adapters
 
             public T Update(T entity)
             {
-                var auditable = entity as IAuditable;
-                if (auditable != null)
-                {
-                    auditable.AuditId = Guid.NewGuid();
-                    auditable.UpdateDate = DateTime.UtcNow;
-                    if (_repository._principal != null && _repository._principal.Identity != null)
-                    {
-                        auditable.UpdatedBy = _repository._principal.Identity.Name;
-                    }
-
-                    auditable.Cascade((root, item) =>
-                    {
-                        if (item.CreateDate == DateTime.MinValue)
-                        {
-                            item.CreateDate = DateTime.UtcNow;
-                            item.CreatedBy = root.CreatedBy;
-                        }
-                        else
-                        {
-                            auditable.UpdateDate = root.UpdateDate;
-                            auditable.UpdatedBy = root.UpdatedBy;
-                        }
-                        item.AuditId = root.AuditId;
-                    });
-                }
+                _repository.BeforeUpdate(entity);
                 return _service.Update(entity);
             }
 
@@ -253,26 +147,6 @@ namespace Yarn.Adapters
             {
                 _service.Dispose();
             }
-        }
-
-        string[] IMetaDataProvider.GetPrimaryKey<T>()
-        {
-            var provider = _repository as IMetaDataProvider;
-            if (provider != null)
-            {
-                return provider.GetPrimaryKey<T>();
-            }
-            throw new InvalidOperationException();
-        }
-
-        object[] IMetaDataProvider.GetPrimaryKeyValue<T>(T entity)
-        {
-            var provider = _repository as IMetaDataProvider;
-            if (provider != null)
-            {
-                return provider.GetPrimaryKeyValue(entity);
-            }
-            throw new InvalidOperationException();
         }
     }
 }

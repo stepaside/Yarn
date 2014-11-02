@@ -74,6 +74,10 @@ namespace Yarn.Reflection
                                                     && typeof(IEnumerable).IsAssignableFrom(t.Item2.PropertyType)
                                                     && !t.Item1.PropertyType.GetGenericArguments()[0].IsAbstract
                                                     && !t.Item2.PropertyType.GetGenericArguments()[0].IsAbstract
+                                                    && t.Item1.PropertyType.GetGenericArguments()[0].IsClass 
+                                                    && t.Item2.PropertyType.GetGenericArguments()[0].IsClass
+                                                    && t.Item1.PropertyType.GetGenericArguments()[0] != typeof(string)
+                                                    && t.Item2.PropertyType.GetGenericArguments()[0] != typeof(string)
                                                     && !HasCycle(sourceType, t.Item1.PropertyType.GetGenericArguments()[0])
                                                     && !HasCycle(targetType, t.Item2.PropertyType.GetGenericArguments()[0])).ToList();
 

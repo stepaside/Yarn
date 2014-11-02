@@ -11,30 +11,23 @@ using Yarn.Specification;
 
 namespace Yarn.Adapters
 {
-    public class SoftDeleteRepository : IRepository, ILoadServiceProvider, IMetaDataProvider
+    public class SoftDeleteRepository : RepositoryAdapter
     {
-        private readonly IRepository _repository;
         private readonly IPrincipal _principal;
 
-        public SoftDeleteRepository(IRepository repository, IPrincipal principal)
+        public SoftDeleteRepository(IRepository repository, IPrincipal principal) 
+            : base(repository)
         {
-            if (repository == null)
-            {
-                throw new ArgumentNullException("repository");
-            }
-
             if (principal == null)
             {
                 throw new ArgumentNullException("principal");
             }
-
-            _repository = repository;
             _principal = principal;
         }
 
-        public T GetById<T, ID>(ID id) where T : class
+        public override T GetById<T, ID>(ID id)
         {
-            var entity = _repository.GetById<T, ID>(id);
+            var entity = base.GetById<T, ID>(id);
             if (entity is ISoftDelete && ((ISoftDelete)entity).IsDeleted)
             {
                 return null;
@@ -42,60 +35,55 @@ namespace Yarn.Adapters
             return entity;
         }
 
-        public T Find<T>(ISpecification<T> criteria) where T : class
+        public override T Find<T>(ISpecification<T> criteria)
         {
             return Find(((Specification<T>)criteria).Predicate);
         }
-
-        public T Find<T>(Expression<Func<T, bool>> criteria) where T : class
+        
+        public override T Find<T>(Expression<Func<T, bool>> criteria)
         {
             Expression<Func<T, bool>> filter = e => !((ISoftDelete)e).IsDeleted;
-            return typeof(ISoftDelete).IsAssignableFrom(typeof(T)) ? _repository.All<T>().Where(CastRemoverVisitor<ISoftDelete>.Convert(filter)).FirstOrDefault(criteria) : _repository.Find<T>(criteria);
+            return typeof(ISoftDelete).IsAssignableFrom(typeof(T)) ? base.All<T>().Where(CastRemoverVisitor<ISoftDelete>.Convert(filter)).FirstOrDefault(criteria) : base.Find<T>(criteria);
         }
 
-        public IEnumerable<T> FindAll<T>(ISpecification<T> criteria, int offset = 0, int limit = 0, Expression<Func<T, object>> orderBy = null) where T : class
+        public override IEnumerable<T> FindAll<T>(ISpecification<T> criteria, int offset = 0, int limit = 0, Expression<Func<T, object>> orderBy = null)
         {
             if (!typeof(ISoftDelete).IsAssignableFrom(typeof(T)))
             {
-                return _repository.FindAll(criteria, offset, limit, orderBy);
+                return base.FindAll(criteria, offset, limit, orderBy);
             }
 
             Expression<Func<T, bool>> filter = e => !((ISoftDelete)e).IsDeleted;
             var spec = ((Specification<T>)criteria).And(CastRemoverVisitor<ISoftDelete>.Convert(filter));
-            var query = _repository.All<T>().Where(spec.Predicate);
+            var query = base.All<T>().Where(spec.Predicate);
             return this.Page(query, offset, limit, orderBy);
         }
 
-        public IEnumerable<T> FindAll<T>(Expression<Func<T, bool>> criteria, int offset = 0, int limit = 0, Expression<Func<T, object>> orderBy = null) where T : class
+        public override IEnumerable<T> FindAll<T>(Expression<Func<T, bool>> criteria, int offset = 0, int limit = 0, Expression<Func<T, object>> orderBy = null)
         {
             if (!typeof(ISoftDelete).IsAssignableFrom(typeof(T)))
             {
-                return _repository.FindAll(criteria, offset, limit, orderBy);
+                return base.FindAll(criteria, offset, limit, orderBy);
             }
 
             Expression<Func<T, bool>> filter = e => !((ISoftDelete)e).IsDeleted;
             var spec = new Specification<T>(CastRemoverVisitor<ISoftDelete>.Convert(filter)).And(criteria);
-            var query = _repository.All<T>().Where(spec.Predicate);
+            var query = base.All<T>().Where(spec.Predicate);
             return this.Page(query, offset, limit, orderBy);
         }
 
-        public IList<T> Execute<T>(string command, ParamList parameters) where T : class
+        public override IList<T> Execute<T>(string command, ParamList parameters)
         {
             Expression<Func<T, bool>> filter = e => !((ISoftDelete)e).IsDeleted;
-            return typeof(ISoftDelete).IsAssignableFrom(typeof(T)) ? _repository.Execute<T>(command, parameters).Where(CastRemoverVisitor<ISoftDelete>.Convert(filter).Compile()).ToArray() : _repository.Execute<T>(command, parameters);
+            return typeof(ISoftDelete).IsAssignableFrom(typeof(T)) ? base.Execute<T>(command, parameters).Where(CastRemoverVisitor<ISoftDelete>.Convert(filter).Compile()).ToArray() : base.Execute<T>(command, parameters);
         }
 
-        public T Add<T>(T entity) where T : class
-        {
-            return _repository.Add(entity);
-        }
-
-        public T Remove<T>(T entity) where T : class
+        public override T Remove<T>(T entity)
         {
             var deleted = entity as ISoftDelete;
             if (deleted == null)
             {
-                return _repository.Remove(entity);
+                return base.Remove(entity);
             }
             deleted.IsDeleted = true;
             deleted.UpdateDate = DateTime.UtcNow;
@@ -103,100 +91,45 @@ namespace Yarn.Adapters
             {
                 deleted.UpdatedBy = _principal.Identity.Name;
             }
-            return _repository.Update(entity);
+            return base.Update(entity);
         }
 
-        public T Remove<T, ID>(ID id) where T : class
+        public override T Remove<T, ID>(ID id)
         {
             if (!typeof(ISoftDelete).IsAssignableFrom(typeof(T)))
             {
-                return _repository.Remove<T, ID>(id);
+                return base.Remove<T, ID>(id);
             }
-            var entity = _repository.GetById<T, ID>(id);
+            var entity = base.GetById<T, ID>(id);
             ((ISoftDelete)entity).IsDeleted = true;
             ((ISoftDelete)entity).UpdateDate = DateTime.UtcNow;
             if (_principal != null)
             {
                 ((ISoftDelete)entity).UpdatedBy = _principal.Identity.Name;
             }
-            return _repository.Update(entity);
+            return base.Update(entity);
         }
 
-        public T Update<T>(T entity) where T : class
-        {
-            return _repository.Update(entity);
-        }
-
-        public long Count<T>() where T : class
+        public override long Count<T>()
         {
             Expression<Func<T, bool>> filter = e => !((ISoftDelete)e).IsDeleted;
-            return typeof(ISoftDelete).IsAssignableFrom(typeof(T)) ? _repository.All<T>().Where(CastRemoverVisitor<ISoftDelete>.Convert(filter)).LongCount() : _repository.Count<T>();
+            return typeof(ISoftDelete).IsAssignableFrom(typeof(T)) ? base.All<T>().Where(CastRemoverVisitor<ISoftDelete>.Convert(filter)).LongCount() : base.Count<T>();
         }
 
-        public long Count<T>(ISpecification<T> criteria) where T : class
+        public override long Count<T>(ISpecification<T> criteria)
         {
             return FindAll(criteria).AsQueryable().LongCount();
         }
 
-        public long Count<T>(Expression<Func<T, bool>> criteria) where T : class
+        public override long Count<T>(Expression<Func<T, bool>> criteria)
         {
             return FindAll(criteria).AsQueryable().LongCount();
         }
 
-        public IQueryable<T> All<T>() where T : class
+        public override IQueryable<T> All<T>()
         {
             Expression<Func<T, bool>> filter = e => !((ISoftDelete)e).IsDeleted;
-            return typeof(ISoftDelete).IsAssignableFrom(typeof(T)) ? _repository.All<T>().Where(CastRemoverVisitor<ISoftDelete>.Convert(filter)) : _repository.All<T>();
-        }
-
-        public void Detach<T>(T entity) where T : class
-        {
-            _repository.Detach(entity);
-        }
-
-        public void Attach<T>(T entity) where T : class
-        {
-            _repository.Attach(entity);
-        }
-
-        public IDataContext DataContext
-        {
-            get { return _repository.DataContext; }
-        }
-
-        public void Dispose()
-        {
-            _repository.Dispose();
-        }
-
-        ILoadService<T> ILoadServiceProvider.Load<T>()
-        {
-            var provider = _repository as ILoadServiceProvider;
-            if (provider != null)
-            {
-                return provider.Load<T>();
-            }
-            throw new InvalidOperationException();
-        }
-        
-        string[] IMetaDataProvider.GetPrimaryKey<T>()
-        {
-            var provider = _repository as IMetaDataProvider;
-            if (provider != null)
-            {
-                return provider.GetPrimaryKey<T>();
-            }
-            throw new InvalidOperationException();
-        }
-
-        object[] IMetaDataProvider.GetPrimaryKeyValue<T>(T entity)
-        {
-            var provider = _repository as IMetaDataProvider;
-            if (provider != null)
-            {
-                return provider.GetPrimaryKeyValue<T>(entity);
-            }
-            throw new InvalidOperationException();
+            return typeof(ISoftDelete).IsAssignableFrom(typeof(T)) ? base.All<T>().Where(CastRemoverVisitor<ISoftDelete>.Convert(filter)) : base.All<T>();
         }
     }
 }

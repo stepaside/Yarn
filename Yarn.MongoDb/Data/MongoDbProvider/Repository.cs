@@ -25,7 +25,7 @@ namespace Yarn.Data.MongoDbProvider
 
         public Repository() : this(null) { }
 
-        public Repository(string prefix = null)
+        public Repository(string prefix = null, string connectionString = null)
         {
             _prefix = prefix;
         }
