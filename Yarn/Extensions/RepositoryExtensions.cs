@@ -50,9 +50,14 @@ namespace Yarn.Extensions
             return new MultiTenantRepository(repository, tenant);
         }
 
-        public static IRepository WithFailover(this IRepository repository, IRepository otherRepository)
+        public static IRepository WithFailover(this IRepository repository, IRepository otherRepository, Action<Exception> logger = null, FailoverStrategy strategy = FailoverStrategy.ReplicationOnly)
         {
-            return new FailoverRepostiory(repository, otherRepository);
+            return new FailoverRepostiory(repository, otherRepository, logger, strategy);
+        }
+
+        public static IRepository WithInterceptor(this IRepository repository, Func<IDisposable> interceptorFactory)
+        {
+            return new InterceptorRepository(repository, interceptorFactory);
         }
 
         public static T As<T>(this IRepository repository)

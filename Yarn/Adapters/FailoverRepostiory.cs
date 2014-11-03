@@ -7,13 +7,20 @@ using System.Threading.Tasks;
 
 namespace Yarn.Adapters
 {
+    public enum FailoverStrategy
+    {
+        ReplicationOnly, Failover, Failback
+    }
+
     public class FailoverRepostiory : RepositoryAdapter
     {
         private readonly Action<Exception> _logger;
         private IRepository _current;
         private IRepository _other;
+        private readonly FailoverStrategy _strategy;
+        private bool _failedOver;
         
-        public FailoverRepostiory(IRepository repository, IRepository otherRepository, Action<Exception> logger = null)
+        public FailoverRepostiory(IRepository repository, IRepository otherRepository, Action<Exception> logger = null, FailoverStrategy strategy = FailoverStrategy.ReplicationOnly)
             : base(repository)
         {
             if (otherRepository == null)
@@ -23,6 +30,8 @@ namespace Yarn.Adapters
             _other = otherRepository;
             _current = _repository;
             _logger = logger;
+            _strategy = strategy;
+            _failedOver = false;
         }
 
         private void Failover()
@@ -30,12 +39,25 @@ namespace Yarn.Adapters
             var temp = _current;
             _current = _other;
             _other = _current;
+            _failedOver = !_failedOver;
+        }
+
+        private void Failback()
+        {
+            if (_failedOver)
+            {
+                Failover();
+            }
         }
 
         public override T GetById<T, ID>(ID id)
         {
             try
             {
+                if (_strategy == FailoverStrategy.Failback)
+                {
+                    Failback();
+                }
                 return _current.GetById<T, ID>(id);
             }
             catch (Exception ex)
@@ -44,6 +66,7 @@ namespace Yarn.Adapters
                 {
                     _logger(ex);
                 }
+                if (_strategy == FailoverStrategy.ReplicationOnly) throw;
                 Failover();
                 return _current.GetById<T, ID>(id);
             }
@@ -53,6 +76,10 @@ namespace Yarn.Adapters
         {
             try
             {
+                if (_strategy == FailoverStrategy.Failback)
+                {
+                    Failback();
+                }
                 return _current.Find(criteria);
             }
             catch (Exception ex)
@@ -61,6 +88,7 @@ namespace Yarn.Adapters
                 {
                     _logger(ex);
                 }
+                if (_strategy == FailoverStrategy.ReplicationOnly) throw;
                 Failover();
                 return _current.Find(criteria);
             }
@@ -70,15 +98,19 @@ namespace Yarn.Adapters
         {
             try
             {
+                if (_strategy == FailoverStrategy.Failback)
+                {
+                    Failback();
+                }
                 return _current.Find(criteria);
             }
             catch (Exception ex)
             {
-
                 if (_logger != null)
                 {
                     _logger(ex);
                 }
+                if (_strategy == FailoverStrategy.ReplicationOnly) throw;
                 Failover();
                 return _current.Find(criteria);
             }
@@ -88,6 +120,10 @@ namespace Yarn.Adapters
         {
             try
             {
+                if (_strategy == FailoverStrategy.Failback)
+                {
+                    Failback();
+                }
                 return _current.FindAll(criteria, offset, limit, orderBy);
             }
             catch (Exception ex)
@@ -96,6 +132,7 @@ namespace Yarn.Adapters
                 {
                     _logger(ex);
                 }
+                if (_strategy == FailoverStrategy.ReplicationOnly) throw;
                 Failover();
                 return _current.FindAll(criteria, offset, limit, orderBy);
             }
@@ -105,6 +142,10 @@ namespace Yarn.Adapters
         {
             try
             {
+                if (_strategy == FailoverStrategy.Failback)
+                {
+                    Failback();
+                }
                 return _current.FindAll(criteria, offset, limit, orderBy);
             }
             catch (Exception ex)
@@ -113,6 +154,7 @@ namespace Yarn.Adapters
                 {
                     _logger(ex);
                 }
+                if (_strategy == FailoverStrategy.ReplicationOnly) throw;
                 Failover();
                 return _current.FindAll(criteria, offset, limit, orderBy);
             }
@@ -122,6 +164,10 @@ namespace Yarn.Adapters
         {
             try
             {
+                if (_strategy == FailoverStrategy.Failback)
+                {
+                    Failback();
+                }
                 return _current.Execute<T>(command, parameters);
             }
             catch (Exception ex)
@@ -130,6 +176,7 @@ namespace Yarn.Adapters
                 {
                     _logger(ex);
                 }
+                if (_strategy == FailoverStrategy.ReplicationOnly) throw;
                 Failover();
                 return _current.Execute<T>(command, parameters);
             }
@@ -167,6 +214,10 @@ namespace Yarn.Adapters
         {
             try
             {
+                if (_strategy == FailoverStrategy.Failback)
+                {
+                    Failback();
+                }
                 return _current.All<T>();
             }
             catch (Exception ex)
@@ -175,6 +226,7 @@ namespace Yarn.Adapters
                 {
                     _logger(ex);
                 }
+                if (_strategy == FailoverStrategy.ReplicationOnly) throw;
                 Failover();
                 return _current.All<T>();
             }
@@ -209,7 +261,7 @@ namespace Yarn.Adapters
             var otherProvider = _other as ILoadServiceProvider;
             if (provider != null || otherProvider != null)
             {
-                return new LoadService<T>((provider ?? otherProvider).Load<T>(), provider != null ? otherProvider : null, _logger);
+                return new LoadService<T>((provider ?? otherProvider).Load<T>(), provider != null ? otherProvider : null, _logger, _strategy);
             }
             throw new InvalidOperationException();
         }
@@ -220,12 +272,14 @@ namespace Yarn.Adapters
             private readonly ILoadService<T> _service;
             private readonly ILoadService<T> _failoverService;
             private readonly Action<Exception> _logger;
+            private readonly FailoverStrategy _strategy;
 
-            public LoadService(ILoadService<T> service, ILoadServiceProvider failoverProvider, Action<Exception> logger)
+            public LoadService(ILoadService<T> service, ILoadServiceProvider failoverProvider, Action<Exception> logger, FailoverStrategy strategy)
             {
                 _service = service;
                 _failoverService = failoverProvider != null ? failoverProvider.Load<T>() : null;
                 _logger = logger;
+                _strategy = strategy;
             }
 
             public ILoadService<T> Include<TProperty>(Expression<Func<T, TProperty>> path) where TProperty : class
@@ -261,11 +315,11 @@ namespace Yarn.Adapters
                 }
                 catch (Exception ex)
                 {
-                    if (_failoverService == null) throw;
                     if (_logger != null)
                     {
                         _logger(ex);
                     }
+                    if (_failoverService == null || _strategy == FailoverStrategy.ReplicationOnly) throw;
                     return _failoverService.Find(criteria);
                 }
             }
@@ -278,11 +332,11 @@ namespace Yarn.Adapters
                 }
                 catch (Exception ex)
                 {
-                    if (_failoverService == null) throw;
                     if (_logger != null)
                     {
                         _logger(ex);
                     }
+                    if (_failoverService == null || _strategy == FailoverStrategy.ReplicationOnly) throw;
                     return _failoverService.FindAll(criteria, offset, limit, orderBy);
                 }
             }
@@ -295,11 +349,11 @@ namespace Yarn.Adapters
                 }
                 catch (Exception ex)
                 {
-                    if (_failoverService == null) throw;
                     if (_logger != null)
                     {
                         _logger(ex);
                     }
+                    if (_failoverService == null || _strategy == FailoverStrategy.ReplicationOnly) throw;
                     return _failoverService.Find(criteria);
                 }
             }
@@ -312,11 +366,11 @@ namespace Yarn.Adapters
                 }
                 catch (Exception ex)
                 {
-                    if (_failoverService == null) throw;
                     if (_logger != null)
                     {
                         _logger(ex);
                     }
+                    if (_failoverService == null || _strategy == FailoverStrategy.ReplicationOnly) throw;
                     return _failoverService.FindAll(criteria, offset, limit, orderBy);
                 }
             }
@@ -329,11 +383,11 @@ namespace Yarn.Adapters
                 }
                 catch (Exception ex)
                 {
-                     if (_failoverService == null) throw;
                     if (_logger != null)
                     {
                         _logger(ex);
                     }
+                    if (_failoverService == null || _strategy == FailoverStrategy.ReplicationOnly) throw;
                     return _failoverService.All();
                 }
             }
