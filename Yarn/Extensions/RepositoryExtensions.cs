@@ -55,7 +55,7 @@ namespace Yarn.Extensions
             return new FailoverRepostiory(repository, otherRepository, logger, strategy);
         }
 
-        public static IRepository WithInterceptor(this IRepository repository, Func<IDisposable> interceptorFactory)
+        public static IRepository WithInterceptor(this IRepository repository, Func<InterceptorContext, IDisposable> interceptorFactory)
         {
             return new InterceptorRepository(repository, interceptorFactory);
         }
