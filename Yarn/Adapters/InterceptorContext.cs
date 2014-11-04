@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Reflection;
 
 namespace Yarn.Adapters
 {
@@ -8,7 +9,7 @@ namespace Yarn.Adapters
         {
         }
 
-        public string Method { get; internal set; }
+        public MethodBase Method { get; internal set; }
         public object[] Arguments { get; internal set; }
         public Action Action { get; internal set; }
         public Exception Exception { get; set; }

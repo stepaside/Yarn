@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using System.Linq.Expressions;
+using System.Reflection;
 using System.Runtime.ExceptionServices;
 
 namespace Yarn.Adapters
@@ -23,69 +24,80 @@ namespace Yarn.Adapters
 
         public override T GetById<T, ID>(ID id)
         {
-            return Intercept(() => base.GetById<T, ID>(id), "GetById", new object[] { id });
+            Func<ID, T> f = base.GetById<T, ID>;
+            return Intercept(() => f(id), f.Method, new object[] { id });
         }
         
         public override T Find<T>(ISpecification<T> criteria)
         {
-            return Intercept(() => base.Find(criteria), "Find", new object[] { criteria });
+            Func<ISpecification<T>, T> f = base.Find;
+            return Intercept(() => f(criteria), f.Method, new object[] { criteria });
         }
 
         public override T Find<T>(System.Linq.Expressions.Expression<Func<T, bool>> criteria)
         {
-            return Intercept(() => base.Find(criteria), "Find", new object[] { criteria });
+            Func<Expression<Func<T, bool>>, T> f = base.Find;
+            return Intercept(() => base.Find(criteria), f.Method, new object[] { criteria });
         }
 
         public override IEnumerable<T> FindAll<T>(ISpecification<T> criteria, int offset = 0, int limit = 0, System.Linq.Expressions.Expression<Func<T, object>> orderBy = null)
         {
-            return Intercept(() => base.FindAll(criteria, offset, limit, orderBy), "FindAll", new object[] { criteria, offset, limit, orderBy });
+            Func<ISpecification<T>, int, int, Expression<Func<T, object>>, IEnumerable<T>> f = base.FindAll;
+            return Intercept(() => f(criteria, offset, limit, orderBy), f.Method, new object[] { criteria, offset, limit, orderBy });
         }
 
         public override IEnumerable<T> FindAll<T>(System.Linq.Expressions.Expression<Func<T, bool>> criteria, int offset = 0, int limit = 0, System.Linq.Expressions.Expression<Func<T, object>> orderBy = null)
         {
-            return Intercept(() => base.FindAll(criteria, offset, limit, orderBy), "FindAll", new object[] { criteria, offset, limit, orderBy });
+            Func<Expression<Func<T, bool>>, int, int, Expression<Func<T, object>>, IEnumerable<T>> f = base.FindAll;
+            return Intercept(() => f(criteria, offset, limit, orderBy), f.Method, new object[] { criteria, offset, limit, orderBy });
         }
 
         public override IList<T> Execute<T>(string command, ParamList parameters)
         {
-            return Intercept(() => base.Execute<T>(command, parameters), "Execute", new object[] { command, parameters });
+            Func<string, ParamList,IList<T>> f = base.Execute<T>;
+            return Intercept(() => f(command, parameters), f.Method, new object[] { command, parameters });
         }
 
         public override T Add<T>(T entity)
         {
-            return Intercept(() => base.Add(entity), "Add", new object[] { entity });
+            Func<T, T> f = base.Add;
+            return Intercept(() => f(entity), f.Method, new object[] { entity });
         }
 
         public override T Remove<T>(T entity)
         {
-            return Intercept(() => base.Remove(entity), "Remove", new object[] { entity });
+            Func<T, T> f = base.Remove;
+            return Intercept(() => f(entity), f.Method, new object[] { entity });
         }
 
         public override T Remove<T, ID>(ID id)
         {
-            return Intercept(() => base.Remove<T, ID>(id), "Remove", new object[] { id });
+            Func<ID, T> f = base.Remove<T, ID>;
+            return Intercept(() => f(id), f.Method, new object[] { id });
         }
 
         public override T Update<T>(T entity)
         {
-            return Intercept(() => base.Update(entity), "Update", new object[] { entity });
+            Func<T, T> f = base.Update;
+            return Intercept(() => f(entity), f.Method, new object[] { entity });
         }
 
         public override IQueryable<T> All<T>()
         {
-            return Intercept(() => base.All<T>(), "All", new object[] { });
+            Func<IQueryable<T>> f = base.All<T>;
+            return Intercept(f, f.Method, new object[] { });
         }
 
         public override void Detach<T>(T entity)
         {
-            Action action = () => base.Detach(entity);
-            InterceptNoResult<T>(action, "Detach", new object[] { entity });
+            Action<T> f = base.Detach;
+            InterceptNoResult<T>(() => f(entity), f.Method, new object[] { entity });
         }
 
         public override void Attach<T>(T entity)
         {
-            Action action = () => base.Attach(entity);
-            InterceptNoResult<T>(action, "Attach", new object[] { entity });
+            Action<T> f= base.Attach;
+            InterceptNoResult<T>(() => f(entity), f.Method, new object[] { entity });
         }
 
         public override ILoadService<T> Load<T>()
@@ -115,32 +127,38 @@ namespace Yarn.Adapters
 
             public T Update(T entity)
             {
-                return _repository.Intercept(() => _service.Update(entity), "Update", new object[] { entity });
+                Func<T, T> f = _service.Update;
+                return _repository.Intercept(() => f(entity), f.Method, new object[] { entity });
             }
 
             public T Find(Expression<Func<T, bool>> criteria)
             {
-                return _repository.Intercept(() => _service.Find(criteria), "Find", new object[] { criteria });
+                Func<Expression<Func<T, bool>>, T> f = _service.Find;
+                return _repository.Intercept(() => f(criteria), f.Method, new object[] { criteria });
             }
 
             public IEnumerable<T> FindAll(Expression<Func<T, bool>> criteria, int offset = 0, int limit = 0, Expression<Func<T, object>> orderBy = null)
             {
-                return _repository.Intercept(() => _service.FindAll(criteria), "FindAll", new object[] { criteria, offset, limit, orderBy });
+                Func<Expression<Func<T, bool>>, int, int, Expression<Func<T, object>>, IEnumerable<T>> f = _service.FindAll;
+                return _repository.Intercept(() => f(criteria, offset, limit, orderBy), f.Method, new object[] { criteria, offset, limit, orderBy });
             }
 
             public T Find(ISpecification<T> criteria)
             {
-                return _repository.Intercept(() => _service.Find(criteria), "Find", new object[] { criteria });
+                Func<ISpecification<T>, T> f = _service.Find;
+                return _repository.Intercept(() => f(criteria), f.Method, new object[] { criteria });
             }
 
             public IEnumerable<T> FindAll(ISpecification<T> criteria, int offset = 0, int limit = 0, Expression<Func<T, object>> orderBy = null)
             {
-                return _repository.Intercept(() => _service.FindAll(criteria), "FindAll", new object[] { criteria, offset, limit, orderBy });
+                Func<ISpecification<T>, int, int, Expression<Func<T, object>>, IEnumerable<T>> f = _service.FindAll;
+                return _repository.Intercept(() => f(criteria, offset, limit, orderBy), f.Method, new object[] { criteria, offset, limit, orderBy });
             }
 
             public IQueryable<T> All()
             {
-                return _repository.Intercept(() => _service.All(), "All", new object[] { });
+                Func<IQueryable<T>> f = _service.All;
+                return _repository.Intercept(f, f.Method, new object[] { });
             }
 
             public void Dispose()
@@ -149,7 +167,7 @@ namespace Yarn.Adapters
             }
         }
 
-        private T Intercept<T>(Func<T> func, string method, object[] arguments)
+        private T Intercept<T>(Func<T> func, MethodBase method, object[] arguments)
         {
             var result = default(T);
             var ctx = new InterceptorContext { Action = () => result = func(), Method = method, Arguments = arguments };
@@ -163,7 +181,7 @@ namespace Yarn.Adapters
             }
         }
 
-        private void InterceptNoResult<T>(Action action, string method, object[] arguments)
+        private void InterceptNoResult<T>(Action action, MethodBase method, object[] arguments)
         {
             var ctx = new InterceptorContext { Action = action, Method = method, Arguments = arguments };
             using (_interceptorFactory(ctx))
