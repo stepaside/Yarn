@@ -274,3 +274,29 @@ bulk.Delete<Customer>(c => c.City == "London");
 // Bulk update
 bulk.Update<Customer>(c => c.City == "New York", c => new Customer { City = c.City + " City" });
 ```
+
+###Quick Interceptor###
+
+```c#
+public class LogInterceptor : IDisposable
+{
+  private readonly ILog logger = LogManager.GetLogger("my-log");
+  private readonly Stopwatch sw;
+  
+  public LogIntercetor(InterceptorContext ctx)
+  {
+    sw = Stopwatch.StartNew();
+    logger.Info("Begin " + ctx.Method.Name);
+    ctx.Action();
+  }
+  
+  public void Dispose()
+  {
+    sw.Stop();
+    logger.Info("End " + ctx.Method.Name + ", " + sw.Elapsed.TotalMilliseconds + " ms");  
+  }
+}
+
+// Interceptor will automatically intercept all methods
+var repo = ObjectContainer.Current.Resolve<IRepository>().WithInterceptor(ctx => new LogInterceptor(ctx));
+```
