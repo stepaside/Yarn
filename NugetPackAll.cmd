@@ -9,3 +9,4 @@ mkdir NugetPackages
 .nuget\nuget.exe pack Yarn.Cache\Yarn.Cache.nuspec -BasePath Yarn.Cache\bin\Release -OutputDirectory NugetPackages
 .nuget\nuget.exe pack Yarn.StructureMap\Yarn.StructureMap.nuspec -BasePath Yarn.StructureMap\bin\Release -OutputDirectory NugetPackages
 .nuget\nuget.exe pack Yarn.Nemo\Yarn.Nemo.nuspec -BasePath Yarn.Nemo\bin\Release -OutputDirectory NugetPackages
+.nuget\nuget.exe pack Yarn.Elasticsearch\Yarn.Elasticsearch.nuspec -BasePath Yarn.Elasticsearch\bin\Release -OutputDirectory NugetPackages

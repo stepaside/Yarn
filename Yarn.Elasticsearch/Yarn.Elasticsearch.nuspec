@@ -1,0 +1,23 @@
+﻿<?xml version="1.0"?>
+<package >
+  <metadata>
+    <id>Yarn.Elasticsearch</id>
+    <version>0.8.15-beta01</version>
+    <title>Yarn.Elasticsearch</title>
+    <authors>Max Stepanskiy</authors>
+    <owners>Stepaside, Inc.</owners>
+    <projectUrl>https://github.com/stepaside/Yarn</projectUrl>
+    <requireLicenseAcceptance>false</requireLicenseAcceptance>
+    <description>Yarn Elasticsearch Provider</description>
+    <copyright>Copyright © Max Stepanskiy 2012-2014</copyright>
+    <tags>Elastic Elasticsearch Repository</tags>
+    <dependencies>
+      <dependency id="Yarn" version="[0.8.15]" />
+      <dependency id="ElasticLINQ" version="1.0.0" />
+	  <dependency id="NEST" version="1.2.2" />
+    </dependencies>
+  </metadata>
+  <files>
+    <file src="Yarn.Elasticsearch.dll" target="lib\net40" />
+  </files>
+</package>
