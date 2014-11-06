@@ -287,7 +287,7 @@ public class LogInterceptor : IDisposable
   {
     sw = Stopwatch.StartNew();
     logger.Info("Begin " + ctx.Method.Name);
-    ctx.Action();
+    ctx.Execute();
   }
   
   public void Dispose()
