@@ -91,13 +91,13 @@ namespace Yarn.Adapters
         public override void Detach<T>(T entity)
         {
             Action<T> f = base.Detach;
-            InterceptNoResult<T>(() => f(entity), f.Method, new object[] { entity });
+            InterceptNoResult(() => f(entity), f.Method, new object[] { entity });
         }
 
         public override void Attach<T>(T entity)
         {
             Action<T> f= base.Attach;
-            InterceptNoResult<T>(() => f(entity), f.Method, new object[] { entity });
+            InterceptNoResult(() => f(entity), f.Method, new object[] { entity });
         }
 
         public override ILoadService<T> Load<T>()
@@ -169,21 +169,25 @@ namespace Yarn.Adapters
 
         private T Intercept<T>(Func<T> func, MethodBase method, object[] arguments)
         {
-            var result = default(T);
-            var ctx = new InterceptorContext { Action = () => result = func(), Method = method, Arguments = arguments };
+            var ctx = new InterceptorContext(() => (object)func()) { Method = method, Arguments = arguments, ReturnType = typeof(T) };
             using (_interceptorFactory(ctx))
             {
                 if (ctx.Exception != null)
                 {
                     ExceptionDispatchInfo.Capture(ctx.Exception).Throw();
                 }
-                return result;
+
+                if (!ctx.Canceled)
+                {
+                    return (T)ctx.ReturnValue;
+                }
             }
+            return default(T);
         }
 
-        private void InterceptNoResult<T>(Action action, MethodBase method, object[] arguments)
+        private void InterceptNoResult(Action action, MethodBase method, object[] arguments)
         {
-            var ctx = new InterceptorContext { Action = action, Method = method, Arguments = arguments };
+            var ctx = new InterceptorContext(action) { Method = method, Arguments = arguments };
             using (_interceptorFactory(ctx))
             {
                 if (ctx.Exception != null)
