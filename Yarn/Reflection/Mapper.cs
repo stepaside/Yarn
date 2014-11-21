@@ -3,6 +3,7 @@ using System.Collections;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
+using System.Linq.Expressions;
 using System.Reflection;
 using System.Reflection.Emit;
 
@@ -11,13 +12,14 @@ namespace Yarn.Reflection
     public static class Mapper
     {
         public delegate void PropertyMapper(object source, object target);
-        private static readonly ConcurrentDictionary<Tuple<Type, Type>, PropertyMapper> _mappers = new ConcurrentDictionary<Tuple<Type, Type>, PropertyMapper>();
-        private static readonly ConcurrentDictionary<Type, HashSet<Type>> _ancestors = new ConcurrentDictionary<Type, HashSet<Type>>();
-
+        private static readonly ConcurrentDictionary<Tuple<Type, Type>, PropertyMapper> Mappers = new ConcurrentDictionary<Tuple<Type, Type>, PropertyMapper>();
+        private static readonly ConcurrentDictionary<Type, HashSet<Type>> Ancestors = new ConcurrentDictionary<Type, HashSet<Type>>();
+        private static readonly ConcurrentDictionary<Tuple<Type, Type>, MapperConfiguration> MapperConfigurations = new ConcurrentDictionary<Tuple<Type, Type>, MapperConfiguration>();
+        
         internal static PropertyMapper CreateDelegate(Type sourceType, Type targetType)
         {
             var key = Tuple.Create(sourceType, targetType);
-            var mapper = _mappers.GetOrAdd(key, t => (PropertyMapper)CreateDynamicMethod(t.Item1, t.Item2).CreateDelegate(typeof(PropertyMapper)));
+            var mapper = Mappers.GetOrAdd(key, t => (PropertyMapper)CreateDynamicMethod(t.Item1, t.Item2).CreateDelegate(typeof(PropertyMapper)));
             return mapper;
         }
 
@@ -33,12 +35,16 @@ namespace Yarn.Reflection
             var sourceProperties = sourceType.GetProperties();
             var targetProperties = targetType.GetProperties();
 
+            MapperConfiguration config;
+            MapperConfigurations.TryGetValue(Tuple.Create(sourceType, targetType), out config);
+
             var matches = sourceProperties.SelectMany(s => targetProperties.Select(t => Tuple.Create(s, t)))
                                             .Where(t => t.Item1.PropertyType.IsPublic
                                                     && t.Item2.PropertyType.IsPublic
                                                     && t.Item1.CanRead
                                                     && t.Item2.CanWrite
-                                                    && t.Item1.Name == t.Item2.Name).ToList();
+                                                    && t.Item1.Name == t.Item2.Name
+                                                    && (config == null || !config.IsIgnored(t.Item1.Name))).ToList();
 
             var simpleMatches = matches.Where(t => t.Item1.PropertyType == t.Item2.PropertyType
                                                     && (t.Item1.PropertyType.IsValueType || t.Item1.PropertyType == typeof(string))
@@ -59,7 +65,7 @@ namespace Yarn.Reflection
             {
                 if (match.Item1.PropertyType == match.Item2.PropertyType)
                 {
-                    _ancestors.AddOrUpdate(match.Item1.PropertyType, t => new HashSet<Type>(new[] { sourceType, targetType }), (t, h) =>
+                    Ancestors.AddOrUpdate(match.Item1.PropertyType, t => new HashSet<Type>(new[] { sourceType, targetType }), (t, h) =>
                     {
                         h.Add(sourceType);
                         h.Add(targetType);
@@ -85,7 +91,7 @@ namespace Yarn.Reflection
             {
                 if (match.Item1.PropertyType == match.Item2.PropertyType)
                 {
-                    _ancestors.AddOrUpdate(match.Item1.PropertyType.GetGenericArguments()[0], t => new HashSet<Type>(new[] { sourceType, targetType }), (t, h) =>
+                    Ancestors.AddOrUpdate(match.Item1.PropertyType.GetGenericArguments()[0], t => new HashSet<Type>(new[] { sourceType, targetType }), (t, h) =>
                     {
                         h.Add(sourceType);
                         h.Add(targetType);
@@ -184,7 +190,7 @@ namespace Yarn.Reflection
         private static bool HasCycle(Type childType, Type parentType)
         {
             HashSet<Type> ancestors;
-            if (!_ancestors.TryGetValue(childType, out ancestors))
+            if (!Ancestors.TryGetValue(childType, out ancestors))
             {
                 return false;
             }
@@ -226,6 +232,40 @@ namespace Yarn.Reflection
                 Map(source, result);
             }
             return result;
+        }
+
+        public static MapperConfiguration<TSource, TResult> For<TSource, TResult>()
+        {
+            return (MapperConfiguration<TSource, TResult>)MapperConfigurations.GetOrAdd(Tuple.Create(typeof(TSource), typeof(TResult)), t => new MapperConfiguration<TSource, TResult>());
+        }
+    }
+
+    public abstract class MapperConfiguration
+    {
+        public abstract bool IsIgnored(string property);
+    }
+
+    public sealed class MapperConfiguration<TSource, TResult> : MapperConfiguration
+    {
+        private readonly HashSet<string> _ignoredProperties = new HashSet<string>();
+
+        internal MapperConfiguration()
+        {
+        }
+
+        public MapperConfiguration<TSource, TResult> Ignore(Expression<Func<TSource, object>> selector)
+        {
+            var memberExpression = selector.Body as MemberExpression;
+            if (memberExpression != null && memberExpression.Expression.NodeType == ExpressionType.Parameter)
+            {
+                _ignoredProperties.Add(memberExpression.Member.Name);
+            }
+            return this;
+        }
+
+        public override bool IsIgnored(string property)
+        {
+            return _ignoredProperties.Contains(property);
         }
     }
 }
