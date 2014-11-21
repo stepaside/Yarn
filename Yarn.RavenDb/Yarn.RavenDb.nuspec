@@ -13,7 +13,7 @@
     <tags>Raven RavenDB Repository</tags>
     <dependencies>
       <dependency id="Yarn" version="[0.8.16]" />
-      <dependency id="RavenDB.Client" version="2.5.2935" />
+      <dependency id="RavenDB.Client" version="2.5.2939" />
     </dependencies>
   </metadata>
   <files>

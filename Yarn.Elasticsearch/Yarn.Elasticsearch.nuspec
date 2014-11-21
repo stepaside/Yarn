@@ -14,7 +14,7 @@
     <dependencies>
       <dependency id="Yarn" version="[0.8.16]" />
       <dependency id="ElasticLINQ" version="1.0.0" />
-	  <dependency id="NEST" version="1.2.2" />
+	  <dependency id="NEST" version="1.2.3" />
     </dependencies>
   </metadata>
   <files>

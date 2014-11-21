@@ -14,7 +14,7 @@
     <dependencies>
       <dependency id="Yarn" version="[0.8.16]" />
       <dependency id="FluentNHibernate" version="1.4.0.0" />
-      <dependency id="NHibernate" version="4.0.1.4000" />
+      <dependency id="NHibernate" version="4.0.2.4000" />
       <dependency id="NHibernate.Search" version="2.0.2.4000" />
       <dependency id="Lucene.Net" version="3.0.3" />
       <dependency id="Lucene" version="2.9.4.1" />
