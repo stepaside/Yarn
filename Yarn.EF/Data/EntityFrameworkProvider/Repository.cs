@@ -786,16 +786,14 @@ namespace Yarn.Data.EntityFrameworkProvider
         {
             if (source == null || target == null) return;
 
+            if (paths == null || paths.Count == 0) return;
+
             (ancestors = ancestors ?? new HashSet<object>()).Add(source);
 
-            var properties = source.GetType().GetProperties();
-            if (paths != null && paths.Count > 0)
-            {
-                var set = new HashSet<string>(paths.Select(p => p.ElementAtOrDefault(level)).Where(p => p != null));
-                properties = properties.Where(p => set.Contains(p.Name)).ToArray();
-            }
+            var set = new HashSet<string>(paths.Select(p => p.ElementAtOrDefault(level)).Where(p => p != null));
+            var properties = source.GetType().GetProperties().Where(p => set.Contains(p.Name)).ToArray();            
 
-            foreach (var property in properties.Where(p => p.PropertyType != typeof(string) && p.PropertyType.IsClass && !typeof(IEnumerable).IsAssignableFrom(p.PropertyType)))
+            foreach (var property in properties.Where(p => p.PropertyType != typeof(string) && p.CanRead && p.CanWrite && p.PropertyType.IsClass && !typeof(IEnumerable).IsAssignableFrom(p.PropertyType)))
             {
                 var value = PropertyAccessor.Get(target.GetType(), target, property.Name);
                 var newValue = PropertyAccessor.Get(source.GetType(), source, property.Name);
