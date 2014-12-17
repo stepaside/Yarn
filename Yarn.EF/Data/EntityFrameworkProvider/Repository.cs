@@ -786,7 +786,7 @@ namespace Yarn.Data.EntityFrameworkProvider
         {
             if (source == null || target == null) return;
 
-            if (paths == null || paths.Count == 0) return;
+            if (paths != null && paths.Count == 0) return;
 
             (ancestors = ancestors ?? new HashSet<object>()).Add(source);
 

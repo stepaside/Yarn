@@ -27,25 +27,25 @@ namespace Yarn.Adapters
         public override T Add<T>(T entity)
         {
             var auditable = entity as IAuditable;
-            if (auditable != null)
+            if (auditable == null)
             {
-                auditable.AuditId = Guid.NewGuid();
-                auditable.CreateDate = DateTime.UtcNow;
-                if (_principal != null)
-                {
-                    auditable.CreatedBy = _principal.Identity.Name;
-                }
-                
-                auditable.Cascade((root, item) =>
-                {
-                    if (item.CreateDate == DateTime.MinValue || !item.AuditId.HasValue)
-                    {
-                        item.CreateDate = root.CreateDate;
-                        item.CreatedBy = root.CreatedBy;
-                        item.AuditId = root.AuditId;
-                    }
-                });
+                return _repository.Add(entity);
             }
+
+            auditable.AuditId = Guid.NewGuid();
+            auditable.CreateDate = DateTime.UtcNow;
+            if (_principal != null)
+            {
+                auditable.CreatedBy = _principal.Identity.Name;
+            }
+                
+            auditable.Cascade((root, item) =>
+            {
+                if (item.CreateDate != DateTime.MinValue && item.AuditId.HasValue) return;
+                item.CreateDate = root.CreateDate;
+                item.CreatedBy = root.CreatedBy;
+                item.AuditId = root.AuditId;
+            });
             return _repository.Add(entity);
         }
 
@@ -55,33 +55,32 @@ namespace Yarn.Adapters
             return _repository.Update(entity);
         }
 
-        private void BeforeUpdate<T>(T entity) where T : class
+        private void BeforeUpdate<T>(T entity, IReadOnlyCollection<string> paths = null) where T : class
         {
             var auditable = entity as IAuditable;
-            if (auditable != null)
-            {
-                auditable.AuditId = Guid.NewGuid();
-                auditable.UpdateDate = DateTime.UtcNow;
-                if (_principal != null)
-                {
-                    auditable.UpdatedBy = _principal.Identity.Name;
-                }
+            if (auditable == null) return;
 
-                auditable.Cascade((root, item) =>
-                {
-                    if (item.CreateDate == DateTime.MinValue)
-                    {
-                        item.CreateDate = DateTime.UtcNow;
-                        item.CreatedBy = root.CreatedBy;
-                    }
-                    else
-                    {
-                        auditable.UpdateDate = root.UpdateDate;
-                        auditable.UpdatedBy = root.UpdatedBy;
-                    }
-                    item.AuditId = root.AuditId;
-                });
+            auditable.AuditId = Guid.NewGuid();
+            auditable.UpdateDate = DateTime.UtcNow;
+            if (_principal != null)
+            {
+                auditable.UpdatedBy = _principal.Identity.Name;
             }
+
+            auditable.Cascade((root, item) =>
+            {
+                if (item.CreateDate == DateTime.MinValue)
+                {
+                    item.CreateDate = DateTime.UtcNow;
+                    item.CreatedBy = root.CreatedBy;
+                }
+                else
+                {
+                    auditable.UpdateDate = root.UpdateDate;
+                    auditable.UpdatedBy = root.UpdatedBy;
+                }
+                item.AuditId = root.AuditId;
+            }, paths);
         }
 
         public override ILoadService<T> Load<T>()
@@ -99,22 +98,28 @@ namespace Yarn.Adapters
         {
             private readonly AuditableRepository _repository;
             private readonly ILoadService<T> _service;
+            private readonly List<string> _paths;
             
             public LoadService(AuditableRepository repository, ILoadService<T> service)
             {
                 _repository = repository;
                 _service = service;
+                _paths = new List<string>();
             }
 
             public ILoadService<T> Include<TProperty>(Expression<Func<T, TProperty>> path) where TProperty : class
             {
                 _service.Include(path);
+
+                var properties = string.Join(".", path.Body.ToString().Split('.').Where(p => !p.StartsWith("Select")).Select(p => p.TrimEnd(')')).Skip(1));
+                _paths.Add(properties);
+
                 return this;
             }
 
             public T Update(T entity)
             {
-                _repository.BeforeUpdate(entity);
+                _repository.BeforeUpdate(entity, _paths);
                 return _service.Update(entity);
             }
 
