@@ -841,7 +841,10 @@ namespace Yarn.Data.EntityFrameworkProvider
 
             foreach (var property in properties.Where(p => p.PropertyType != typeof(string) && p.PropertyType.IsGenericType && typeof(IEnumerable).IsAssignableFrom(p.PropertyType)))
             {
-                var collection = context.Entry(target).Collection(property.Name).CurrentValue as IList;
+                var colletionProperty = context.Entry(target).Collection(property.Name);
+                if (colletionProperty == null) continue;
+
+                var collection = colletionProperty.CurrentValue as IList;
 
                 var values = ((IEnumerable)PropertyAccessor.Get(target.GetType(), target, property.Name) ?? new object[] { }).Cast<object>().ToList();
                 var newValues = ((IEnumerable)PropertyAccessor.Get(source.GetType(), source, property.Name) ?? new object[] { }).Cast<object>().ToList();
@@ -855,16 +858,19 @@ namespace Yarn.Data.EntityFrameworkProvider
                     }
 
                     var entry = context.Entry(item.Item2);
-                    if (entry.State == EntityState.Detached)
+                    switch (entry.State)
                     {
-                        var hash = comparer.GetHashCode(item.Item2);
-                        var attachedTarget = context.Set(item.Item2.GetType()).Local.Cast<object>().First(e => comparer.GetHashCode(e) == hash);
-                        entry = context.Entry(attachedTarget);
-                        entry.CurrentValues.SetValues(item.Item1);
-                    }
-                    else if (entry.State == EntityState.Unchanged)
-                    {
-                        entry.CurrentValues.SetValues(item.Item1);
+                        case EntityState.Detached:
+                        {
+                            var hash = comparer.GetHashCode(item.Item2);
+                            var attachedTarget = context.Set(item.Item2.GetType()).Local.Cast<object>().First(e => comparer.GetHashCode(e) == hash);
+                            entry = context.Entry(attachedTarget);
+                            entry.CurrentValues.SetValues(item.Item1);
+                        }
+                            break;
+                        case EntityState.Unchanged:
+                            entry.CurrentValues.SetValues(item.Item1);
+                            break;
                     }
 
                     MergeImplementation(context, item.Item1, item.Item2, comparer, new HashSet<object>(ancestors), paths, level + 1);
@@ -873,52 +879,43 @@ namespace Yarn.Data.EntityFrameworkProvider
                 var deletes = values.Except(newValues, comparer).ToList();
                 foreach (var item in deletes)
                 {
-                    if (ancestors.Contains(item))
-                    {
-                        continue;
-                    }
+                    if (ancestors.Contains(item)) continue;
 
-                    if (collection != null)
-                    {
-                        collection.Remove(item);
-                        context.Entry(item).State = EntityState.Deleted;
-                    }
+                    if (collection == null) continue;
+
+                    collection.Remove(item);
+                    context.Entry(item).State = EntityState.Deleted;
                 }
 
                 var inserts = newValues.Where(e => !values.Any(f => comparer.Equals(e, f))).ToList();
                 foreach (var item in inserts)
                 {
-                    if (ancestors.Contains(item))
+                    if (ancestors.Contains(item)) continue;
+
+                    if (collection == null) continue;
+
+                    collection.Add(item);
+
+                    var entry = context.Entry(item);
+
+                    var objectProperties = item.GetType().GetProperties().Where(p => p.PropertyType.IsClass && p.PropertyType != typeof(string));
+
+                    foreach (var objectProperty in objectProperties)
                     {
-                        continue;
-                    }
+                        var member = entry.Member(objectProperty.Name);
+                        if (member == null || member.EntityEntry.State != EntityState.Detached || member.CurrentValue == null) continue;
 
-                    if (collection != null)
-                    {
-                        collection.Add(item);
-
-                        var entry = context.Entry(item);
-
-                        var objectProperties = item.GetType().GetProperties().Where(p => p.PropertyType.IsClass && p.PropertyType != typeof(string));
-
-                        foreach (var objectProperty in objectProperties)
+                        var hash = comparer.GetHashCode(member.CurrentValue);
+                        var local = context.Set(member.CurrentValue.GetType()).Local.Cast<object>().FirstOrDefault(e => comparer.GetHashCode(e) == hash);
+                        if (local != null && local != member.CurrentValue)
                         {
-                            var member = entry.Member(objectProperty.Name);
-                            if (member != null && member.EntityEntry.State == EntityState.Detached && member.CurrentValue != null)
-                            {
-                                var hash = comparer.GetHashCode(member.CurrentValue);
-                                var local = context.Set(member.CurrentValue.GetType()).Local.Cast<object>().FirstOrDefault(e => comparer.GetHashCode(e) == hash);
-                                if (local != null && local != member.CurrentValue)
-                                {
-                                    // Found unchanged locally
-                                    // Assign existing parent
-                                    PropertyAccessor.Set(item.GetType(), item, objectProperty.Name, local);
-                                }
-                            }
+                            // Found unchanged locally
+                            // Assign existing parent
+                            PropertyAccessor.Set(item.GetType(), item, objectProperty.Name, local);
                         }
-
-                        entry.State = EntityState.Added;
                     }
+
+                    entry.State = EntityState.Added;
                 }
             }
         }
