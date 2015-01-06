@@ -863,9 +863,12 @@ namespace Yarn.Data.EntityFrameworkProvider
                         case EntityState.Detached:
                         {
                             var hash = comparer.GetHashCode(item.Item2);
-                            var attachedTarget = context.Set(item.Item2.GetType()).Local.Cast<object>().First(e => comparer.GetHashCode(e) == hash);
-                            entry = context.Entry(attachedTarget);
-                            entry.CurrentValues.SetValues(item.Item1);
+                            var attachedTarget = context.Set(item.Item2.GetType()).Local.Cast<object>().FirstOrDefault(e => comparer.GetHashCode(e) == hash);
+                            if (attachedTarget != null)
+                            {
+                                entry = context.Entry(attachedTarget);
+                                entry.CurrentValues.SetValues(item.Item1);
+                            }
                         }
                             break;
                         case EntityState.Unchanged:
