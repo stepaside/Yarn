@@ -2,7 +2,7 @@
 <package >
   <metadata>
     <id>Yarn.EF</id>
-    <version>0.8.18.2</version>
+    <version>0.8.18.3</version>
     <title>Yarn.EF</title>
     <authors>Max Stepanskiy</authors>
     <owners>Stepaside, Inc.</owners>
@@ -13,7 +13,7 @@
     <tags>Entity Framework EntityFramework EF Repository</tags>
     <dependencies>
       <dependency id="Yarn" version="[0.8.18]" />
-      <dependency id="EntityFramework" version="6.1.1" />
+      <dependency id="EntityFramework" version="6.1.2" />
     </dependencies>
   </metadata>
   <files>
