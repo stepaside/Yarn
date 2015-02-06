@@ -12,7 +12,7 @@ namespace Yarn.Linq.Expressions
     /// From https://github.com/SharpRepository/SharpRepository/blob/develop/SharpRepository.Repository/Caching/Hash/LocalCollectionExpander.cs
     /// </remarks>
     /// </summary>
-    public class LocalCollectionExpander : System.Linq.Expressions.ExpressionVisitor
+    public class LocalCollectionExpander : ExpressionVisitor
     {
         public static Expression Rewrite(Expression expression)
         {

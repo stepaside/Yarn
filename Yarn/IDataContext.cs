@@ -11,7 +11,7 @@ namespace Yarn
         string Source { get; }
     }
 
-    public interface IDataContext<TSession> : IDataContext
+    public interface IDataContext<out TSession> : IDataContext
     {
         TSession Session { get; }
     }

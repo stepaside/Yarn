@@ -9,13 +9,13 @@ namespace Yarn.Reflection
 {
     public static class Activator
     {
-        private static ConcurrentDictionary<TypeArray, ObjectActivator> _activatorCache = new ConcurrentDictionary<TypeArray, ObjectActivator>();
+        private static readonly ConcurrentDictionary<TypeArray, ObjectActivator> ActivatorCache = new ConcurrentDictionary<TypeArray, ObjectActivator>();
 
         private class TypeArray
         {
-            Type _first;
-            Type[] _rest;
-            uint _hash;
+            readonly Type _first;
+            readonly Type[] _rest;
+            readonly uint _hash;
 
             public TypeArray(IList<Type> types)
             {
@@ -42,9 +42,10 @@ namespace Yarn.Reflection
 
             public override bool Equals(object obj)
             {
-                if (obj is TypeArray)
+                var array = obj as TypeArray;
+                if (array != null)
                 {
-                    return this.GetHashCode() == ((TypeArray)obj).GetHashCode();
+                    return GetHashCode() == array.GetHashCode();
                 }
                 return false;
             }
@@ -82,7 +83,7 @@ namespace Yarn.Reflection
                 typeList.AddRange(constructorArgumentTypes);
             }
             var key = new TypeArray(typeList);
-            return _activatorCache.GetOrAdd(key, k => GenerateDelegate(k.First, k.Rest));
+            return ActivatorCache.GetOrAdd(key, k => GenerateDelegate(k.First, k.Rest));
         }
 
         private static ObjectActivator GenerateDelegate(Type objectType, params Type[] types)
@@ -92,34 +93,33 @@ namespace Yarn.Reflection
             ConstructorInfo ctor = null;
             ParameterInfo[] paramsInfo = null;
 
-            for (int i = 0; i < ctors.Length; i++)
+            foreach (var c in ctors)
             {
-                var c = ctors[i];
                 var p = c.GetParameters();
-                if (p.Length == types.Length)
+
+                if (p.Length != types.Length) continue;
+
+                if (p.Length == 0)
                 {
-                    if (p.Length == 0)
-                    {
-                        ctor = c;
-                        paramsInfo = p;
-                        break;
-                    }
-                    else
-                    {
-                        var count = p.Select(a => a.ParameterType).Zip(types, (t1, t2) => t1 == t2 || t1.IsAssignableFrom(t2) || t2.IsAssignableFrom(t1) ? 1 : 0).Sum();
-                        if (count == types.Length)
-                        {
-                            ctor = c;
-                            paramsInfo = p;
-                            break;
-                        }
-                    }
+                    ctor = c;
+                    paramsInfo = p;
+                    break;
                 }
+
+                var count = p.Select(a => a.ParameterType).Zip(types, (t1, t2) => t1 == t2 || t1.IsAssignableFrom(t2) || t2.IsAssignableFrom(t1) ? 1 : 0).Sum();
+                
+                if (count != types.Length) continue;
+
+                ctor = c;
+                paramsInfo = p;
+                break;
             }
 
             var method = new DynamicMethod("CreateInstance", objectType, new[] { typeof(object[]) }, true); // skip visibility is on to allow instantiation of anonyopus type wrappers
+            
             var il = method.GetILGenerator();
-            for (int i = 0; i < paramsInfo.Length; i++)
+
+            for (var i = 0; i < paramsInfo.Length; i++)
             {
                 il.Emit(OpCodes.Ldarg_0);
                 il.Emit(OpCodes.Ldc_I4, i);

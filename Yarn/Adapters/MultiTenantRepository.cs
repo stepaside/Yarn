@@ -2,9 +2,6 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
-using System.Security.Principal;
-using System.Text;
-using System.Threading.Tasks;
 using Yarn.Extensions;
 using Yarn.Linq.Expressions;
 using Yarn.Specification;
@@ -69,7 +66,7 @@ namespace Yarn.Adapters
             }
 
             Expression<Func<T, bool>> filter = e => ((ITenant)e).TenantId == _owner.TenantId;
-            var spec = new Specification<T>(CastRemoverVisitor<ITenant>.Convert(filter)).And(criteria); ;
+            var spec = new Specification<T>(CastRemoverVisitor<ITenant>.Convert(filter)).And(criteria);
             var query = base.All<T>().Where(spec.Predicate);
             return this.Page(query, offset, limit, orderBy);
         }

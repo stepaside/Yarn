@@ -14,7 +14,7 @@ namespace Yarn.Specification
 
         public override IQueryable<T> Apply(IQueryable<T> query)
         {
-            return query.Where(_leftSide.Predicate.And(_rightSide.Predicate));
+            return query.Where(LeftSide.Predicate.And(RightSide.Predicate));
         }
     }
 

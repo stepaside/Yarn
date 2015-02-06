@@ -16,22 +16,22 @@ namespace Yarn.Specification
 
         public Specification<T> And(Specification<T> specification)
         {
-            return new Specification<T>(this.Predicate.And(specification.Predicate));
+            return new Specification<T>(Predicate.And(specification.Predicate));
         }
 
         public Specification<T> And(Expression<Func<T, bool>> predicate)
         {
-            return new Specification<T>(this.Predicate.And(predicate));
+            return new Specification<T>(Predicate.And(predicate));
         }
 
         public Specification<T> Or(Specification<T> specification)
         {
-            return new Specification<T>(this.Predicate.Or(specification.Predicate));
+            return new Specification<T>(Predicate.Or(specification.Predicate));
         }
 
         public Specification<T> Or(Expression<Func<T, bool>> predicate)
         {
-            return new Specification<T>(this.Predicate.Or(predicate));
+            return new Specification<T>(Predicate.Or(predicate));
         }
 
         public bool IsSatisfiedBy(T item)

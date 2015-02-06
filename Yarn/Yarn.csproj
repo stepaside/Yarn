@@ -84,7 +84,6 @@
     <Compile Include="Extensions\ExpressionExtensions.cs" />
     <Compile Include="IoC\IContainerAdapter.cs" />
     <Compile Include="Linq\Expressions\CastRemoverVisitor.cs" />
-    <Compile Include="Linq\Expressions\ExpressionVisitor.cs" />
     <Compile Include="Linq\Expressions\ParameterRebinder.cs" />
     <Compile Include="IoC\IContainer.cs" />
     <Compile Include="IDataContext.cs" />

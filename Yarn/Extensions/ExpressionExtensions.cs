@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 using System.Linq.Expressions;
 using Yarn.Linq.Expressions;
 
@@ -31,7 +30,7 @@ namespace Yarn.Extensions
             return first.Compose(second, Expression.Or);
         }
 
-        public static Expression<Func<T, bool>> BuildOrExpression<T, ID>(this Expression<Func<T, ID>> valueSelector, IEnumerable<ID> values)
+        public static Expression<Func<T, bool>> BuildOrExpression<T, ID>(this Expression<Func<T, ID>> valueSelector, IList<ID> values)
             where T : class
         {
 
@@ -47,13 +46,13 @@ namespace Yarn.Extensions
 
             var p = valueSelector.Parameters.Single();
 
-            if (!values.Any())
+            if (values.Count == 0)
             {
                 return e => false;
             }
 
             var equals = values.Select(value => (Expression)Expression.Equal(valueSelector.Body, Expression.Constant(value, typeof(ID))));
-            var body = @equals.Aggregate(Expression.Or);
+            var body = equals.Aggregate(Expression.Or);
             return Expression.Lambda<Func<T, bool>>(body, p);
         }
 

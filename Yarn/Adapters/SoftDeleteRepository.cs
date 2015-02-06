@@ -3,8 +3,6 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Security.Principal;
-using System.Text;
-using System.Threading.Tasks;
 using Yarn.Extensions;
 using Yarn.Linq.Expressions;
 using Yarn.Specification;
@@ -43,7 +41,7 @@ namespace Yarn.Adapters
         public override T Find<T>(Expression<Func<T, bool>> criteria)
         {
             Expression<Func<T, bool>> filter = e => !((ISoftDelete)e).IsDeleted;
-            return typeof(ISoftDelete).IsAssignableFrom(typeof(T)) ? base.All<T>().Where(CastRemoverVisitor<ISoftDelete>.Convert(filter)).FirstOrDefault(criteria) : base.Find<T>(criteria);
+            return typeof(ISoftDelete).IsAssignableFrom(typeof(T)) ? base.All<T>().Where(CastRemoverVisitor<ISoftDelete>.Convert(filter)).FirstOrDefault(criteria) : base.Find(criteria);
         }
 
         public override IEnumerable<T> FindAll<T>(ISpecification<T> criteria, int offset = 0, int limit = 0, Expression<Func<T, object>> orderBy = null)

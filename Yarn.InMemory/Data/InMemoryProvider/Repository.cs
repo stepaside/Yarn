@@ -4,8 +4,6 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
-using System.Text;
-using System.Threading.Tasks;
 using Yarn.Extensions;
 using Yarn.Reflection;
 using Yarn.Specification;
@@ -14,8 +12,8 @@ namespace Yarn.Data.InMemoryProvider
 {
     public class Repository : IRepository, IMetaDataProvider
     {
-        private DataContext _context = null;
-        private IMetaDataProvider _metaDataProvider = null;
+        private DataContext _context;
+        private readonly IMetaDataProvider _metaDataProvider;
 
         public Repository(IMetaDataProvider metaDataProvider = null)
         {
@@ -33,18 +31,16 @@ namespace Yarn.Data.InMemoryProvider
             {
                 return ids.Select(id => (T)_context.Session.GetObjectFromId((OID)id));
             }
-            else
-            {
-                var primaryKey = _metaDataProvider.GetPrimaryKey<T>().First();
 
-                var parameter = Expression.Parameter(typeof(T));
-                var body = Expression.Convert(Expression.PropertyOrField(parameter, primaryKey), typeof(ID));
-                var idSelector = Expression.Lambda<Func<T, ID>>(body, parameter);
+            var primaryKey = _metaDataProvider.GetPrimaryKey<T>().First();
 
-                var predicate = idSelector.BuildOrExpression<T, ID>(ids);
+            var parameter = Expression.Parameter(typeof(T));
+            var body = Expression.Convert(Expression.PropertyOrField(parameter, primaryKey), typeof(ID));
+            var idSelector = Expression.Lambda<Func<T, ID>>(body, parameter);
 
-                return this.All<T>().Where(predicate).AsEnumerable();
-            }
+            var predicate = idSelector.BuildOrExpression(ids);
+
+            return All<T>().Where(predicate).AsEnumerable();
         }
 
         public T Find<T>(ISpecification<T> criteria) where T : class
@@ -75,7 +71,7 @@ namespace Yarn.Data.InMemoryProvider
 
         public T Add<T>(T entity) where T : class
         {
-            _context.Session.Store<T>(entity);
+            _context.Session.Store(entity);
             return entity;
         }
 
@@ -87,10 +83,11 @@ namespace Yarn.Data.InMemoryProvider
 
         public T Remove<T, ID>(ID id) where T : class
         {
-            if (id is OID)
+            var oid = id as OID;
+            if (oid != null)
             {
-                var entity = (T)_context.Session.GetObjectFromId((OID)id);
-                _context.Session.DeleteObjectWithId((OID)id);
+                var entity = (T)_context.Session.GetObjectFromId(oid);
+                _context.Session.DeleteObjectWithId(oid);
                 return entity;
             }
             else
@@ -106,7 +103,7 @@ namespace Yarn.Data.InMemoryProvider
 
         public T Update<T>(T entity) where T : class
         {
-             _context.Session.Store<T>(entity);
+             _context.Session.Store(entity);
              return entity;
         }
 
@@ -150,14 +147,7 @@ namespace Yarn.Data.InMemoryProvider
 
         public IDataContext DataContext
         {
-            get
-            {
-                if (_context == null)
-                {
-                    _context = new DataContext();
-                }
-                return _context;
-            }
+            get { return _context ?? (_context = new DataContext()); }
         }
 
         public void Dispose()
@@ -177,7 +167,7 @@ namespace Yarn.Data.InMemoryProvider
 
         protected OID GetId<T>(T entity) where T : class
         {
-            return this.Database.GetObjectId<T>(entity);
+            return Database.GetObjectId(entity);
         }
 
         #region IMetaDataProvider Members
@@ -189,15 +179,12 @@ namespace Yarn.Data.InMemoryProvider
             {
                 return typeof(OID).IsAssignableFrom(p.PropertyType) || string.Equals(p.Name, "id", StringComparison.OrdinalIgnoreCase);
             }
-            else
-            {
-                return true;
-            }
+            return true;
         }
 
         string[] IMetaDataProvider.GetPrimaryKey<T>()
         {
-            return typeof(T).GetProperties().Where(p => IsPrimaryKey(p)).Select(p => p.Name).ToArray();
+            return typeof(T).GetProperties().Where(IsPrimaryKey).Select(p => p.Name).ToArray();
         }
 
         object[] IMetaDataProvider.GetPrimaryKeyValue<T>(T entity)

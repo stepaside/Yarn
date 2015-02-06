@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 
 namespace Yarn.Linq.Expressions
 {
-    internal sealed class CastRemoverVisitor<TInterface> : ExpressionVisitor
+    public sealed class CastRemoverVisitor<TInterface> : ExpressionVisitor
     {
         public static Expression<Func<T, bool>> Convert<T>(
             Expression<Func<T, bool>> predicate)

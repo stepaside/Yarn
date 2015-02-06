@@ -31,7 +31,7 @@ namespace Yarn.Linq.Expressions
         /// <returns>A new tree with sub-trees evaluated and replaced.</returns>
         public static Expression PartialEval(Expression expression)
         {
-            return PartialEval(expression, Evaluator.CanBeEvaluatedLocally);
+            return PartialEval(expression, CanBeEvaluatedLocally);
         }
 
         private static bool CanBeEvaluatedLocally(Expression expression)
@@ -44,16 +44,16 @@ namespace Yarn.Linq.Expressions
         /// </summary>
         private class SubtreeEvaluator : ExpressionVisitor
         {
-            private HashSet<Expression> candidates;
+            private readonly HashSet<Expression> _candidates;
 
             internal SubtreeEvaluator(HashSet<Expression> candidates)
             {
-                this.candidates = candidates;
+                _candidates = candidates;
             }
 
             internal Expression Eval(Expression exp)
             {
-                return this.Visit(exp);
+                return Visit(exp);
             }
 
             public override Expression Visit(Expression exp)
@@ -62,21 +62,17 @@ namespace Yarn.Linq.Expressions
                 {
                     return null;
                 }
-                if (this.candidates.Contains(exp))
-                {
-                    return this.Evaluate(exp);
-                }
-                return base.Visit(exp);
+                return _candidates.Contains(exp) ? Evaluate(exp) : base.Visit(exp);
             }
 
-            private Expression Evaluate(Expression e)
+            private static Expression Evaluate(Expression e)
             {
                 if (e.NodeType == ExpressionType.Constant)
                 {
                     return e;
                 }
-                LambdaExpression lambda = Expression.Lambda(e);
-                Delegate fn = lambda.Compile();
+                var lambda = Expression.Lambda(e);
+                var fn = lambda.Compile();
                 return Expression.Constant(fn.DynamicInvoke(null), e.Type);
             }
 
@@ -88,41 +84,41 @@ namespace Yarn.Linq.Expressions
         /// </summary>
         class Nominator : ExpressionVisitor
         {
-            Func<Expression, bool> fnCanBeEvaluated;
-            HashSet<Expression> candidates;
-            bool cannotBeEvaluated;
+            readonly Func<Expression, bool> _canBeEvaluated;
+            HashSet<Expression> _candidates;
+            bool _cannotBeEvaluated;
 
-            internal Nominator(Func<Expression, bool> fnCanBeEvaluated)
+            internal Nominator(Func<Expression, bool> canBeEvaluated)
             {
-                this.fnCanBeEvaluated = fnCanBeEvaluated;
+                _canBeEvaluated = canBeEvaluated;
             }
 
             internal HashSet<Expression> Nominate(Expression expression)
             {
-                this.candidates = new HashSet<Expression>();
-                this.Visit(expression);
-                return this.candidates;
+                _candidates = new HashSet<Expression>();
+                Visit(expression);
+                return _candidates;
             }
 
             public override Expression Visit(Expression expression)
             {
                 if (expression != null)
                 {
-                    bool saveCannotBeEvaluated = this.cannotBeEvaluated;
-                    this.cannotBeEvaluated = false;
+                    var saveCannotBeEvaluated = _cannotBeEvaluated;
+                    _cannotBeEvaluated = false;
                     base.Visit(expression);
-                    if (!this.cannotBeEvaluated)
+                    if (!_cannotBeEvaluated)
                     {
-                        if (this.fnCanBeEvaluated(expression))
+                        if (_canBeEvaluated(expression))
                         {
-                            this.candidates.Add(expression);
+                            _candidates.Add(expression);
                         }
                         else
                         {
-                            this.cannotBeEvaluated = true;
+                            _cannotBeEvaluated = true;
                         }
                     }
-                    this.cannotBeEvaluated |= saveCannotBeEvaluated;
+                    _cannotBeEvaluated |= saveCannotBeEvaluated;
                 }
                 return expression;
             }

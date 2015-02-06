@@ -1,20 +1,17 @@
 ﻿using System;
 using System.Collections;
-using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace Yarn.Reflection
 {
     public static class ReflectedType<T>
     {
-        private static readonly Lazy<HashSet<Type>> _childTypes = new Lazy<HashSet<Type>>(() => GetChildTypes(typeof(T)), true);
+        private static readonly Lazy<HashSet<Type>> ChildTypesLazy = new Lazy<HashSet<Type>>(() => GetChildTypes(typeof(T)), true);
 
         public static HashSet<Type> ChildTypes
         {
-            get { return _childTypes.Value; }
+            get { return ChildTypesLazy.Value; }
         }
 
         private static HashSet<Type> GetChildTypes(Type type, HashSet<Type> ancestors = null)

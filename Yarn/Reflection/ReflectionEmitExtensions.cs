@@ -1,8 +1,5 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
 using System.Reflection.Emit;
-using System.Text;
 
 namespace Yarn.Reflection
 {
@@ -33,16 +30,9 @@ namespace Yarn.Reflection
             }
         }
 
-        internal static void EmitCastToReference(this ILGenerator il, System.Type type)
+        internal static void EmitCastToReference(this ILGenerator il, Type type)
         {
-            if (type.IsValueType)
-            {
-                il.Emit(OpCodes.Unbox_Any, type);
-            }
-            else
-            {
-                il.Emit(OpCodes.Castclass, type);
-            }
+            il.Emit(type.IsValueType ? OpCodes.Unbox_Any : OpCodes.Castclass, type);
         }
     }
 }

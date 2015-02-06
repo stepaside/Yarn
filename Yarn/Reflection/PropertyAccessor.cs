@@ -1,7 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
 using System.Reflection;
 using System.Reflection.Emit;
 using System.Collections.Concurrent;
@@ -10,8 +7,8 @@ namespace Yarn.Reflection
 {
     public static class PropertyAccessor
     {
-        private static ConcurrentDictionary<Tuple<Type, string>, GenericGetter> _getters = new ConcurrentDictionary<Tuple<Type, string>, GenericGetter>();
-        private static ConcurrentDictionary<Tuple<Type, string>, GenericSetter> _setters = new ConcurrentDictionary<Tuple<Type, string>, GenericSetter>();
+        private static readonly ConcurrentDictionary<Tuple<Type, string>, GenericGetter> Getters = new ConcurrentDictionary<Tuple<Type, string>, GenericGetter>();
+        private static readonly ConcurrentDictionary<Tuple<Type, string>, GenericSetter> Setters = new ConcurrentDictionary<Tuple<Type, string>, GenericSetter>();
 
         #region Exist Methods
 
@@ -23,8 +20,8 @@ namespace Yarn.Reflection
         public static bool Exists(Type targetType, string propertyName)
         {
             var propertyKey = Tuple.Create(targetType, propertyName);
-            var getMethod = _getters.GetOrAdd(propertyKey, key => GenerateGetter(key));
-            var setMethod = _setters.GetOrAdd(propertyKey, key => GenerateSetter(key));
+            var getMethod = Getters.GetOrAdd(propertyKey, GenerateGetter);
+            var setMethod = Setters.GetOrAdd(propertyKey, GenerateSetter);
             return getMethod != null && setMethod != null;
         }
 
@@ -47,7 +44,7 @@ namespace Yarn.Reflection
             if (target != null)
             {
                 var propertyKey = Tuple.Create(targetType, propertyName);
-                var getMethod = _getters.GetOrAdd(propertyKey, key => GenerateGetter(key));
+                var getMethod = Getters.GetOrAdd(propertyKey, GenerateGetter);
                 return getMethod(target);
             }
             return null;
@@ -77,7 +74,7 @@ namespace Yarn.Reflection
             if (target != null)
             {
                 var propertyKey = Tuple.Create(targetType, propertyName);
-                var setMethod = _setters.GetOrAdd(propertyKey, key => GenerateSetter(key));
+                var setMethod = Setters.GetOrAdd(propertyKey, GenerateSetter);
                 setMethod(target, value);
             }
         }
@@ -98,6 +95,7 @@ namespace Yarn.Reflection
         /// Creates a dynamic setter for the property
         /// </summary>
         /// <param name="propertyInfo"></param>
+        /// <param name="targetType"></param>
         private static GenericSetter CreateSetMethod(PropertyInfo propertyInfo, Type targetType)
         {
             var setMethod = propertyInfo.GetSetMethod();
@@ -133,6 +131,7 @@ namespace Yarn.Reflection
         /// Creates a dynamic getter for the property
         /// </summary>
         /// <param name="propertyInfo"></param>
+        /// <param name="targetType"></param>
         /// <returns></returns>
         private static GenericGetter CreateGetMethod(PropertyInfo propertyInfo, Type targetType)
         {

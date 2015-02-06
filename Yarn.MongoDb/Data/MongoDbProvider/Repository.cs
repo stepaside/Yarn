@@ -11,7 +11,6 @@ using System.Globalization;
 using System.Linq;
 using System.Linq.Expressions;
 using Yarn.Extensions;
-using Yarn.Reflection;
 using Yarn.Specification;
 
 namespace Yarn.Data.MongoDbProvider
@@ -125,7 +124,7 @@ namespace Yarn.Data.MongoDbProvider
         public IList<T> Execute<T>(string command, ParamList parameters) where T : class
         {
             IList<T> items = new T[] { };
-            var args = parameters != null ? (Dictionary<string, object>)parameters : new Dictionary<string, object>();
+            var args = parameters ?? new Dictionary<string, object>();
 
             switch (command)
             {
@@ -225,9 +224,7 @@ namespace Yarn.Data.MongoDbProvider
                         }
 
                         var result = _context.Session.RunCommand(commandDoc);
-                        items =
-                            result.Response["result"].AsBsonArray.Select(
-                                v => BsonSerializer.Deserialize<T>(v.AsBsonDocument)).ToArray();
+                        items = result.Response["result"].AsBsonArray.Select(v => BsonSerializer.Deserialize<T>(v.AsBsonDocument)).ToArray();
                     }
                 }
                     break;

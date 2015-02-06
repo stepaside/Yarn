@@ -29,7 +29,7 @@ namespace Yarn.Adapters
             var auditable = entity as IAuditable;
             if (auditable == null)
             {
-                return _repository.Add(entity);
+                return Repository.Add(entity);
             }
 
             auditable.AuditId = Guid.NewGuid();
@@ -46,13 +46,13 @@ namespace Yarn.Adapters
                 item.CreatedBy = root.CreatedBy;
                 item.AuditId = root.AuditId;
             });
-            return _repository.Add(entity);
+            return Repository.Add(entity);
         }
 
         public override T Update<T>(T entity)
         {
             BeforeUpdate(entity);
-            return _repository.Update(entity);
+            return Repository.Update(entity);
         }
 
         private void BeforeUpdate<T>(T entity, IReadOnlyCollection<string> paths = null) where T : class
@@ -85,7 +85,7 @@ namespace Yarn.Adapters
 
         public override ILoadService<T> Load<T>()
         {
-            var provider = _repository as ILoadServiceProvider;
+            var provider = Repository as ILoadServiceProvider;
             if (provider != null)
             {
                 return new LoadService<T>(this, provider.Load<T>());

@@ -28,7 +28,7 @@ namespace Yarn.Adapters
                 throw new ArgumentNullException("otherRepository");
             }
             _other = otherRepository;
-            _current = _repository;
+            _current = Repository;
             _logger = logger;
             _strategy = strategy;
             _failedOver = false;

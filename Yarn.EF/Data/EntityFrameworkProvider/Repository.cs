@@ -345,7 +345,7 @@ namespace Yarn.Data.EntityFrameworkProvider
             var body = Expression.Convert(Expression.PropertyOrField(parameter, primaryKey), typeof(ID));
             var idSelector = Expression.Lambda<Func<T, ID>>(body, parameter);
 
-            var predicate = idSelector.BuildOrExpression(ids);
+            var predicate = idSelector.BuildOrExpression(ids.ToArray());
 
             return Table<T>().Where(predicate);
         }
