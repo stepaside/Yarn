@@ -14,7 +14,7 @@ namespace Yarn.Adapters
         public InterceptorRepository(IRepository repository, Func<InterceptorContext, IDisposable> interceptorFactory)
             : base(repository)
         {
-            if (_interceptorFactory == null)
+            if (interceptorFactory == null)
             {
                 throw new ArgumentNullException("interceptorFactory");
             }
