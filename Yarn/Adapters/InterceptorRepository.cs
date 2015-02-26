@@ -166,7 +166,7 @@ namespace Yarn.Adapters
             }
         }
 
-        private T Intercept<T>(Func<T> func, MethodBase method, object[] arguments)
+        protected T Intercept<T>(Func<T> func, MethodBase method, object[] arguments)
         {
             var ctx = new InterceptorContext(() => (object)func()) { Method = method, Arguments = arguments, ReturnType = typeof(T) };
             using (_interceptorFactory(ctx))
@@ -184,7 +184,7 @@ namespace Yarn.Adapters
             return default(T);
         }
 
-        private void InterceptNoResult(Action action, MethodBase method, object[] arguments)
+        protected void InterceptNoResult(Action action, MethodBase method, object[] arguments)
         {
             var ctx = new InterceptorContext(action) { Method = method, Arguments = arguments };
             using (_interceptorFactory(ctx))
