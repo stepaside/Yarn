@@ -8,13 +8,13 @@ namespace Yarn.Adapters
         private readonly Action _action;
         private readonly Func<object> _func;
 
-        internal InterceptorContext(Action action)
+        public InterceptorContext(Action action)
         {
             _action = action;
             _func = null;
         }
 
-        internal InterceptorContext(Func<object> func)
+        public InterceptorContext(Func<object> func)
         {
             _func = func;
             _action = null;
