@@ -33,19 +33,19 @@ namespace Yarn.Adapters
             return Intercept(() => f(criteria), f.Method, new object[] { criteria });
         }
 
-        public override T Find<T>(System.Linq.Expressions.Expression<Func<T, bool>> criteria)
+        public override T Find<T>(Expression<Func<T, bool>> criteria)
         {
             Func<Expression<Func<T, bool>>, T> f = base.Find;
             return Intercept(() => base.Find(criteria), f.Method, new object[] { criteria });
         }
 
-        public override IEnumerable<T> FindAll<T>(ISpecification<T> criteria, int offset = 0, int limit = 0, System.Linq.Expressions.Expression<Func<T, object>> orderBy = null)
+        public override IEnumerable<T> FindAll<T>(ISpecification<T> criteria, int offset = 0, int limit = 0, Expression<Func<T, object>> orderBy = null)
         {
             Func<ISpecification<T>, int, int, Expression<Func<T, object>>, IEnumerable<T>> f = base.FindAll;
             return Intercept(() => f(criteria, offset, limit, orderBy), f.Method, new object[] { criteria, offset, limit, orderBy });
         }
 
-        public override IEnumerable<T> FindAll<T>(System.Linq.Expressions.Expression<Func<T, bool>> criteria, int offset = 0, int limit = 0, System.Linq.Expressions.Expression<Func<T, object>> orderBy = null)
+        public override IEnumerable<T> FindAll<T>(Expression<Func<T, bool>> criteria, int offset = 0, int limit = 0, Expression<Func<T, object>> orderBy = null)
         {
             Func<Expression<Func<T, bool>>, int, int, Expression<Func<T, object>>, IEnumerable<T>> f = base.FindAll;
             return Intercept(() => f(criteria, offset, limit, orderBy), f.Method, new object[] { criteria, offset, limit, orderBy });

@@ -1,8 +1,8 @@
 ﻿<?xml version="1.0"?>
-<package >
+<package>
   <metadata>
     <id>Yarn.Elasticsearch</id>
-    <version>0.8.19</version>
+    <version>0.8.20</version>
     <title>Yarn.Elasticsearch</title>
     <authors>Max Stepanskiy</authors>
     <owners>Stepaside, Inc.</owners>
@@ -12,9 +12,9 @@
     <copyright>Copyright © Max Stepanskiy 2012-2014</copyright>
     <tags>Elastic Elasticsearch Repository</tags>
     <dependencies>
-      <dependency id="Yarn" version="[0.8.19]" />
-      <dependency id="ElasticLINQ" version="1.2.0" />
-	  <dependency id="NEST" version="1.4.0" />
+      <dependency id="Yarn" version="[0.8.20]" />
+      <dependency id="ElasticLINQ" version="1.3.0" />
+	  <dependency id="NEST" version="1.4.2" />
     </dependencies>
   </metadata>
   <files>
