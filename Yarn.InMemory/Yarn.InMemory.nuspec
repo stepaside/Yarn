@@ -2,7 +2,7 @@
 <package>
   <metadata>
     <id>Yarn.InMemory</id>
-    <version>0.8.20</version>
+    <version>0.8.20.1</version>
     <title>Yarn.InMemory</title>
     <authors>Max Stepanskiy</authors>
     <owners>Stepaside, Inc.</owners>

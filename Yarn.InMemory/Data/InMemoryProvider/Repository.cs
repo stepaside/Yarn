@@ -177,7 +177,7 @@ namespace Yarn.Data.InMemoryProvider
             var attr = p.GetCustomAttributes(false).OfType<OIDAttribute>().ToList();
             if (attr.Count == 0)
             {
-                return typeof(OID).IsAssignableFrom(p.PropertyType) || string.Equals(p.Name, "id", StringComparison.OrdinalIgnoreCase);
+                return typeof(OID).IsAssignableFrom(p.PropertyType) || string.Equals(p.Name, "id", StringComparison.OrdinalIgnoreCase) || (p.ReflectedType != null && string.Equals(p.Name, p.ReflectedType.Name + "id", StringComparison.OrdinalIgnoreCase));
             }
             return true;
         }
