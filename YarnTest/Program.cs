@@ -23,9 +23,11 @@ namespace YarnTest
     {
         static void Main(string[] args)
         {
-            ObjectContainer.Current.Register<IRepository, Repository>(new Repository("Yarn.EF2", false, false), "EF");
+            ObjectContainer.Current.Register<IRepository>(() => new Repository("Yarn.EF2", false, false), "EF");
+
+            ObjectContainer.Current.Register<IRepository>(() => new Yarn.Data.InMemoryProvider.Repository(), "InMemory");
             
-            var repo = ObjectContainer.Current.Resolve<IRepository>("EF");
+            var repo = ObjectContainer.Current.Resolve<IRepository>("InMemory");
             if (repo == null)
             {
                 Console.WriteLine("RepoNull");
@@ -37,16 +39,24 @@ namespace YarnTest
             }
             else
             {
-                var session = ((IDataContext<DbContext>)dctx).Session;
-                var tableName = session.GetTableName<Customer>();
+                var context = dctx as IDataContext<DbContext>;
+                if (context != null)
+                {
+                    var session = context.Session;
+                    var tableName = session.GetTableName<Customer>();
+                }
                 //repo.As<IBulkOperationsProvider>().Update<Customer>(c => c.CustomerID.Length > 12, c => new Customer { ContactName = c.ContactName + " 2" });
                 //repo.As<IBulkOperationsProvider>().Delete<Customer>(c => c.CustomerID.Length > 12, c => c.CustomerID.StartsWith("AL"));
             }
 
             //var customer = repo.GetById<Customer, string>("ALFKI");
             
-            var eager_customer = repo.As<ILoadServiceProvider>().Load<Customer>().Include(c => c.Orders).Include(c => c.Orders.Select(o => o.Order_Details)).Find(c => c.CustomerID == "ALFKI");
-            
+            var loader = repo.As<ILoadServiceProvider>();
+            if (loader != null)
+            {
+                var eager_customer = loader.Load<Customer>().Include(c => c.Orders).Include(c => c.Orders.Select(o => o.Order_Details)).Find(c => c.CustomerID == "ALFKI");
+            }
+
             var customersFromLondon = repo.FindAll<Customer>(c => c.City == "London", offset: 1).ToList();
 
             var customers = repo.Execute<Customer>("EXEC spDTO_Customer_Retrieve @CustomerID", new ParamList { { "CustomerID", "ALFKI" } });
@@ -56,7 +66,7 @@ namespace YarnTest
             var customer1 = cachedRepo.Find<Customer>(c => c.CustomerID == id);
             var customer2 = cachedRepo.Find<Customer>(c => c.CustomerID == id);
 
-            if (object.ReferenceEquals(customer1, customer2))
+            if (ReferenceEquals(customer1, customer2))
             {
                 Console.WriteLine("From Cache");
             }
