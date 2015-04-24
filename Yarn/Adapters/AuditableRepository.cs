@@ -128,7 +128,7 @@ namespace Yarn.Adapters
                 return _service.Find(criteria);
             }
 
-            public IEnumerable<T> FindAll(Expression<Func<T, bool>> criteria, int offset = 0, int limit = 0, Expression<Func<T, object>> orderBy = null)
+            public IEnumerable<T> FindAll(Expression<Func<T, bool>> criteria, int offset = 0, int limit = 0, Sorting<T> orderBy = null)
             {
                 return _service.FindAll(criteria, offset, limit, orderBy);
             }
@@ -138,7 +138,7 @@ namespace Yarn.Adapters
                 return _service.Find(criteria);
             }
 
-            public IEnumerable<T> FindAll(ISpecification<T> criteria, int offset = 0, int limit = 0, Expression<Func<T, object>> orderBy = null)
+            public IEnumerable<T> FindAll(ISpecification<T> criteria, int offset = 0, int limit = 0, Sorting<T> orderBy = null)
             {
                 return _service.FindAll(criteria, offset, limit, orderBy);
             }

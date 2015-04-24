@@ -44,13 +44,13 @@ namespace Yarn.Data.MongoDbProvider
             return FindAll(criteria).FirstOrDefault();
         }
 
-        public IEnumerable<T> FindAll<T>(Expression<Func<T, bool>> criteria, int offset = 0, int limit = 0, Expression<Func<T, object>> orderBy = null) where T : class
+        public IEnumerable<T> FindAll<T>(Expression<Func<T, bool>> criteria, int offset = 0, int limit = 0, Sorting<T> orderBy = null) where T : class
         {
             var query = All<T>().Where(criteria);
             return this.Page(query, offset, limit, orderBy);
         }
 
-        public IEnumerable<T> FindAll<T>(ISpecification<T> criteria, int offset = 0, int limit = 0, Expression<Func<T, object>> orderBy = null) where T : class
+        public IEnumerable<T> FindAll<T>(ISpecification<T> criteria, int offset = 0, int limit = 0, Sorting<T> orderBy = null) where T : class
         {
             var query = criteria.Apply(All<T>());
             return this.Page(query, offset, limit, orderBy);

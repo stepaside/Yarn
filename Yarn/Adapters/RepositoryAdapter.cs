@@ -37,12 +37,12 @@ namespace Yarn.Adapters
             return Repository.Find(criteria);
         }
 
-        public virtual IEnumerable<T> FindAll<T>(ISpecification<T> criteria, int offset = 0, int limit = 0, Expression<Func<T, object>> orderBy = null) where T : class
+        public virtual IEnumerable<T> FindAll<T>(ISpecification<T> criteria, int offset = 0, int limit = 0, Sorting<T> orderBy = null) where T : class
         {
             return Repository.FindAll(criteria, offset, limit, orderBy);
         }
 
-        public virtual IEnumerable<T> FindAll<T>(Expression<Func<T, bool>> criteria, int offset = 0, int limit = 0, Expression<Func<T, object>> orderBy = null) where T : class
+        public virtual IEnumerable<T> FindAll<T>(Expression<Func<T, bool>> criteria, int offset = 0, int limit = 0, Sorting<T> orderBy = null) where T : class
         {
             return Repository.FindAll(criteria, offset, limit, orderBy);
         }

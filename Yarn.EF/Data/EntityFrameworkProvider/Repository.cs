@@ -88,13 +88,13 @@ namespace Yarn.Data.EntityFrameworkProvider
             return FindAll(criteria).FirstOrDefault();
         }
 
-        public IEnumerable<T> FindAll<T>(Expression<Func<T, bool>> criteria, int offset = 0, int limit = 0, Expression<Func<T, object>> orderBy = null) where T : class
+        public IEnumerable<T> FindAll<T>(Expression<Func<T, bool>> criteria, int offset = 0, int limit = 0, Sorting<T> orderBy = null) where T : class
         {
             var query = Table<T>().Where(criteria);
             return this.Page(query, offset, limit, orderBy);
         }
 
-        public IEnumerable<T> FindAll<T>(ISpecification<T> criteria, int offset = 0, int limit = 0, Expression<Func<T, object>> orderBy = null) where T : class
+        public IEnumerable<T> FindAll<T>(ISpecification<T> criteria, int offset = 0, int limit = 0, Sorting<T> orderBy = null) where T : class
         {
             var query = criteria.Apply(Table<T>());
             return this.Page(query, offset, limit, orderBy);
@@ -296,7 +296,7 @@ namespace Yarn.Data.EntityFrameworkProvider
                 return _query.FirstOrDefault(criteria);
             }
 
-            public IEnumerable<T> FindAll(Expression<Func<T, bool>> criteria, int offset = 0, int limit = 0, Expression<Func<T, object>> orderBy = null)
+            public IEnumerable<T> FindAll(Expression<Func<T, bool>> criteria, int offset = 0, int limit = 0, Sorting<T> orderBy = null)
             {
                 var query = _query.Where(criteria);
                 return _repository.Page(query, offset, limit, orderBy);
@@ -307,7 +307,7 @@ namespace Yarn.Data.EntityFrameworkProvider
                 return Find(((Specification<T>)criteria).Predicate);
             }
 
-            public IEnumerable<T> FindAll(ISpecification<T> criteria, int offset = 0, int limit = 0, Expression<Func<T, object>> orderBy = null)
+            public IEnumerable<T> FindAll(ISpecification<T> criteria, int offset = 0, int limit = 0, Sorting<T> orderBy = null)
             {
                 return FindAll(((Specification<T>)criteria).Predicate, offset, limit, orderBy);
             }

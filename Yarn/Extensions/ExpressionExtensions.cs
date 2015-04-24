@@ -80,5 +80,37 @@ namespace Yarn.Extensions
             var predicate = idSelector.BuildOrExpression(new[] { id });
             return predicate;
         }
+
+        public static LambdaExpression BuildLambdaExpression(this Type type, string path, bool covariantReturnType = true)
+        {
+            var properties = path.Split('.').Skip(1).ToList();
+
+            var t = type;
+            var parameter = Expression.Parameter(t);
+            Expression expression = parameter;
+
+            for (var i = 0; i < properties.Count; i++)
+            {
+                var property = properties[i];
+                var start = property.IndexOf('[');
+                var end = property.IndexOf(']');
+
+                int index;
+                if (start > -1 && int.TryParse(property.Substring(start + 1, end - start - 1), out index))
+                {
+                    property = property.Substring(0, start);
+                    var temp = Expression.Property(expression, t, property);
+                    expression = Expression.Call(temp, temp.Type.GetMethod("get_Item"), new Expression[] { Expression.Constant(index) });
+                }
+                else
+                {
+                    expression = Expression.Property(expression, t, property);
+                }
+                t = expression.Type;
+            }
+
+            var lambdaExpression = covariantReturnType ? Expression.Lambda(typeof(Func<,>).MakeGenericType(type, typeof(object)), expression, parameter) : Expression.Lambda(expression, parameter);
+            return lambdaExpression;
+        }
     }
 }

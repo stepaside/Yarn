@@ -45,7 +45,7 @@ namespace Yarn.Adapters
             return typeof(ITenant).IsAssignableFrom(typeof(T)) ? base.All<T>().Where(CastRemoverVisitor<ITenant>.Convert(filter)).FirstOrDefault(criteria) : base.Find(criteria);
         }
 
-        public override IEnumerable<T> FindAll<T>(ISpecification<T> criteria, int offset = 0, int limit = 0, Expression<Func<T, object>> orderBy = null)
+        public override IEnumerable<T> FindAll<T>(ISpecification<T> criteria, int offset = 0, int limit = 0, Sorting<T> orderBy = null)
         {
             if (!typeof(ITenant).IsAssignableFrom(typeof(T)))
             {
@@ -58,7 +58,7 @@ namespace Yarn.Adapters
             return this.Page(query, offset, limit, orderBy);
         }
 
-        public override IEnumerable<T> FindAll<T>(Expression<Func<T, bool>> criteria, int offset = 0, int limit = 0, Expression<Func<T, object>> orderBy = null)
+        public override IEnumerable<T> FindAll<T>(Expression<Func<T, bool>> criteria, int offset = 0, int limit = 0, Sorting<T> orderBy = null)
         {
             if (!typeof(ITenant).IsAssignableFrom(typeof(T)))
             {

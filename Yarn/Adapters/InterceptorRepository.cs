@@ -39,15 +39,15 @@ namespace Yarn.Adapters
             return Intercept(() => base.Find(criteria), f.Method, new object[] { criteria });
         }
 
-        public override IEnumerable<T> FindAll<T>(ISpecification<T> criteria, int offset = 0, int limit = 0, Expression<Func<T, object>> orderBy = null)
+        public override IEnumerable<T> FindAll<T>(ISpecification<T> criteria, int offset = 0, int limit = 0, Sorting<T> orderBy = null)
         {
-            Func<ISpecification<T>, int, int, Expression<Func<T, object>>, IEnumerable<T>> f = base.FindAll;
+            Func<ISpecification<T>, int, int, Sorting<T>, IEnumerable<T>> f = base.FindAll;
             return Intercept(() => f(criteria, offset, limit, orderBy), f.Method, new object[] { criteria, offset, limit, orderBy });
         }
 
-        public override IEnumerable<T> FindAll<T>(Expression<Func<T, bool>> criteria, int offset = 0, int limit = 0, Expression<Func<T, object>> orderBy = null)
+        public override IEnumerable<T> FindAll<T>(Expression<Func<T, bool>> criteria, int offset = 0, int limit = 0, Sorting<T> orderBy = null)
         {
-            Func<Expression<Func<T, bool>>, int, int, Expression<Func<T, object>>, IEnumerable<T>> f = base.FindAll;
+            Func<Expression<Func<T, bool>>, int, int, Sorting<T>, IEnumerable<T>> f = base.FindAll;
             return Intercept(() => f(criteria, offset, limit, orderBy), f.Method, new object[] { criteria, offset, limit, orderBy });
         }
 
@@ -136,9 +136,9 @@ namespace Yarn.Adapters
                 return _repository.Intercept(() => f(criteria), f.Method, new object[] { criteria });
             }
 
-            public IEnumerable<T> FindAll(Expression<Func<T, bool>> criteria, int offset = 0, int limit = 0, Expression<Func<T, object>> orderBy = null)
+            public IEnumerable<T> FindAll(Expression<Func<T, bool>> criteria, int offset = 0, int limit = 0, Sorting<T> orderBy = null)
             {
-                Func<Expression<Func<T, bool>>, int, int, Expression<Func<T, object>>, IEnumerable<T>> f = _service.FindAll;
+                Func<Expression<Func<T, bool>>, int, int, Sorting<T>, IEnumerable<T>> f = _service.FindAll;
                 return _repository.Intercept(() => f(criteria, offset, limit, orderBy), f.Method, new object[] { criteria, offset, limit, orderBy });
             }
 
@@ -148,9 +148,9 @@ namespace Yarn.Adapters
                 return _repository.Intercept(() => f(criteria), f.Method, new object[] { criteria });
             }
 
-            public IEnumerable<T> FindAll(ISpecification<T> criteria, int offset = 0, int limit = 0, Expression<Func<T, object>> orderBy = null)
+            public IEnumerable<T> FindAll(ISpecification<T> criteria, int offset = 0, int limit = 0, Sorting<T> orderBy = null)
             {
-                Func<ISpecification<T>, int, int, Expression<Func<T, object>>, IEnumerable<T>> f = _service.FindAll;
+                Func<ISpecification<T>, int, int, Sorting<T>, IEnumerable<T>> f = _service.FindAll;
                 return _repository.Intercept(() => f(criteria, offset, limit, orderBy), f.Method, new object[] { criteria, offset, limit, orderBy });
             }
 

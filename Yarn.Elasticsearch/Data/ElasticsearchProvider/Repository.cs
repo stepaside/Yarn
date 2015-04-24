@@ -29,12 +29,12 @@ namespace Yarn.Elasticsearch.Data.ElasticsearchProvider
             return _context.Session.LinqClient.Query<T>().FirstOrDefault(criteria);
         }
 
-        public System.Collections.Generic.IEnumerable<T> FindAll<T>(ISpecification<T> criteria, int offset = 0, int limit = 0, System.Linq.Expressions.Expression<System.Func<T, object>> orderBy = null) where T : class
+        public System.Collections.Generic.IEnumerable<T> FindAll<T>(ISpecification<T> criteria, int offset = 0, int limit = 0, Sorting<T> sorting = null) where T : class
         {
-            return FindAll(((Specification<T>)criteria).Predicate, offset, limit, orderBy);
+            return FindAll(((Specification<T>)criteria).Predicate, offset, limit, sorting);
         }
 
-        public System.Collections.Generic.IEnumerable<T> FindAll<T>(System.Linq.Expressions.Expression<System.Func<T, bool>> criteria, int offset = 0, int limit = 0, System.Linq.Expressions.Expression<System.Func<T, object>> orderBy = null) where T : class
+        public System.Collections.Generic.IEnumerable<T> FindAll<T>(System.Linq.Expressions.Expression<System.Func<T, bool>> criteria, int offset = 0, int limit = 0, Sorting<T> sorting = null) where T : class
         {
             var query = _context.Session.LinqClient.Query<T>().Where(criteria);
             if (offset > 0)
@@ -45,9 +45,9 @@ namespace Yarn.Elasticsearch.Data.ElasticsearchProvider
             {
                 query = query.Take(limit);
             }
-            if (orderBy != null)
+            if (sorting != null && sorting.OrderBy != null)
             {
-                query = query.OrderBy(orderBy);
+                query = sorting.Reverse ? query.OrderByDescending(sorting.OrderBy) : query.OrderBy(sorting.OrderBy);
             }
             return query;
         }

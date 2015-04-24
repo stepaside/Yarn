@@ -115,12 +115,12 @@ namespace Yarn.Cache
             return FindAll(criteria, limit: 1).AsQueryable<T>().FirstOrDefault();
         }
 
-        public IEnumerable<T> FindAll<T>(ISpecification<T> criteria, int offset = 0, int limit = 0, Expression<Func<T, object>> orderBy = null) where T : class
+        public IEnumerable<T> FindAll<T>(ISpecification<T> criteria, int offset = 0, int limit = 0, Sorting<T> orderBy = null) where T : class
         {
             return FindAll(((Specification<T>)criteria).Predicate, offset, limit);
         }
 
-        public IEnumerable<T> FindAll<T>(Expression<Func<T, bool>> criteria, int offset = 0, int limit = 0, Expression<Func<T, object>> orderBy = null) where T : class
+        public IEnumerable<T> FindAll<T>(Expression<Func<T, bool>> criteria, int offset = 0, int limit = 0, Sorting<T> orderBy = null) where T : class
         {
             // Reduce invalid cache combinations
             if (offset < 0) offset = 0;
@@ -310,7 +310,7 @@ namespace Yarn.Cache
                 return FindAll(criteria, limit: 1).FirstOrDefault();
             }
 
-            public IEnumerable<T> FindAll(Expression<Func<T, bool>> criteria, int offset = 0, int limit = 0, Expression<Func<T, object>> orderBy = null)
+            public IEnumerable<T> FindAll(Expression<Func<T, bool>> criteria, int offset = 0, int limit = 0, Sorting<T> orderBy = null)
             {
                 // Reduce invalid cache combinations
                 if (offset < 0) offset = 0;
@@ -331,7 +331,7 @@ namespace Yarn.Cache
                 return Find(((Specification<T>)criteria).Predicate);
             }
 
-            public IEnumerable<T> FindAll(ISpecification<T> criteria, int offset = 0, int limit = 0, Expression<Func<T, object>> orderBy = null)
+            public IEnumerable<T> FindAll(ISpecification<T> criteria, int offset = 0, int limit = 0, Sorting<T> orderBy = null)
             {
                 return FindAll(((Specification<T>)criteria).Predicate, offset, limit, orderBy);
             }
@@ -439,7 +439,7 @@ namespace Yarn.Cache
             return string.Concat(typeof(T).FullName, "/", operation, parametersValue);
         }
 
-        private string CacheKey<T>(Expression<Func<T, bool>> predicate = null, int offset = 0, int limit = 0, Expression<Func<T, object>> orderBy = null, IEnumerable<Expression> paths = null)
+        private string CacheKey<T>(Expression<Func<T, bool>> predicate = null, int offset = 0, int limit = 0, Sorting<T> orderBy = null, IEnumerable<Expression> paths = null)
         {
             var identity = new StringBuilder();
 

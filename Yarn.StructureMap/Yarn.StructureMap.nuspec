@@ -2,18 +2,18 @@
 <package>
   <metadata>
     <id>Yarn.StructureMap</id>
-    <version>0.8.20</version>
+    <version>0.9.0</version>
     <title>Yarn.StructureMap</title>
     <authors>Max Stepanskiy</authors>
     <owners>Stepaside, Inc.</owners>
     <projectUrl>https://github.com/stepaside/Yarn</projectUrl>
     <requireLicenseAcceptance>false</requireLicenseAcceptance>
     <description>Yarn StructureMap Provider</description>
-    <copyright>Copyright © Max Stepanskiy 2012-2014</copyright>
+    <copyright>Copyright © Max Stepanskiy 2012-2015</copyright>
     <tags>Yarn StructureMap</tags>
     <dependencies>
-      <dependency id="Yarn" version="[0.8.20]" />
-      <dependency id="structuremap" version="3.1.4.143" />
+      <dependency id="Yarn" version="[0.9.0]" />
+      <dependency id="structuremap" version="3.1.5.154" />
     </dependencies>
   </metadata>
   <files>

@@ -94,7 +94,7 @@ namespace Yarn.Adapters
             }
         }
 
-        public override T Find<T>(System.Linq.Expressions.Expression<Func<T, bool>> criteria)
+        public override T Find<T>(Expression<Func<T, bool>> criteria)
         {
             try
             {
@@ -116,7 +116,7 @@ namespace Yarn.Adapters
             }
         }
 
-        public override IEnumerable<T> FindAll<T>(ISpecification<T> criteria, int offset = 0, int limit = 0, System.Linq.Expressions.Expression<Func<T, object>> orderBy = null)
+        public override IEnumerable<T> FindAll<T>(ISpecification<T> criteria, int offset = 0, int limit = 0, Sorting<T> orderBy = null)
         {
             try
             {
@@ -138,7 +138,7 @@ namespace Yarn.Adapters
             }
         }
 
-        public override IEnumerable<T> FindAll<T>(System.Linq.Expressions.Expression<Func<T, bool>> criteria, int offset = 0, int limit = 0, System.Linq.Expressions.Expression<Func<T, object>> orderBy = null)
+        public override IEnumerable<T> FindAll<T>(Expression<Func<T, bool>> criteria, int offset = 0, int limit = 0, Sorting<T> orderBy = null)
         {
             try
             {
@@ -324,7 +324,7 @@ namespace Yarn.Adapters
                 }
             }
 
-            public IEnumerable<T> FindAll(Expression<Func<T, bool>> criteria, int offset = 0, int limit = 0, Expression<Func<T, object>> orderBy = null)
+            public IEnumerable<T> FindAll(Expression<Func<T, bool>> criteria, int offset = 0, int limit = 0, Sorting<T> orderBy = null)
             {
                 try
                 {
@@ -358,7 +358,7 @@ namespace Yarn.Adapters
                 }
             }
 
-            public IEnumerable<T> FindAll(ISpecification<T> criteria, int offset = 0, int limit = 0, Expression<Func<T, object>> orderBy = null)
+            public IEnumerable<T> FindAll(ISpecification<T> criteria, int offset = 0, int limit = 0, Sorting<T> orderBy = null)
             {
                 try
                 {

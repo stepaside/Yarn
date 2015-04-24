@@ -52,16 +52,16 @@ namespace Yarn.Nemo.Data.NemoProvider
             return FindAll(criteria, limit: 1).FirstOrDefault();
         }
 
-        public IEnumerable<T> FindAll<T>(ISpecification<T> criteria, int offset = 0, int limit = 0, Expression<Func<T, object>> orderBy = null) where T : class
+        public IEnumerable<T> FindAll<T>(ISpecification<T> criteria, int offset = 0, int limit = 0, Sorting<T> orderBy = null) where T : class
         {
             return FindAll(((Specification<T>)criteria).Predicate, offset, limit, orderBy);
         }
 
-        public IEnumerable<T> FindAll<T>(Expression<Func<T, bool>> criteria, int offset = 0, int limit = 0, Expression<Func<T, object>> orderBy = null) where T : class
+        public IEnumerable<T> FindAll<T>(Expression<Func<T, bool>> criteria, int offset = 0, int limit = 0, Sorting<T> orderBy = null) where T : class
         {
             if (orderBy != null)
             {
-                return ObjectFactory.Select(criteria, connection: Connection, page: limit > 0 ? offset / limit + 1 : 0, pageSize: limit, orderBy: Tuple.Create(orderBy, SortingOrder.Ascending));
+                return ObjectFactory.Select(criteria, connection: Connection, page: limit > 0 ? offset / limit + 1 : 0, pageSize: limit, orderBy: Tuple.Create(orderBy.OrderBy, orderBy.Reverse ? SortingOrder.Descending : SortingOrder.Ascending));
             }
             return ObjectFactory.Select(criteria, connection: Connection, page: limit > 0 ? offset / limit + 1 : 0, pageSize: limit);
         }
@@ -239,7 +239,7 @@ namespace Yarn.Nemo.Data.NemoProvider
                 return FindAll(criteria, 0, 1).FirstOrDefault();
             }
 
-            public IEnumerable<T> FindAll(Expression<Func<T, bool>> criteria, int offset = 0, int limit = 0, Expression<Func<T, object>> orderBy = null)
+            public IEnumerable<T> FindAll(Expression<Func<T, bool>> criteria, int offset = 0, int limit = 0, Sorting<T> sorting = null)
             {
                 var typeCount = _types.Sum(t => t.Item1.Length);
                 
@@ -250,7 +250,7 @@ namespace Yarn.Nemo.Data.NemoProvider
 
                 if (typeCount == 1)
                 {
-                    return _repository.FindAll(criteria, offset, limit, orderBy) ;
+                    return _repository.FindAll(criteria, offset, limit, sorting) ;
                 }
 
                 if (_repository._useStoredProcedures)
@@ -267,9 +267,9 @@ namespace Yarn.Nemo.Data.NemoProvider
                         parameters.Add(new Param { Name = "limit", Value = limit, DbType = DbType.Int32 });
                     }
 
-                    if (orderBy != null)
+                    if (sorting != null && sorting.OrderBy != null)
                     {
-                        var memberExpression = orderBy.Body as MemberExpression;
+                        var memberExpression = sorting.OrderBy.Body as MemberExpression;
                         if (memberExpression != null)
                         {
                             parameters.Add(new Param { Name = "orderBy", Value = map[memberExpression.Member.Name].MappedColumnName });
@@ -281,7 +281,10 @@ namespace Yarn.Nemo.Data.NemoProvider
                 }
                 else
                 {
-                    var result = ObjectFactory.Select(criteria, page: limit > 0 ? offset / limit + 1 : 0, pageSize: limit, orderBy: new[] { Tuple.Create(orderBy, SortingOrder.Ascending) });
+
+                    var result = sorting != null
+                        ? ObjectFactory.Select(criteria, page: limit > 0 ? offset / limit + 1 : 0, pageSize: limit, orderBy: new[] { Tuple.Create(sorting.OrderBy, sorting.Reverse ? SortingOrder.Descending : SortingOrder.Ascending) })
+                        : ObjectFactory.Select(criteria, page: limit > 0 ? offset / limit + 1 : 0, pageSize: limit);
 
                     foreach (var types in _types)
                     {
@@ -317,7 +320,7 @@ namespace Yarn.Nemo.Data.NemoProvider
                 return Find(((Specification<T>)criteria).Predicate);
             }
 
-            public IEnumerable<T> FindAll(ISpecification<T> criteria, int offset = 0, int limit = 0, Expression<Func<T, object>> orderBy = null)
+            public IEnumerable<T> FindAll(ISpecification<T> criteria, int offset = 0, int limit = 0, Sorting<T> orderBy = null)
             {
                 return FindAll(((Specification<T>)criteria).Predicate, offset, limit, orderBy);
             }

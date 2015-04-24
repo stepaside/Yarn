@@ -2,18 +2,18 @@
 <package>
   <metadata>
     <id>Yarn.RavenDb</id>
-    <version>0.8.20</version>
+    <version>0.9.0</version>
     <title>Yarn.RavenDb</title>
     <authors>Max Stepanskiy</authors>
     <owners>Stepaside, Inc.</owners>
     <projectUrl>https://github.com/stepaside/Yarn</projectUrl>
     <requireLicenseAcceptance>false</requireLicenseAcceptance>
     <description>Yarn RavenDB Provider</description>
-    <copyright>Copyright © Max Stepanskiy 2012-2014</copyright>
+    <copyright>Copyright © Max Stepanskiy 2012-2015</copyright>
     <tags>Raven RavenDB Repository</tags>
     <dependencies>
-      <dependency id="Yarn" version="[0.8.20]" />
-      <dependency id="RavenDB.Client" version="3.0.3528" />
+      <dependency id="Yarn" version="[0.9.0]" />
+      <dependency id="RavenDB.Client" version="3.0.3660" />
     </dependencies>
   </metadata>
   <files>

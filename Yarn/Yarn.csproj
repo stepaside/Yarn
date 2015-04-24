@@ -110,6 +110,7 @@
     <Compile Include="Reflection\PropertyAccessor.cs" />
     <Compile Include="Reflection\ReflectedType.cs" />
     <Compile Include="Reflection\ReflectionEmitExtensions.cs" />
+    <Compile Include="Sorting.cs" />
     <Compile Include="Specification\AndSpecification.cs" />
     <Compile Include="Specification\CompositeSpecification.cs" />
     <Compile Include="Specification\OrSpecification.cs" />

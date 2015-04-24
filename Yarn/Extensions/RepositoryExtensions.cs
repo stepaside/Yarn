@@ -13,20 +13,25 @@ namespace Yarn.Extensions
 {
     public static class RepositoryExtensions
     {
-        public static IQueryable<T> Page<T>(this IRepository repository, IQueryable<T> query, int offset, int limit, Expression<Func<T, object>> orderBy)
+        public static IQueryable<T> Page<T>(this IRepository repository, IQueryable<T> query, int offset, int limit, Sorting<T> sorting)
             where T : class
         {
             if (offset > 0)
             {
-                if (orderBy == null)
+                if (sorting == null)
+                {
+                    sorting = new Sorting<T>();
+                }
+
+                if (sorting.OrderBy == null)
                 {
                     var primaryKey = ((IMetaDataProvider)repository).GetPrimaryKey<T>().First();
                     var parameter = Expression.Parameter(typeof(T));
                     var body = Expression.Convert(Expression.PropertyOrField(parameter, primaryKey), typeof(T).GetProperty(primaryKey).PropertyType);
-                    orderBy = Expression.Lambda<Func<T, object>>(body, parameter);
+                    sorting.OrderBy = Expression.Lambda<Func<T, object>>(body, parameter);
                 }
 
-                query = query.OrderBy(orderBy).Skip(offset);
+                query = (sorting.Reverse ? query.OrderByDescending(sorting.OrderBy) : query.OrderBy(sorting.OrderBy)).Skip(offset);
             }
             if (limit > 0)
             {

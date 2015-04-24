@@ -2,14 +2,14 @@
 <package>
   <metadata>
     <id>Yarn</id>
-    <version>0.8.20</version>
+    <version>0.9.0</version>
     <title>Yarn</title>
     <authors>Max Stepanskiy</authors>
     <owners>Stepaside, Inc.</owners>
     <projectUrl>https://github.com/stepaside/Yarn</projectUrl>
     <requireLicenseAcceptance>false</requireLicenseAcceptance>
     <description>Yet Another Repository for .Net</description>
-    <copyright>Copyright © Max Stepanskiy 2012-2014</copyright>
+    <copyright>Copyright © Max Stepanskiy 2012-2015</copyright>
     <tags>Repository Repository-Pattern</tags>
 	  <releaseNotes/>
   </metadata>
