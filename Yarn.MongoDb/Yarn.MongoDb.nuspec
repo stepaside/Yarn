@@ -2,7 +2,7 @@
 <package>
   <metadata>
     <id>Yarn.MongoDb</id>
-    <version>0.9.0</version>
+    <version>0.9.0.1</version>
     <title>Yarn.MongoDb</title>
     <authors>Max Stepanskiy</authors>
     <owners>Stepaside, Inc.</owners>
@@ -14,7 +14,7 @@
     <dependencies>
       <dependency id="Yarn" version="[0.9.0]" />
       <dependency id="Inflector" version="1.0.0.0" />
-      <dependency id="mongocsharpdriver" version="2.0.0" />
+      <dependency id="mongocsharpdriver" version="2.0.1" />
     </dependencies>
   </metadata>
   <files>

@@ -2,7 +2,7 @@
 <package>
   <metadata>
     <id>Yarn.Elasticsearch</id>
-    <version>0.9.0</version>
+    <version>0.9.0.1</version>
     <title>Yarn.Elasticsearch</title>
     <authors>Max Stepanskiy</authors>
     <owners>Stepaside, Inc.</owners>
@@ -14,7 +14,7 @@
     <dependencies>
       <dependency id="Yarn" version="[0.9.0]" />
       <dependency id="ElasticLINQ" version="1.3.1" />
-	  <dependency id="NEST" version="1.4.3" />
+	  <dependency id="NEST" version="1.6.0" />
     </dependencies>
   </metadata>
   <files>

@@ -233,6 +233,10 @@ namespace Yarn.Data.EntityFrameworkProvider
 
         public void SaveChanges()
         {
+            if (!Session.Configuration.AutoDetectChangesEnabled)
+            {
+                Session.ChangeTracker.DetectChanges();
+            }
             Session.SaveChanges();
         }
 
