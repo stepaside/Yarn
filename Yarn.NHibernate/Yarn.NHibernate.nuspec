@@ -2,7 +2,7 @@
 <package>
   <metadata>
     <id>Yarn.NHibernate</id>
-    <version>0.9.0</version>
+    <version>0.9.1</version>
     <title>Yarn.NHibernate</title>
     <authors>Max Stepanskiy</authors>
     <owners>Stepaside, Inc.</owners>
@@ -12,7 +12,7 @@
     <copyright>Copyright © Max Stepanskiy 2012-2015</copyright>
     <tags>NHibernate FluentNHibernate Repository</tags>
     <dependencies>
-      <dependency id="Yarn" version="[0.9.0]" />
+      <dependency id="Yarn" version="[0.9.1]" />
       <dependency id="FluentNHibernate" version="2.0.1.0" />
       <dependency id="NHibernate" version="4.0.3.4000" />
       <dependency id="NHibernate.Search" version="2.0.2.4000" />

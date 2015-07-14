@@ -76,8 +76,8 @@ namespace Yarn.Adapters
                 }
                 else
                 {
-                    auditable.UpdateDate = root.UpdateDate;
-                    auditable.UpdatedBy = root.UpdatedBy;
+                    item.UpdateDate = root.UpdateDate;
+                    item.UpdatedBy = root.UpdatedBy;
                 }
                 item.AuditId = root.AuditId;
             }, paths);
