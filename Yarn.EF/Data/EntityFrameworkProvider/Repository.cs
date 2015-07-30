@@ -790,8 +790,12 @@ namespace Yarn.Data.EntityFrameworkProvider
 
             (ancestors = ancestors ?? new HashSet<object>()).Add(source);
 
-            var set = new HashSet<string>(paths.Select(p => p.ElementAtOrDefault(level)).Where(p => p != null));
-            var properties = source.GetType().GetProperties().Where(p => set.Contains(p.Name)).ToArray();            
+            var properties = source.GetType().GetProperties();
+            if (paths != null)
+            {
+                var set = new HashSet<string>(paths.Select(p => p.ElementAtOrDefault(level)).Where(p => p != null));
+                properties = properties.Where(p => set.Contains(p.Name)).ToArray();
+            }
 
             foreach (var property in properties.Where(p => p.PropertyType != typeof(string) && p.CanRead && p.CanWrite && p.PropertyType.IsClass && !typeof(IEnumerable).IsAssignableFrom(p.PropertyType)))
             {
