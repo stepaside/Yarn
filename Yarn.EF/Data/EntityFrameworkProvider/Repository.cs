@@ -475,7 +475,7 @@ namespace Yarn.Data.EntityFrameworkProvider
 
                                 if (value == null)
                                 {
-                                    builder.AppendFormat("[{0}] = NULL", name);
+                                    builder.AppendFormat("[{0}] = NULL", columnName);
                                 }
                                 else
                                 {
@@ -490,48 +490,48 @@ namespace Yarn.Data.EntityFrameworkProvider
                                                     var providerName = DbFactory.GetProviderInvariantNameByConnectionString(connection.ConnectionString);
                                                     if (providerName.Contains("SqlClient"))
                                                     {
-                                                        builder.AppendFormat(isLeft ? "[{0}] = [{0}] + @{1}" : "[{0}] = @{1} + [{0}]", name, "p" + i);
+                                                        builder.AppendFormat(isLeft ? "[{0}] = [{0}] + @{1}" : "[{0}] = @{1} + [{0}]", columnName, "p" + i);
                                                     }
                                                     else if (providerName.Contains("MySql"))
                                                     {
-                                                        builder.AppendFormat(isLeft ? "[{0}] = CONCAT([{0}], @{1})" : "[{0}] = CONCAT(@{1}, [{0}])", name, "p" + i);
+                                                        builder.AppendFormat(isLeft ? "[{0}] = CONCAT([{0}], @{1})" : "[{0}] = CONCAT(@{1}, [{0}])", columnName, "p" + i);
                                                     }
                                                     else
                                                     {
-                                                        builder.AppendFormat(isLeft ? "[{0}] = [{0}] || @{1}" : "[{0}] = @{1} || [{0}]", name, "p" + i);
+                                                        builder.AppendFormat(isLeft ? "[{0}] = [{0}] || @{1}" : "[{0}] = @{1} || [{0}]", columnName, "p" + i);
                                                     }
                                                 }
                                                 else
                                                 {
-                                                    builder.AppendFormat("[{0}] = [{0}] + @{1}", name, "p" + i);
+                                                    builder.AppendFormat("[{0}] = [{0}] + @{1}", columnName, "p" + i);
                                                 }
                                                 break;
                                             }
                                             case ExpressionType.Subtract:
                                             {
-                                                builder.AppendFormat(isLeft ? "[{0}] = [{0}] - @{1}" : "[{0}] = @{1} - [{0}]", name, "p" + i);
+                                                builder.AppendFormat(isLeft ? "[{0}] = [{0}] - @{1}" : "[{0}] = @{1} - [{0}]", columnName, "p" + i);
                                                 break;
                                             }
                                             case ExpressionType.Multiply:
                                             {
-                                                builder.AppendFormat("[{0}] = [{0}] * @{1}", name, "p" + i);
+                                                builder.AppendFormat("[{0}] = [{0}] * @{1}", columnName, "p" + i);
                                                 break;
                                             }
                                             case ExpressionType.Divide:
                                             {
-                                                builder.AppendFormat(isLeft ? "[{0}] = [{0}] / @{1}" : "[{0}] = @{1} / [{0}]", name, "p" + i);
+                                                builder.AppendFormat(isLeft ? "[{0}] = [{0}] / @{1}" : "[{0}] = @{1} / [{0}]", columnName, "p" + i);
                                                 break;
                                             }
                                             default:
                                             {
-                                                builder.AppendFormat("[{0}] = @{1}", name, "p" + i);
+                                                builder.AppendFormat("[{0}] = @{1}", columnName, "p" + i);
                                                 break;
                                             }
                                         }
                                     }
                                     else
                                     {
-                                        builder.AppendFormat("[{0}] = @{1}", name, "p" + i);
+                                        builder.AppendFormat("[{0}] = @{1}", columnName, "p" + i);
                                     }
 
                                     var parameter = command.CreateParameter();
