@@ -408,7 +408,7 @@ namespace Yarn.Data.EntityFrameworkProvider
 
                             if (mappings == null)
                             {
-                                mappings = ExtractColumnMappings<T>(DbContext);
+                                mappings = ExtractColumnMappings(typeof(T), DbContext);
                             }
 
                             var matchWhere = regexWhere.Match(sql);
@@ -545,7 +545,7 @@ namespace Yarn.Data.EntityFrameworkProvider
                             }
 
                             builder.AppendLine();
-                            builder.Append("WHERE ");
+                            builder.Append(" WHERE ");
                             builder.Append(whereClause);
                             notFirst = true;
                         }
@@ -594,7 +594,7 @@ namespace Yarn.Data.EntityFrameworkProvider
                     using (var command = connection.CreateCommand())
                     {
                         var sql = All<T>().ToString();
-                        var mappings = ExtractColumnMappings<T>(DbContext);
+                        var mappings = ExtractColumnMappings(typeof(T), DbContext);
 
                         var builder = new StringBuilder();
                         builder.Append("DELETE FROM ");
@@ -721,11 +721,11 @@ namespace Yarn.Data.EntityFrameworkProvider
             return Delete(criteria.Select(spec => ((Specification<T>)spec).Predicate).ToArray());
         }
 
-        protected static Dictionary<string, string> ExtractColumnMappings<T>(DbContext context) where T : class
+        protected static Dictionary<string, string> ExtractColumnMappings(Type type, DbContext context)
         {
             const BindingFlags bindings = BindingFlags.Public | BindingFlags.Instance | BindingFlags.NonPublic;
 
-            return _columnMappings.GetOrAdd(typeof(T), t =>
+            return _columnMappings.GetOrAdd(type, t =>
             {
                 var result = new Dictionary<string, string>();
 
@@ -741,12 +741,32 @@ namespace Yarn.Data.EntityFrameworkProvider
 
                 var getMemberMapForClrMember = ocItem.GetType().GetMethod("GetMemberMapForClrMember", bindings);
                 var clrType = (EdmType)ocItem.GetType().GetProperty("ClrType", bindings).GetValue(ocItem);
+
                 var properties = (IList)clrType.GetType().GetProperty("Properties", bindings).GetValue(clrType);
                 foreach (var property in properties.Cast<EdmProperty>())
                 {
                     var mapping = getMemberMapForClrMember.Invoke(ocItem, new object[] { property.Name, false });
                     var edmMember = mapping.GetType().GetProperty("EdmMember", bindings);
                     result[property.Name] = ((EdmMember)edmMember.GetValue(mapping)).Name;
+                }
+                
+                var complexProperties = t.GetProperties().Where(p => p.PropertyType.IsClass
+                                            && p.PropertyType != typeof(string)
+                                            && !typeof(IEnumerable).IsAssignableFrom(p.PropertyType));
+
+                foreach (var property in complexProperties)
+                {
+                    var key = MetaDataProvider.GetPrimaryKeyFromTypeHierarchy(property.PropertyType, context);
+                    if (key.Length <= 0) continue;
+
+                    var mappings = ExtractColumnMappings(property.PropertyType, context);
+                    if (mappings == null) continue;
+
+                    string columnName;
+                    if (mappings.TryGetValue(key[0], out columnName))
+                    {
+                        result[property.Name] = property.Name + "_" + columnName;
+                    }
                 }
 
                 return result;
