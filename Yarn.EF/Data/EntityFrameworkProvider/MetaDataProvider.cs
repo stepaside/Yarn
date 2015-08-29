@@ -12,7 +12,7 @@ namespace Yarn.Data.EntityFrameworkProvider
 {
     internal sealed class MetaDataProvider
     {
-        private static readonly Lazy<MetaDataProvider> _instance = new Lazy<MetaDataProvider>(() => new MetaDataProvider(), true);
+        private static readonly Lazy<MetaDataProvider> Instance = new Lazy<MetaDataProvider>(() => new MetaDataProvider(), true);
         private readonly ConcurrentDictionary<Type, string[]> _keys = new ConcurrentDictionary<Type, string[]>();
 
         private MetaDataProvider()
@@ -21,7 +21,7 @@ namespace Yarn.Data.EntityFrameworkProvider
 
         public static MetaDataProvider Current
         {
-            get { return _instance.Value; }
+            get { return Instance.Value; }
         }
 
         public string[] GetPrimaryKey<T>(DbContext context) 
@@ -59,6 +59,17 @@ namespace Yarn.Data.EntityFrameworkProvider
             var keyNames = keyMembers.Select(k => (string)k.Name).ToArray();
 
             return keyNames;
+        }
+
+        internal object[] GetPrimaryKeyValue(object entity, DbContext context)
+        {
+            var primaryKey = _keys.GetOrAdd(entity.GetType(), t => GetPrimaryKeyFromTypeHierarchy(t, context)); 
+            var values = new object[primaryKey.Length];
+            for (var i = 0; i < primaryKey.Length; i++)
+            {
+                values[i] = PropertyAccessor.Get(entity, primaryKey[i]);
+            }
+            return values;
         }
 
         public object[] GetPrimaryKeyValue<T>(T entity, DbContext context) 
