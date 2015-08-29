@@ -420,11 +420,6 @@ namespace Yarn.Data.EntityFrameworkProvider
 
                             var updateBody = (MemberInitExpression)bulkOperation.Update.Body;
 
-                            builder.Append("UPDATE ");
-                            builder.Append(DbContext.GetTableName<T>());
-                            builder.AppendLine();
-                            builder.Append("SET ");
-
                             var i = 0;
                             var notFirstColumn = false;
                             foreach (var binding in updateBody.Bindings)
@@ -439,6 +434,14 @@ namespace Yarn.Data.EntityFrameworkProvider
                                 if (!mappings.TryGetValue(name, out columnName))
                                 {
                                     continue;
+                                }
+
+                                if (!notFirstColumn)
+                                {
+                                    builder.Append("UPDATE [");
+                                    builder.Append(DbContext.GetTableName<T>());
+                                    builder.AppendLine("]");
+                                    builder.Append("SET ");
                                 }
 
                                 object value;
@@ -479,7 +482,26 @@ namespace Yarn.Data.EntityFrameworkProvider
                                 }
                                 else
                                 {
-                                    if (selfReference)
+                                    var type = value.GetType();
+                                    var isComplex = type.IsClass && !(value is IEnumerable);
+                                    if (isComplex)
+                                    {
+                                        var primaryKey = MetaDataProvider.GetPrimaryKeyFromTypeHierarchy(type, DbContext);
+                                        var primaryKeyValue = primaryKey.Select(key => type.GetProperty(key).GetValue(value)).ToList();
+                                        var j = 0;
+                                        foreach (var pair in columnName.Split('|').Zip(primaryKeyValue, Tuple.Create))
+                                        {
+                                            builder.AppendFormat("{0} = @{1}", pair.Item1, "p" + i + "_" + j);
+                                         
+                                            var parameter = command.CreateParameter();
+                                            parameter.ParameterName = "p" + i + "_" + j;
+                                            parameter.Value = pair.Item2;
+                                            command.Parameters.Add(parameter);
+
+                                            j++;
+                                        }
+                                    }
+                                    else if (selfReference)
                                     {
                                         switch (binaryExpression.NodeType)
                                         {
@@ -534,25 +556,34 @@ namespace Yarn.Data.EntityFrameworkProvider
                                         builder.AppendFormat("[{0}] = @{1}", columnName, "p" + i);
                                     }
 
-                                    var parameter = command.CreateParameter();
-                                    parameter.ParameterName = "p" + i;
-                                    parameter.Value = value;
-                                    command.Parameters.Add(parameter);
+                                    if (!isComplex)
+                                    {
+                                        var parameter = command.CreateParameter();
+                                        parameter.ParameterName = "p" + i;
+                                        parameter.Value = value;
+                                        command.Parameters.Add(parameter);
+                                    }
 
                                     i++;
                                 }
                                 notFirstColumn = true;
                             }
 
+                            if (i == 0) continue;
+                         
                             builder.AppendLine();
-                            builder.Append(" WHERE ");
+                            builder.Append("WHERE ");
                             builder.Append(whereClause);
                             notFirst = true;
                         }
 
                         command.CommandTimeout = 0;
                         command.CommandText = builder.ToString();
-                        count = command.ExecuteNonQuery();
+
+                        if (command.CommandText.Length > 0)
+                        {
+                            count = command.ExecuteNonQuery();
+                        }
 
                         scope.Complete();
                     }
@@ -756,16 +787,24 @@ namespace Yarn.Data.EntityFrameworkProvider
 
                 foreach (var property in complexProperties)
                 {
-                    var key = MetaDataProvider.GetPrimaryKeyFromTypeHierarchy(property.PropertyType, context);
-                    if (key.Length <= 0) continue;
+                    var primaryKey = MetaDataProvider.GetPrimaryKeyFromTypeHierarchy(property.PropertyType, context);
+                    if (primaryKey.Length <= 0) continue;
 
                     var mappings = ExtractColumnMappings(property.PropertyType, context);
                     if (mappings == null) continue;
 
-                    string columnName;
-                    if (mappings.TryGetValue(key[0], out columnName))
+                    for (var i = 0; i < primaryKey.Length; i++)
                     {
-                        result[property.Name] = property.Name + "_" + columnName;
+                        string columnName;
+                        if (!mappings.TryGetValue(primaryKey[i], out columnName)) continue;
+                        if (i == 0)
+                        {
+                            result[property.Name] = "[" + property.Name + "_" + columnName + "]";
+                        }
+                        else
+                        {
+                            result[property.Name] += "|[" + property.Name + "_" + columnName + "]";
+                        }
                     }
                 }
 
