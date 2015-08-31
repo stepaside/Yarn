@@ -486,7 +486,7 @@ namespace Yarn.Data.EntityFrameworkProvider
                                     var isComplex = type.IsClass && !(value is IEnumerable);
                                     if (isComplex)
                                     {
-                                        var primaryKey = MetaDataProvider.Current.GetPrimaryKeyValue(type, DbContext);
+                                        var primaryKey = MetaDataProvider.Current.GetPrimaryKeyValue(value, DbContext);
                                         var j = 0;
                                         foreach (var pair in columnName.Split('|').Zip(primaryKey, Tuple.Create))
                                         {
