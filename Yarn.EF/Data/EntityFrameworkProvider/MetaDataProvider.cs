@@ -63,11 +63,12 @@ namespace Yarn.Data.EntityFrameworkProvider
 
         internal object[] GetPrimaryKeyValue(object entity, DbContext context)
         {
-            var primaryKey = _keys.GetOrAdd(entity.GetType(), t => GetPrimaryKeyFromTypeHierarchy(t, context)); 
+            var entityType = entity.GetType();
+            var primaryKey = _keys.GetOrAdd(entityType, t => GetPrimaryKeyFromTypeHierarchy(t, context)); 
             var values = new object[primaryKey.Length];
             for (var i = 0; i < primaryKey.Length; i++)
             {
-                values[i] = PropertyAccessor.Get(entity, primaryKey[i]);
+                values[i] = PropertyAccessor.Get(entityType, entity, primaryKey[i]);
             }
             return values;
         }
