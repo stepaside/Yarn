@@ -1,12 +1,8 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
-using System.Security.Claims;
 using System.Security.Principal;
-using System.Text;
 using System.Threading;
-using System.Threading.Tasks;
 using Yarn.Adapters;
 
 namespace Yarn.Extensions
@@ -48,6 +44,11 @@ namespace Yarn.Extensions
         public static IRepository WithAudit(this IRepository repository, IPrincipal principal = null)
         {
             return new AuditableRepository(repository, principal ?? Thread.CurrentPrincipal);
+        }
+
+        public static IRepository WithAudit(this IRepository repository, Func<string> getOwnerIdentity)
+        {
+            return new AuditableRepository(repository, getOwnerIdentity);
         }
 
         public static IRepository WithMultiTenancy(this IRepository repository, ITenant tenant)
