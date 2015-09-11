@@ -1,27 +1,29 @@
 ﻿using System;
-using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Security.Principal;
-using System.Text;
-using System.Threading.Tasks;
 using Yarn.Extensions;
 
 namespace Yarn.Adapters
 {
     public class AuditableRepository : RepositoryAdapter
     {
-        private readonly IPrincipal _principal;
+        private readonly Func<string> _getOwnerIdentity;
 
         public AuditableRepository(IRepository repository, IPrincipal principal) 
-            : base(repository)
+            : this(repository, () => principal.Identity.Name)
         {
             if (principal == null)
-            {
                 throw new ArgumentNullException("principal");
-            }
-            _principal = principal;
+        }
+
+        public AuditableRepository(IRepository repository, Func<string> getOwnerIdentity)
+            :base(repository)
+        {
+            if (getOwnerIdentity == null)
+                throw new ArgumentNullException("getOwnerIdentity");
+            _getOwnerIdentity = getOwnerIdentity;
         }
 
         public override T Add<T>(T entity)
@@ -34,10 +36,7 @@ namespace Yarn.Adapters
 
             auditable.AuditId = Guid.NewGuid();
             auditable.CreateDate = DateTime.UtcNow;
-            if (_principal != null)
-            {
-                auditable.CreatedBy = _principal.Identity.Name;
-            }
+            auditable.CreatedBy = _getOwnerIdentity();
                 
             auditable.Cascade((root, item) =>
             {
@@ -62,10 +61,7 @@ namespace Yarn.Adapters
 
             auditable.AuditId = Guid.NewGuid();
             auditable.UpdateDate = DateTime.UtcNow;
-            if (_principal != null)
-            {
-                auditable.UpdatedBy = _principal.Identity.Name;
-            }
+            auditable.UpdatedBy = _getOwnerIdentity();
 
             auditable.Cascade((root, item) =>
             {
