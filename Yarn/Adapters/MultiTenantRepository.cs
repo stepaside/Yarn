@@ -207,5 +207,88 @@ namespace Yarn.Adapters
         {
             get { return _owner.OwnerId; }
         }
+
+        public override ILoadService<T> Load<T>()
+        {
+            if (!typeof(ITenant).IsAssignableFrom(typeof(T))) return base.Load<T>();
+
+            var provider = Repository as ILoadServiceProvider;
+            if (provider != null)
+            {
+                return new LoadService<T>(provider.Load<T>(), _owner);
+            }
+            throw new InvalidOperationException();
+        }
+
+        private class LoadService<T> : ILoadService<T>
+            where T : class
+        {
+            private readonly Expression<Func<T, bool>> _filter;
+            private readonly ITenant _owner;
+            private readonly ILoadService<T> _service;
+            private readonly List<string> _paths;
+
+            public LoadService(ILoadService<T> service, ITenant owner)
+            {
+                _owner = owner;
+                _filter = e => ((ITenant)e).TenantId == _owner.TenantId;
+                _service = service;
+                _paths = new List<string>();
+            }
+
+            public ILoadService<T> Include<TProperty>(Expression<Func<T, TProperty>> path) where TProperty : class
+            {
+                _service.Include(path);
+
+                var properties = string.Join(".", path.Body.ToString().Split('.').Where(p => !p.StartsWith("Select")).Select(p => p.TrimEnd(')')).Skip(1));
+                _paths.Add(properties);
+
+                return this;
+            }
+
+            public T Update(T entity)
+            {
+                var tenant = (ITenant)entity;
+                if (tenant.TenantId == _owner.TenantId)
+                {
+                    return _service.Update(entity);
+                }
+                throw new InvalidOperationException();
+            }
+
+            public T Find(Expression<Func<T, bool>> criteria)
+            {
+                criteria = new Specification<T>(CastRemoverVisitor<ITenant>.Convert(_filter)).And(criteria).Predicate;
+                return _service.Find(criteria);
+            }
+
+            public IEnumerable<T> FindAll(Expression<Func<T, bool>> criteria, int offset = 0, int limit = 0, Sorting<T> orderBy = null)
+            {
+                criteria = new Specification<T>(CastRemoverVisitor<ITenant>.Convert(_filter)).And(criteria).Predicate;
+                return _service.FindAll(criteria, offset, limit, orderBy);
+            }
+
+            public T Find(ISpecification<T> criteria)
+            {
+                criteria = ((Specification<T>)criteria).And(CastRemoverVisitor<ITenant>.Convert(_filter));
+                return _service.Find(criteria);
+            }
+
+            public IEnumerable<T> FindAll(ISpecification<T> criteria, int offset = 0, int limit = 0, Sorting<T> orderBy = null)
+            {
+                criteria = ((Specification<T>)criteria).And(CastRemoverVisitor<ITenant>.Convert(_filter));
+                return _service.FindAll(criteria, offset, limit, orderBy);
+            }
+
+            public IQueryable<T> All()
+            {
+                return _service.All().Where(CastRemoverVisitor<ITenant>.Convert(_filter));
+            }
+
+            public void Dispose()
+            {
+                _service.Dispose();
+            }
+        }
     }
 }
