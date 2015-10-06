@@ -55,11 +55,14 @@
   <ItemGroup>
     <Compile Include="Data\EntityFrameworkProvider\ContextExtensions.cs" />
     <Compile Include="Data\EntityFrameworkProvider\DataContextAsync.cs" />
+    <Compile Include="Data\EntityFrameworkProvider\ISequenceNameProvider.cs" />
     <Compile Include="Data\EntityFrameworkProvider\RepositoryAsync.cs" />
     <Compile Include="Data\EntityFrameworkProvider\DataContext.cs" />
     <Compile Include="Data\EntityFrameworkProvider\FullTextRepository.cs" />
     <Compile Include="Data\EntityFrameworkProvider\Migrations\ScriptGeneratorMigrationInitializer.cs" />
     <Compile Include="Data\EntityFrameworkProvider\Repository.cs" />
+    <Compile Include="Data\EntityFrameworkProvider\DefaultSequenceNameProvider.cs.cs" />
+    <Compile Include="Data\EntityFrameworkProvider\SqlClient\SqlSequenceRepositoryAdapter.cs" />
     <Compile Include="Data\EntityFrameworkProvider\SqlClient\SqlFullTextProvider.cs" />
     <Compile Include="Data\EntityFrameworkProvider\MetaDataProvider.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
