@@ -15,7 +15,7 @@ namespace Yarn
 
         public Expression<Func<T, object>> OrderBy
         {
-            get { return _orderBy.Value; }
+            get { return _orderBy != null ? _orderBy.Value : null; }
             set
             {
                 _orderBy = new Lazy<Expression<Func<T,object>>>(() => value);
@@ -25,7 +25,7 @@ namespace Yarn
 
         public string Path
         {
-            get { return _path.Value; }
+            get { return _path != null ? _path.Value : null; }
             set
             {
                 _path = new Lazy<string>(() => value);

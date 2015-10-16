@@ -25,9 +25,11 @@ namespace YarnTest
         {
             ObjectContainer.Current.Register<IRepository>(() => new Repository("Yarn.EF2", false, false), "EF");
 
+            ObjectContainer.Current.Register<IRepository>(() => new Repository(null, false, false, dbContextType: typeof(NorthwindEntities)), "EF2");
+
             ObjectContainer.Current.Register<IRepository>(() => new Yarn.Data.InMemoryProvider.Repository(), "InMemory");
             
-            var repo = ObjectContainer.Current.Resolve<IRepository>("InMemory");
+            var repo = ObjectContainer.Current.Resolve<IRepository>("EF2");
             if (repo == null)
             {
                 Console.WriteLine("RepoNull");
@@ -50,11 +52,12 @@ namespace YarnTest
             }
 
             //var customer = repo.GetById<Customer, string>("ALFKI");
-            
+
+            Customer eagerCustomer = null;
             var loader = repo.As<ILoadServiceProvider>();
             if (loader != null)
             {
-                var eager_customer = loader.Load<Customer>().Include(c => c.Orders).Include(c => c.Orders.Select(o => o.Order_Details)).Find(c => c.CustomerID == "ALFKI");
+                eagerCustomer = loader.Load<Customer>().Include(c => c.Orders).Include(c => c.Orders.Select(o => o.Order_Details)).Find(c => c.CustomerID == "ALFKI");
             }
 
             var customersFromLondon = repo.FindAll<Customer>(c => c.City == "London", offset: 1).ToList();
