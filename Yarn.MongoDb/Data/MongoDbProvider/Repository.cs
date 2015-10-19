@@ -1,4 +1,4 @@
-﻿using MongoDB.Bson;
+using MongoDB.Bson;
 using MongoDB.Bson.Serialization;
 using MongoDB.Driver;
 using MongoDB.Driver.Builders;
@@ -21,12 +21,15 @@ namespace Yarn.Data.MongoDbProvider
         private readonly ConcurrentDictionary<Type, MongoCollection> _collections = new ConcurrentDictionary<Type,MongoCollection>();
         private IDataContext<MongoDatabase> _context;
         private readonly string _prefix;
+        private readonly string _connectionString;
 
         public Repository() : this(null) { }
 
         public Repository(string prefix = null, string connectionString = null)
         {
             _prefix = prefix;
+            _connectionString = connectionString;
+
         }
         
         public T GetById<T, ID>(ID id) where T : class
@@ -242,7 +245,7 @@ namespace Yarn.Data.MongoDbProvider
 
         public IDataContext DataContext
         {
-            get { return _context ?? (_context = new DataContext(_prefix)); }
+            get { return _context ?? (_context = new DataContext(_prefix , _connectionString)); }
         }
 
         public void Dispose()
