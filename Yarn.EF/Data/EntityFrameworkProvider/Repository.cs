@@ -4,6 +4,7 @@ using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Data;
+using System.Data.Common;
 using System.Data.Entity;
 using System.Data.Entity.Core.Metadata.Edm;
 using System.Data.Entity.Core.Objects.DataClasses;
@@ -112,7 +113,7 @@ namespace Yarn.Data.EntityFrameworkProvider
         {
             var connection = ((IObjectContextAdapter)DbContext).ObjectContext.Connection;
             var query = parameters != null
-                ? DbContext.Database.SqlQuery<T>(command, parameters.Select(p => (object)DbFactory.CreateParameter(connection, p.Key, p.Value)).ToArray())
+                ? DbContext.Database.SqlQuery<T>(command, parameters.Select(p => p.Value is DbParameter ? p.Value : DbFactory.CreateParameter(connection, p.Key, p.Value)).ToArray())
                 : DbContext.Database.SqlQuery<T>(command);
             return query;
         }
