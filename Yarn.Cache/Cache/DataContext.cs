@@ -9,7 +9,7 @@ namespace Yarn.Cache
     public class DataContext : IDataContext
     {
         private IDataContext _context;
-        private Action _handleCache;
+        private readonly Action _handleCache;
 
         public DataContext(IDataContext context, Action handleCache)
         {
@@ -19,13 +19,11 @@ namespace Yarn.Cache
 
         public void SaveChanges()
         {
-            if (_context != null)
+            if (_context == null) return;
+            _context.SaveChanges();
+            if (_handleCache != null)
             {
-                _context.SaveChanges();
-                if (_handleCache != null)
-                {
-                    _handleCache();
-                }
+                _handleCache();
             }
         }
 

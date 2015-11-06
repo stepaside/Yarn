@@ -34,5 +34,10 @@ namespace Yarn
         }
         
         public bool Reverse { get; set; }
+
+        public override string ToString()
+        {
+            return Path + " " + (Reverse ? "DESC" : "ASC");
+        }
     }
 }

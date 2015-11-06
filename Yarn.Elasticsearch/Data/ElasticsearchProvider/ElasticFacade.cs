@@ -19,9 +19,10 @@ namespace Yarn.Elasticsearch.Data.ElasticsearchProvider
 
         public void Dispose()
         {
-            if (LinqClient.Connection != null)
+            var connection = LinqClient.Connection as ElasticConnection;
+            if (connection != null)
             {
-                LinqClient.Connection.Dispose();
+                connection.Dispose();
             }
         }
     }

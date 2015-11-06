@@ -19,8 +19,9 @@ namespace Yarn.Adapters
         private IRepository _other;
         private readonly FailoverStrategy _strategy;
         private bool _failedOver;
-        
-        public FailoverRepostiory(IRepository repository, IRepository otherRepository, Action<Exception> logger = null, FailoverStrategy strategy = FailoverStrategy.ReplicationOnly)
+        private readonly bool _allowInconsistentReplication;
+
+        public FailoverRepostiory(IRepository repository, IRepository otherRepository, Action<Exception> logger = null, FailoverStrategy strategy = FailoverStrategy.ReplicationOnly, bool allowInconsistentReplication = false)
             : base(repository)
         {
             if (otherRepository == null)
@@ -32,6 +33,7 @@ namespace Yarn.Adapters
             _logger = logger;
             _strategy = strategy;
             _failedOver = false;
+            _allowInconsistentReplication = allowInconsistentReplication;
         }
 
         private void Failover()
@@ -185,31 +187,99 @@ namespace Yarn.Adapters
         public override T Add<T>(T entity)
         {
             var result = _current.Add(entity);
-            _other.Add(entity);
+            if (!_allowInconsistentReplication)
+            {
+                _other.Add(entity);
+            }
+            else
+            {
+                try
+                {
+                    _other.Add(entity);
+                }
+                catch (Exception ex)
+                {
+                    if (_logger != null)
+                    {
+                        _logger(ex);
+                    }
+                }
+            }
             return result;
         }
 
         public override T Remove<T>(T entity)
         {
             var result = _current.Remove(entity);
-            _other.Remove(entity);
+            if (!_allowInconsistentReplication)
+            {
+                _other.Remove(entity);
+            }
+            else
+            {
+                try
+                {
+                    _other.Remove(entity);
+                }
+                catch (Exception ex)
+                {
+                    if (_logger != null)
+                    {
+                        _logger(ex);
+                    }
+                }
+            }
             return result;
         }
 
         public override T Remove<T, ID>(ID id)
         {
             var result = _current.Remove<T, ID>(id);
-            _other.Remove<T, ID>(id);
+            if (!_allowInconsistentReplication)
+            {
+                _other.Remove<T, ID>(id);
+            }
+            else
+            {
+                try
+                {
+                    _other.Remove<T, ID>(id);
+                }
+                catch (Exception ex)
+                {
+                    if (_logger != null)
+                    {
+                        _logger(ex);
+                    }
+                }
+            }
             return result;
         }
 
         public override T Update<T>(T entity)
         {
             var result = _current.Update(entity);
-            _other.Update(entity);
+            if (!_allowInconsistentReplication)
+            {
+                _other.Update(entity);
+            }
+            else
+            {
+                try
+                {
+                    _other.Update(entity);
+                }
+                catch (Exception ex)
+                {
+                    if (_logger != null)
+                    {
+                        _logger(ex);
+                    }
+                }
+            }
             return result;
         }
-        
+
         public override IQueryable<T> All<T>()
         {
             try
@@ -244,15 +314,14 @@ namespace Yarn.Adapters
             _other.Attach(entity);
         }
 
-        public IDataContext DataContext
+        public override IDataContext DataContext
         {
-            get { return _current.DataContext; }
+            get { return new FailoverDataContext(_current.DataContext, _other.DataContext); }
         }
 
-        public void Dispose()
+        public override void Dispose()
         {
-            _current.Dispose();
-            _other.Dispose();
+            DataContext.Dispose();
         }
 
         public override ILoadService<T> Load<T>()
@@ -261,7 +330,7 @@ namespace Yarn.Adapters
             var otherProvider = _other as ILoadServiceProvider;
             if (provider != null || otherProvider != null)
             {
-                return new LoadService<T>((provider ?? otherProvider).Load<T>(), provider != null ? otherProvider : null, _logger, _strategy);
+                return new LoadService<T>((provider ?? otherProvider).Load<T>(), provider != null ? otherProvider : null, _logger, _strategy, _allowInconsistentReplication);
             }
             throw new InvalidOperationException();
         }
@@ -273,13 +342,15 @@ namespace Yarn.Adapters
             private readonly ILoadService<T> _failoverService;
             private readonly Action<Exception> _logger;
             private readonly FailoverStrategy _strategy;
+            private readonly bool _allowInconsistentReplication;
 
-            public LoadService(ILoadService<T> service, ILoadServiceProvider failoverProvider, Action<Exception> logger, FailoverStrategy strategy)
+            public LoadService(ILoadService<T> service, ILoadServiceProvider failoverProvider, Action<Exception> logger, FailoverStrategy strategy, bool allowInconsistentReplication)
             {
                 _service = service;
                 _failoverService = failoverProvider != null ? failoverProvider.Load<T>() : null;
                 _logger = logger;
                 _strategy = strategy;
+                _allowInconsistentReplication = allowInconsistentReplication;
             }
 
             public ILoadService<T> Include<TProperty>(Expression<Func<T, TProperty>> path) where TProperty : class
@@ -294,17 +365,27 @@ namespace Yarn.Adapters
 
             public T Update(T entity)
             {
-                try
+                var result = _service.Update(entity);
+                if (_failoverService == null) return result;
+                if (!_allowInconsistentReplication)
                 {
-                    return _service.Update(entity);
+                    _failoverService.Update(entity);
                 }
-                finally
+                else
                 {
-                    if (_failoverService != null)
+                    try
                     {
                         _failoverService.Update(entity);
                     }
+                    catch (Exception ex)
+                    {
+                        if (_logger != null)
+                        {
+                            _logger(ex);
+                        }
+                    }
                 }
+                return result;
             }
 
             public T Find(Expression<Func<T, bool>> criteria)
@@ -399,6 +480,35 @@ namespace Yarn.Adapters
                 {
                     _failoverService.Dispose();
                 }
+            }
+        }
+
+        private class FailoverDataContext : IDataContext
+        {
+            private readonly IDataContext _current;
+            private readonly IDataContext _other;
+
+            public FailoverDataContext(IDataContext current, IDataContext other)
+            {
+                _current = current;
+                _other = other;
+            }
+
+            public void SaveChanges()
+            {
+                _current.SaveChanges();
+                _other.SaveChanges();
+            }
+
+            public string Source
+            {
+                get { return _current.Source; }
+            }
+
+            public void Dispose()
+            {
+                _current.Dispose();
+                _other.Dispose();
             }
         }
     }

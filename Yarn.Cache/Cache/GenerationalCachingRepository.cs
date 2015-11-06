@@ -112,7 +112,7 @@ namespace Yarn.Cache
 
         public T Find<T>(Expression<Func<T, bool>> criteria) where T : class
         {
-            return FindAll(criteria, limit: 1).AsQueryable<T>().FirstOrDefault();
+            return FindAll(criteria, limit: 1).AsQueryable().FirstOrDefault();
         }
 
         public IEnumerable<T> FindAll<T>(ISpecification<T> criteria, int offset = 0, int limit = 0, Sorting<T> orderBy = null) where T : class
@@ -165,7 +165,7 @@ namespace Yarn.Cache
             }
             finally
             {
-                var id = _metaData.GetPrimaryKeyValue<T>(entity);
+                var id = _metaData.GetPrimaryKeyValue(entity);
                 var key = CacheKey<T>("GetById", new[] { new { Name = "id", Value = ConvertId(id) } }, false);
                 _delayedCache.Add(() =>
                 {
@@ -183,7 +183,7 @@ namespace Yarn.Cache
             }
             finally
             {
-                var id = _metaData.GetPrimaryKeyValue<T>(entity);
+                var id = _metaData.GetPrimaryKeyValue(entity);
                 var key = CacheKey<T>("GetById", new[] { new { Name = "id", Value = ConvertId(id) } }, false);
                 _delayedCache.Add(() =>
                 {
@@ -387,14 +387,7 @@ namespace Yarn.Cache
         private static string ConvertId<ID>(ID id)
         {
             var list = id as object[];
-            if (list != null)
-            {
-                return string.Join("|", list.Select(i => i.ToString()));
-            }
-            else
-            {
-                return id.ToString();
-            }
+            return list != null ? string.Join("|", list.Select(i => i.ToString())) : id.ToString();
         }
 
         private void SetWriteThroughCache<T>(string key, T item)
@@ -471,7 +464,7 @@ namespace Yarn.Cache
 
             if (orderBy != null)
             {
-                identity.AppendFormat("|orderby:{0}", orderBy.ToString());
+                identity.AppendFormat("|orderby:{0}", orderBy);
             }
 
             if (paths != null)

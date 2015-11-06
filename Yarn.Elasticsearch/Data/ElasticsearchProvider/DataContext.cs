@@ -35,7 +35,11 @@ namespace Yarn.Elasticsearch.Data.ElasticsearchProvider
 
         public string Source
         {
-            get { return _facade.LinqClient.Connection.Endpoint.ToString(); }
+            get
+            {
+                var connection = _facade.LinqClient.Connection as ElasticConnection;
+                return connection != null ? connection.Endpoint.ToString() : _facade.LinqClient.Connection.ToString();
+            }
         }
 
         public void Dispose()
