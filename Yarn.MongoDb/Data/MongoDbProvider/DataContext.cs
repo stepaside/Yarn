@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
@@ -17,17 +17,19 @@ namespace Yarn.Data.MongoDbProvider
         private readonly string _prefix;
         private MongoDatabase _database;
         private MongoUrl _url;
+        private readonly string _connectionString;
 
         public DataContext() : this(null) { }
 
-        public DataContext(string prefix = null)
+        public DataContext(string prefix = null, string connectionString = null)
         {
             _prefix = prefix;
+            _connectionString = connectionString;
         }
 
-        protected MongoDatabase GetMongoDatabase(string prefix)
+        protected MongoDatabase GetMongoDatabase(string prefix , string connectionString)
         {
-            _url = new MongoUrl(ConfigurationManager.AppSettings.Get(prefix));
+            _url = new MongoUrl(connectionString ?? ConfigurationManager.AppSettings.Get(prefix));
             var dbName = _url.DatabaseName;
             if (string.IsNullOrEmpty(dbName))
             {
@@ -48,7 +50,7 @@ namespace Yarn.Data.MongoDbProvider
 
         protected MongoDatabase GetDefaultMongoDatabase()
         {
-            return GetMongoDatabase(DefaultPrefix);
+            return GetMongoDatabase(DefaultPrefix , _connectionString);
         }
 
         public void SaveChanges()
@@ -96,7 +98,7 @@ namespace Yarn.Data.MongoDbProvider
             {
                 if (_database == null)
                 {
-                    _database = _prefix == null ? GetDefaultMongoDatabase() : GetMongoDatabase(_prefix);
+                    _database = _prefix == null ? GetDefaultMongoDatabase() : GetMongoDatabase(_prefix , _connectionString);
                     _database.Server.Connect();
                 }
                 return _database;
