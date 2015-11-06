@@ -55,6 +55,7 @@
   <ItemGroup>
     <Compile Include="Data\EntityFrameworkProvider\ContextExtensions.cs" />
     <Compile Include="Data\EntityFrameworkProvider\DataContextAsync.cs" />
+    <Compile Include="Data\EntityFrameworkProvider\DataContextLifeCycle.cs" />
     <Compile Include="Data\EntityFrameworkProvider\ISequenceNameProvider.cs" />
     <Compile Include="Data\EntityFrameworkProvider\RepositoryAsync.cs" />
     <Compile Include="Data\EntityFrameworkProvider\DataContext.cs" />

@@ -31,10 +31,11 @@ namespace Yarn.Data.EntityFrameworkProvider
             string nameOrConnectionString = null,
             string assemblyNameOrLocation = null,
             Assembly configurationAssembly = null,
-            Type dbContextType = null)
+            Type dbContextType = null,
+            DataContextLifeCycle lifeCycle = DataContextLifeCycle.DataContextCache)
             : base(
                 prefix, lazyLoadingEnabled, proxyCreationEnabled, autoDetectChangesEnabled, validateOnSaveEnabled,
-                migrationEnabled, nameOrConnectionString, assemblyNameOrLocation, configurationAssembly, dbContextType)
+                migrationEnabled, nameOrConnectionString, assemblyNameOrLocation, configurationAssembly, dbContextType, lifeCycle)
         {
 
         }

@@ -40,6 +40,7 @@ namespace Yarn.Data.EntityFrameworkProvider
         protected readonly Assembly _configurationAssembly;
         protected readonly Type _dbContextType;
         protected readonly bool _mergeOnUpdate;
+        protected readonly DataContextLifeCycle _lifeCycle;
 
         public Repository() : this(prefix: null)
         {
@@ -55,7 +56,8 @@ namespace Yarn.Data.EntityFrameworkProvider
             string assemblyNameOrLocation = null,
             Assembly configurationAssembly = null,
             Type dbContextType = null,
-            bool mergeOnUpdate = false)
+            bool mergeOnUpdate = false,
+            DataContextLifeCycle lifeCycle = DataContextLifeCycle.DataContextCache)
         {
             _prefix = prefix;
             _lazyLoadingEnabled = lazyLoadingEnabled;
@@ -71,6 +73,7 @@ namespace Yarn.Data.EntityFrameworkProvider
             }
             _dbContextType = dbContextType;
             _mergeOnUpdate = mergeOnUpdate;
+            _lifeCycle = lifeCycle;
         }
 
         public T GetById<T, ID>(ID id) where T : class
@@ -109,7 +112,7 @@ namespace Yarn.Data.EntityFrameworkProvider
         {
             var connection = ((IObjectContextAdapter)DbContext).ObjectContext.Connection;
             var query = parameters != null
-                ? DbContext.Database.SqlQuery<T>(command, parameters.Select(p => DbFactory.CreateParameter(connection, p.Key, p.Value)).ToArray())
+                ? DbContext.Database.SqlQuery<T>(command, parameters.Select(p => (object)DbFactory.CreateParameter(connection, p.Key, p.Value)).ToArray())
                 : DbContext.Database.SqlQuery<T>(command);
             return query;
         }
@@ -223,7 +226,7 @@ namespace Yarn.Data.EntityFrameworkProvider
             {
                 return _context ?? (_context = new DataContext(_prefix, _lazyLoadingEnabled, _proxyCreationEnabled,
                     _autoDetectChangesEnabled, _validateOnSaveEnabled, _migrationEnabled, _nameOrConnectionString,
-                    _assemblyNameOrLocation, _configurationAssembly, _dbContextType));
+                    _assemblyNameOrLocation, _configurationAssembly, _dbContextType, _lifeCycle));
             }
         }
 

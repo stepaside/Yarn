@@ -26,10 +26,12 @@ namespace Yarn.Data.EntityFrameworkProvider
             string nameOrConnectionString = null,
             string assemblyNameOrLocation = null,
             Assembly configurationAssembly = null,
-            Type dbContextType = null)
+            Type dbContextType = null,
+            bool mergeOnUpdate = false,
+            DataContextLifeCycle lifeCycle = DataContextLifeCycle.DataContextCache)
             : base(
                 prefix, lazyLoadingEnabled, proxyCreationEnabled, autoDetectChangesEnabled, validateOnSaveEnabled,
-                migrationEnabled, nameOrConnectionString, assemblyNameOrLocation, configurationAssembly, dbContextType)
+                migrationEnabled, nameOrConnectionString, assemblyNameOrLocation, configurationAssembly, dbContextType, mergeOnUpdate, lifeCycle)
         {
         }
 
@@ -90,7 +92,7 @@ namespace Yarn.Data.EntityFrameworkProvider
                 {
                     _context = new DataContextAsync(_prefix, _lazyLoadingEnabled, _proxyCreationEnabled,
                         _autoDetectChangesEnabled, _validateOnSaveEnabled, _migrationEnabled, _nameOrConnectionString,
-                        _assemblyNameOrLocation, _configurationAssembly, _dbContextType);
+                        _assemblyNameOrLocation, _configurationAssembly, _dbContextType, _lifeCycle);
                 }
                 return (IDataContextAsync)_context;
             }
