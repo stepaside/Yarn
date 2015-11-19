@@ -4,24 +4,33 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
+using Raven.Client.Shard;
 using Yarn;
 using Yarn.Extensions;
 using Yarn.Specification;
 
 namespace Yarn.Data.RavenDbProvider
 {
-    public class Repository : IRepository, IMetaDataProvider
+    public class Repository : IRepository, IMetaDataProvider, IBulkOperationsProvider
     {
         private IDataContext<IDocumentSession> _context;
-        private bool _waitForNonStaleResults;
-        private string _prefix;
+        private readonly Action<IDocumentQueryCustomization> _queryCustomization;
+        private readonly string _prefix;
+        private readonly IShardAccessStrategy _accessStrategy;
+        private readonly IShardResolutionStrategy _resolutionStrategy;
+        private readonly IDictionary<string, string> _shards;
+        private readonly string _connectionString;
 
-        public Repository() : this(false, null) { }
+        public Repository() : this(prefix: null) { }
 
-        public Repository(bool waitForNonStaleResults = false, string prefix = null)
+        public Repository(string prefix = null, string connectionString = null, IDictionary<string, string> shards = null, IShardAccessStrategy accessStrategy = null, IShardResolutionStrategy resolutionStrategy = null, Action<IDocumentQueryCustomization> queryCustomization = null)
         {
-            _waitForNonStaleResults = waitForNonStaleResults;
             _prefix = prefix;
+            _connectionString = connectionString;
+            _shards = shards;
+            _accessStrategy = accessStrategy;
+            _resolutionStrategy = resolutionStrategy;
+            _queryCustomization = queryCustomization;
         }
 
         public T GetById<T, ID>(ID id) where T : class
@@ -29,14 +38,9 @@ namespace Yarn.Data.RavenDbProvider
             return _context.Session.Load<T>(id.ToString());
         }
 
-        public IEnumerable<T> GetById<T, ID>(IList<ID> ids) where T : class
-        {
-            return _context.Session.Load<T>(ids.Select(i => i.ToString()));
-        }
-
         public T Find<T>(Expression<Func<T, bool>> criteria) where T : class
         {
-            return this.FindAll(criteria).FirstOrDefault();
+            return FindAll(criteria).FirstOrDefault();
         }
 
         public T Find<T>(ISpecification<T> criteria) where T : class
@@ -46,19 +50,19 @@ namespace Yarn.Data.RavenDbProvider
 
         public IEnumerable<T> FindAll<T>(Expression<Func<T, bool>> criteria, int offset = 0, int limit = 0, Sorting<T> orderBy = null) where T : class
         {
-            var query = this.All<T>().Where(criteria);
-            return this.Page<T>(query, offset, limit, orderBy);
+            var query = All<T>().Where(criteria);
+            return this.Page(query, offset, limit, orderBy);
         }
 
         public IEnumerable<T> FindAll<T>(ISpecification<T> criteria, int offset = 0, int limit = 0, Sorting<T> orderBy = null) where T : class
         {
-            var query = criteria.Apply(this.All<T>());
-            return this.Page<T>(query, offset, limit, orderBy);
+            var query = criteria.Apply(All<T>());
+            return this.Page(query, offset, limit, orderBy);
         }
 
         public T FindOne<T>(Expression<Func<T, bool>> criteria, bool waitForNonStaleResults = false) where T : class
         {
-            var foundList = this.FindAll(criteria);
+            var foundList = FindAll(criteria);
             try
             {
                 return foundList.SingleOrDefault();
@@ -77,7 +81,7 @@ namespace Yarn.Data.RavenDbProvider
 
         public T Remove<T>(T entity) where T : class
         {
-            _context.Session.Delete<T>(entity);
+            _context.Session.Delete(entity);
             return entity;
         }
 
@@ -86,7 +90,7 @@ namespace Yarn.Data.RavenDbProvider
             var entity = GetById<T, ID>(id);
             if (entity != null)
             {
-                _context.Session.Delete<T>(entity);
+                _context.Session.Delete(entity);
             }
             return entity;
         }
@@ -104,12 +108,13 @@ namespace Yarn.Data.RavenDbProvider
 
         public void Detach<T>(T entity) where T : class
         {
-            _context.Session.Advanced.Evict<T>(entity);
+            _context.Session.Advanced.Evict(entity);
         }
 
         public IQueryable<T> All<T>() where T : class
         {
-            return _context.Session.Query<T>().Customize(q => CustomizeQuery(q, _waitForNonStaleResults));
+            var query = _context.Session.Query<T>();
+            return _queryCustomization != null ? query.Customize(_queryCustomization) : query;
         }
 
         public long Count<T>() where T : class
@@ -163,7 +168,7 @@ namespace Yarn.Data.RavenDbProvider
 
                 if (args.TryGetValue("limit", out limit) && limit is int && ((int)limit > 0))
                 {
-                    indexQuery = (IRavenQueryable<T>)indexQuery.Take((int)limit);
+                    indexQuery = indexQuery.Take((int)limit);
                 }
             }
 
@@ -182,11 +187,9 @@ namespace Yarn.Data.RavenDbProvider
         {
             get
             {
-                if (_context == null)
-                {
-                    _context = new DataContext(_prefix);
-                }
-                return _context;
+                return _context ??
+                       (_context =
+                           _shards != null ? new DataContext(_shards, _accessStrategy, _resolutionStrategy) : _connectionString != null ? new DataContext(_connectionString) : new DataContext(_prefix, _accessStrategy, _resolutionStrategy));
             }
         }
 
@@ -198,36 +201,72 @@ namespace Yarn.Data.RavenDbProvider
 
         protected virtual void Dispose(bool disposing)
         {
-            if (disposing)
-            {
-                if (_context != null)
-                {
-                    _context.Dispose();
-                    _context = null;
-                }
-            }
-        }
-
-        private void CustomizeQuery(IDocumentQueryCustomization p, bool waitForNonStaleResults)
-        {
-            if (waitForNonStaleResults)
-            {
-                p.WaitForNonStaleResults();
-            }
+            if (!disposing || _context == null) return;
+            _context.Dispose();
+            _context = null;
         }
 
         #region IMetaDataProvider Members
 
         string[] IMetaDataProvider.GetPrimaryKey<T>()
         {
-            return new[] { this.DocumentSession.Advanced.DocumentStore.Conventions.GetIdentityProperty(typeof(T)).Name };
+            return new[] { DocumentSession.Advanced.DocumentStore.Conventions.GetIdentityProperty(typeof(T)).Name };
         }
 
         object[] IMetaDataProvider.GetPrimaryKeyValue<T>(T entity)
         {
-            return new[] { this.DocumentSession.Advanced.GetDocumentId(entity) };
+            return new object[] { DocumentSession.Advanced.GetDocumentId(entity) };
         }
         
         #endregion
+
+        public IEnumerable<T> GetById<T, ID>(IEnumerable<ID> ids) where T : class
+        {
+            return _context.Session.Load<T>(ids.Select(i => i.ToString()));
+        }
+
+        public long Insert<T>(IEnumerable<T> entities) where T : class
+        {
+            var count = 0L;
+            using (var bulkInsert = _context.Session.Advanced.DocumentStore.BulkInsert())
+            {
+                foreach (var entity in entities)
+                {
+                    bulkInsert.Store(entity);
+                    count++;
+                }
+            }
+            return count;
+        }
+
+        public long Update<T>(Expression<Func<T, bool>> criteria, Expression<Func<T, T>> update) where T : class
+        {
+            throw new NotImplementedException();
+        }
+
+        public long Update<T>(params BulkUpdateOperation<T>[] bulkOperations) where T : class
+        {
+            throw new NotImplementedException();
+        }
+
+        public long Delete<T>(IEnumerable<T> entities) where T : class
+        {
+            throw new NotImplementedException();
+        }
+
+        public long Delete<T, ID>(IEnumerable<ID> ids) where T : class
+        {
+            throw new NotImplementedException();
+        }
+
+        public long Delete<T>(params Expression<Func<T, bool>>[] criteria) where T : class
+        {
+            throw new NotImplementedException();
+        }
+
+        public long Delete<T>(params ISpecification<T>[] criteria) where T : class
+        {
+            throw new NotImplementedException();
+        }
     }
 }

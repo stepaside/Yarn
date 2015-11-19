@@ -2,7 +2,7 @@
 <package>
   <metadata>
     <id>Yarn.RavenDb</id>
-    <version>0.9.5</version>
+    <version>0.9.5.1</version>
     <title>Yarn.RavenDb</title>
     <authors>Max Stepanskiy</authors>
     <owners>Stepaside, Inc.</owners>

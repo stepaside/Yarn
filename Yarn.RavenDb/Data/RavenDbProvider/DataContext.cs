@@ -2,7 +2,9 @@
 using System.Collections;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using System.Configuration;
+using System.Linq;
 using System.Linq.Expressions;
 using Raven.Abstractions.Indexing;
 using Raven.Client;
@@ -14,78 +16,102 @@ namespace Yarn.Data.RavenDbProvider
 {
     public class DataContext : IDataContext<IDocumentSession>
     {
-        private static readonly ConcurrentDictionary<string, IDocumentStore> _documentStores = new ConcurrentDictionary<string, IDocumentStore>();
-        private readonly string _prefix;
+        private static readonly ConcurrentDictionary<string, IDocumentStore> DocumentStores = new ConcurrentDictionary<string, IDocumentStore>();
+
         private readonly string _key;
         private IDocumentSession _session;
+        private readonly IShardAccessStrategy _accessStrategy;
+        private readonly IShardResolutionStrategy _resolutionStrategy;
+        private readonly IReadOnlyDictionary<string, string> _shards;
+        private readonly string _connectionString;
 
-        public DataContext(string prefix = null)
+        public DataContext(string connectionString)
         {
-            _prefix = prefix;
-            _key = _prefix ?? DefaultPrefix;
+            _key = connectionString;
             _session = (IDocumentSession)DataContextCache.Current.Get(_key);
         }
 
-        protected IDocumentStore CreateDocumentStore(string prefix)
+        public DataContext(string prefix = null, IShardAccessStrategy accessStrategy = null, IShardResolutionStrategy resolutionStrategy = null)
         {
-            var documentStore = _documentStores.GetOrAdd(prefix, key =>
+            if (prefix == null)
+            {
+                prefix = DefaultPrefix;
+            }
+
+            var shardCountValue = ConfigurationManager.AppSettings.Get(prefix + ".ShardCount");
+            int shardCount;
+
+            if (int.TryParse(shardCountValue, out shardCount))
+            {
+                var shards = new Dictionary<string, string>();
+                for (var i = 0; i < shardCount; i++)
+                {
+                    var url = ConfigurationManager.AppSettings.Get(prefix + ".Shard." + i + ".Url");
+                    var id = ConfigurationManager.AppSettings.Get(prefix + ".Shard." + i + ".Identifier");
+                    shards.Add(id, url);
+                }
+
+                _shards = new ReadOnlyDictionary<string, string>(shards);
+
+                _key = string.Join("|", shards.Keys.OrderBy(s => s));
+
+                _accessStrategy = accessStrategy ?? new ParallelShardAccessStrategy();
+                _resolutionStrategy = resolutionStrategy;
+            }
+            else
+            {
+                var url = ConfigurationManager.AppSettings.Get(prefix);
+
+                if (!string.IsNullOrEmpty(url))
+                {
+                    _connectionString = url;
+                    _key = url;
+                }
+            }
+
+            if (_key != null)
+            {
+                _session = (IDocumentSession)DataContextCache.Current.Get(_key);
+            }
+        }
+
+        public DataContext(IDictionary<string, string> shards, IShardAccessStrategy accessStrategy = null, IShardResolutionStrategy resolutionStrategy = null)
+        {
+            _key = string.Join("|", shards.Keys.OrderBy(s => s));
+            _accessStrategy = accessStrategy ?? new ParallelShardAccessStrategy();
+            _resolutionStrategy = resolutionStrategy;
+            _session = (IDocumentSession)DataContextCache.Current.Get(_key);
+        }
+
+        protected IDocumentStore CreateDocumentStore()
+        {
+            var documentStore = DocumentStores.GetOrAdd(_key, key =>
             {
                 IDocumentStore ds = null;
-                var shardCountValue = ConfigurationManager.AppSettings.Get(key + ".ShardCount");
-                int shardCount;
-
-                if (int.TryParse(shardCountValue, out shardCount))
+                
+                if (_shards.Count > 0)
                 {
-                    var shards = new Dictionary<string, IDocumentStore>();
-                    for (var i = 0; i < shardCount; i++)
+                    var shards = _shards.ToDictionary(s => s.Key, s => (IDocumentStore)new DocumentStore { Identifier = s.Key, Url = s.Value });
+
+                    var shardStrategy = new ShardStrategy(shards);
+
+                    if (_accessStrategy != null)
                     {
-                        var url = ConfigurationManager.AppSettings.Get(key + ".Shard." + i + ".Url");
-                        var id = ConfigurationManager.AppSettings.Get(key + ".Shard." + i + ".Identifier");
-                        shards.Add(id, new DocumentStore { Identifier = id, Url = url });
+                        shardStrategy.ShardAccessStrategy = _accessStrategy;
                     }
 
-                    var accessStrategyTypeName = ConfigurationManager.AppSettings.Get(key + ".Shard.AccessStrategy");
-                    var resolutionStrategyTypeName = ConfigurationManager.AppSettings.Get(key + ".Shard.ResolutionStrategy");
-                    var selectionStrategyTypeName = ConfigurationManager.AppSettings.Get(key + ".Shard.SelectionStrategy");
-
-                    IShardAccessStrategy accessStrategy;
-                    IShardResolutionStrategy resolutionStrategy;
-
-                    if (!string.IsNullOrEmpty(accessStrategyTypeName) && Type.GetType(accessStrategyTypeName) != null)
+                    if (_resolutionStrategy != null)
                     {
-                        accessStrategy = (IShardAccessStrategy)Activator.CreateInstance(Type.GetType(accessStrategyTypeName));
-                    }
-                    else
-                    {
-                        accessStrategy = new ParallelShardAccessStrategy();
-                    }
-
-                    var shardStrategy = new ShardStrategy(shards)
-                    {
-                        ShardAccessStrategy = accessStrategy
-                    };
-
-                    if (!string.IsNullOrEmpty(resolutionStrategyTypeName) && Type.GetType(resolutionStrategyTypeName) != null)
-                    {
-                        resolutionStrategy = (IShardResolutionStrategy)Activator.CreateInstance(Type.GetType(resolutionStrategyTypeName));
-                    }
-                    else
-                    {
-                        resolutionStrategy = new DefaultShardResolutionStrategy(shards.Keys, shardStrategy);
+                        shardStrategy.ShardResolutionStrategy = _resolutionStrategy;
                     }
 
                     ds = new ShardedDocumentStore(shardStrategy);
                     ds.Initialize();
                 }
-                else
+                else if (_connectionString != null)
                 {
-                    var url = ConfigurationManager.AppSettings.Get(key);
-
-                    if (!string.IsNullOrEmpty(url))
-                    {
-                        ds = new DocumentStore() { Url = url };
-                        ds.Initialize();
-                    }
+                    ds = new DocumentStore { Url = _connectionString };
+                    ds.Initialize();
                 }
 
                 return ds;
@@ -100,15 +126,10 @@ namespace Yarn.Data.RavenDbProvider
                 return "RavenDB.Default";
             }
         }
-
-        protected IDocumentStore GetDefaultDocumentStore()
-        {
-            return CreateDocumentStore(DefaultPrefix);
-        }
-
+        
         public void CreateIndex<T>(string indexName, Expression<Func<IEnumerable<T>, IEnumerable>> map, Expression<Func<IEnumerable<T>, IEnumerable>> reduce, IDictionary<Expression<Func<T, object>>, SortOptions> sortOptions)
         {
-            GetDefaultDocumentStore().DatabaseCommands.PutIndex(indexName, new IndexDefinitionBuilder<T>
+            CreateDocumentStore().DatabaseCommands.PutIndex(indexName, new IndexDefinitionBuilder<T>
             {
                 Map = map,
                 Reduce = reduce,
@@ -118,7 +139,7 @@ namespace Yarn.Data.RavenDbProvider
 
         public void CreateIndex<T>(string indexName, Expression<Func<IEnumerable<T>, IEnumerable>> map, IDictionary<Expression<Func<T, object>>, SortOptions> sortOptions)
         {
-            GetDefaultDocumentStore().DatabaseCommands.PutIndex(indexName, new IndexDefinitionBuilder<T>
+            CreateDocumentStore().DatabaseCommands.PutIndex(indexName, new IndexDefinitionBuilder<T>
             {
                 Map = map,
                 SortOptions = sortOptions
@@ -127,7 +148,7 @@ namespace Yarn.Data.RavenDbProvider
 
         public void CreateIndex<T>(string indexName, Expression<Func<IEnumerable<T>, IEnumerable>> map)
         {
-            GetDefaultDocumentStore().DatabaseCommands.PutIndex(indexName, new IndexDefinitionBuilder<T>
+            CreateDocumentStore().DatabaseCommands.PutIndex(indexName, new IndexDefinitionBuilder<T>
             {
                 Map = map
             });
@@ -142,11 +163,9 @@ namespace Yarn.Data.RavenDbProvider
         {
             get
             {
-                if (_session == null)
-                {
-                    _session = _prefix == null ? GetDefaultDocumentStore().OpenSession() : CreateDocumentStore(_prefix).OpenSession();
-                    DataContextCache.Current.Set(_key, _session);
-                }
+                if (_session != null) return _session;
+                _session = CreateDocumentStore().OpenSession();
+                DataContextCache.Current.Set(_key, _session);
                 return _session;
             }
         }
@@ -167,15 +186,11 @@ namespace Yarn.Data.RavenDbProvider
 
         protected virtual void Dispose(bool disposing)
         {
-            if (disposing)
-            {
-                if (_session != null)
-                {
-                    DataContextCache.Current.Cleanup(_key);
-                    _session.Dispose();
-                    _session = null;
-                }
-            }
+            if (!disposing) return;
+            if (_session == null) return;
+            DataContextCache.Current.Cleanup(_key);
+            _session.Dispose();
+            _session = null;
         }
     }
 }
