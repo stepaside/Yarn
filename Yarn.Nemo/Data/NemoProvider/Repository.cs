@@ -1,25 +1,22 @@
-﻿using System.Data;
+﻿using System;
+using System.Collections.Generic;
+using System.Data;
 using System.Data.Common;
+using System.Linq;
+using System.Linq.Expressions;
 using System.Reflection;
 using Nemo;
-using Nemo.Attributes;
 using Nemo.Collections.Extensions;
 using Nemo.Configuration;
 using Nemo.Extensions;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Linq.Expressions;
 using Nemo.Linq;
 using Nemo.Reflection;
 using Nemo.UnitOfWork;
 using Yarn.Extensions;
 using Yarn.Linq.Expressions;
-using Yarn.Reflection;
 using Yarn.Specification;
-using PList = Nemo.ParamList;
 
-namespace Yarn.Nemo.Data.NemoProvider
+namespace Yarn.Data.NemoProvider
 {
     public class Repository : IRepository, IMetaDataProvider, ILoadServiceProvider
     {
@@ -203,7 +200,7 @@ namespace Yarn.Nemo.Data.NemoProvider
 
                     var equals = pk1.Join(pk2, x => x.Position, y => y.Position, (p1, p2) => Expression.Equal(Expression.PropertyOrField(a1, p1.PropertyName), Expression.PropertyOrField(a2, p2.PropertyName)));
 
-                    var body = equals.Aggregate(Expression.And);
+                    var body = equals.Aggregate(Expression.AndAlso);
                     var join = Expression.Lambda(body, a1, a2);
                     lambdas.Add(join);
                 }

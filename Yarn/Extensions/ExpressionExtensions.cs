@@ -22,18 +22,17 @@ namespace Yarn.Extensions
 
         public static Expression<Func<T, bool>> And<T>(this Expression<Func<T, bool>> first, Expression<Func<T, bool>> second)
         {
-            return first.Compose(second, Expression.And);
+            return first.Compose(second, Expression.AndAlso);
         }
 
         public static Expression<Func<T, bool>> Or<T>(this Expression<Func<T, bool>> first, Expression<Func<T, bool>> second)
         {
-            return first.Compose(second, Expression.Or);
+            return first.Compose(second, Expression.OrElse);
         }
 
         public static Expression<Func<T, bool>> BuildOrExpression<T, ID>(this Expression<Func<T, ID>> valueSelector, IList<ID> values)
             where T : class
         {
-
             if (null == valueSelector)
             {
                 throw new ArgumentNullException("valueSelector");
@@ -43,42 +42,47 @@ namespace Yarn.Extensions
             {
                 throw new ArgumentNullException("values");
             }
-
-            var p = valueSelector.Parameters.Single();
-
+            
             if (values.Count == 0)
             {
                 return e => false;
             }
 
+            var p = valueSelector.Parameters.Single();
             var equals = values.Select(value => (Expression)Expression.Equal(valueSelector.Body, Expression.Constant(value, typeof(ID))));
-            var body = equals.Aggregate(Expression.Or);
+            var body = equals.Aggregate(Expression.OrElse);
             return Expression.Lambda<Func<T, bool>>(body, p);
         }
 
         public static Expression<Func<T, bool>> BuildPrimaryKeyExpression<T>(this IMetaDataProvider repository, T entity)
             where T : class
         {
-            var primaryKeyValue = repository.GetPrimaryKeyValue(entity).First();
-            var primaryKey = repository.GetPrimaryKey<T>().First();
+            var primaryKeyValue = repository.GetPrimaryKeyValue(entity);
+            var primaryKey = repository.GetPrimaryKey<T>();
 
-            var parameter = Expression.Parameter(typeof(T));
-            var body = Expression.Convert(Expression.PropertyOrField(parameter, primaryKey), typeof(object));
-            var idSelector = Expression.Lambda<Func<T, object>>(body, parameter);
-            var predicate = idSelector.BuildOrExpression(new[] { primaryKeyValue });
-            return predicate;
+            var values = primaryKey.Zip(primaryKeyValue, Tuple.Create).ToArray();
+            
+            Expression<Func<T, bool>> predicate = null;
+            foreach (var value in values)
+            {
+                var parameter = Expression.Parameter(typeof(T));
+                var left = Expression.Convert(Expression.PropertyOrField(parameter, value.Item1), value.Item2.GetType());
+                var body = Expression.Equal(left, Expression.Constant(value.Item2));
+                predicate = predicate == null ? Expression.Lambda<Func<T, bool>>(body, parameter) : predicate.And(Expression.Lambda<Func<T, bool>>(body, parameter));
+            }
+            
+            return (Expression<Func<T, bool>>)Evaluator.PartialEval(predicate);
         }
 
         public static Expression<Func<T, bool>> BuildPrimaryKeyExpression<T, ID>(this IMetaDataProvider repository, ID id)
             where T : class
         {
             var primaryKey = repository.GetPrimaryKey<T>().First();
-
             var parameter = Expression.Parameter(typeof(T));
-            var body = Expression.Convert(Expression.PropertyOrField(parameter, primaryKey), typeof(ID));
-            var idSelector = Expression.Lambda<Func<T, ID>>(body, parameter);
-            var predicate = idSelector.BuildOrExpression(new[] { id });
-            return predicate;
+            var left = Expression.Convert(Expression.PropertyOrField(parameter, primaryKey), typeof(ID));
+            var body = Expression.Equal(left, Expression.Constant(id, typeof(ID)));
+            var predicate = Expression.Lambda<Func<T, bool>>(body, parameter);
+            return (Expression<Func<T, bool>>)Evaluator.PartialEval(predicate);
         }
 
         public static LambdaExpression BuildLambdaExpression(this Type type, string path, bool covariantReturnType = true)

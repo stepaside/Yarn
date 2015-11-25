@@ -1,9 +1,7 @@
-﻿using System;
-using System.Data.Common;
+﻿using System.Data.Common;
 using Nemo.Configuration;
-using Yarn.Data;
 
-namespace Yarn.Nemo.Data.NemoProvider
+namespace Yarn.Data.NemoProvider
 {
     public class DataContext : IDataContext<DbConnection>
     {

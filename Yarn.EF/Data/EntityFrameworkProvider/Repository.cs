@@ -7,6 +7,7 @@ using System.Data;
 using System.Data.Common;
 using System.Data.Entity;
 using System.Data.Entity.Core.Metadata.Edm;
+using System.Data.Entity.Core.Objects;
 using System.Data.Entity.Core.Objects.DataClasses;
 using System.Data.Entity.Infrastructure;
 using System.Data.Entity.Migrations;
@@ -288,20 +289,95 @@ namespace Yarn.Data.EntityFrameworkProvider
                 where TProperty : class
             {
                 _query = _query.Include(path);
-
+                
                 var properties = path.Body.ToString().Split('.').Where(p => !p.StartsWith("Select")).Select(p => p.TrimEnd(')')).Skip(1).ToArray();
                 _paths.Add(properties);
 
                 return this;
             }
 
+            private void ScanForPrimaryKey(Expression expresison, IDictionary<string, bool> primaryKey)
+            {
+                var methodCall = expresison as MethodCallExpression;
+                var binaryExpression = expresison as BinaryExpression;
+
+                if (binaryExpression != null)
+                {
+                    switch (binaryExpression.NodeType)
+                    {
+                        case ExpressionType.Equal:
+                        {
+                            var left = binaryExpression.Left.NodeType == ExpressionType.Convert ? ((UnaryExpression)binaryExpression.Left).Operand as MemberExpression : binaryExpression.Left as MemberExpression;
+                            if (left != null && left.NodeType == ExpressionType.MemberAccess && left.Expression.Type == typeof(T))
+                            {
+                                primaryKey[left.Member.Name] = primaryKey.ContainsKey(left.Member.Name);
+                            }
+
+                            var right = binaryExpression.Right.NodeType == ExpressionType.Convert ? ((UnaryExpression)binaryExpression.Right).Operand as MemberExpression : binaryExpression.Right as MemberExpression;
+                            if (right != null && right.NodeType == ExpressionType.MemberAccess && right.Expression.Type == typeof(T))
+                            {
+                                primaryKey[right.Member.Name] = primaryKey.ContainsKey(right.Member.Name);
+                            }
+
+                        }
+                            break;
+
+                        case ExpressionType.And:
+                        case ExpressionType.AndAlso:
+                            ScanForPrimaryKey(binaryExpression.Left, primaryKey);
+                            ScanForPrimaryKey(binaryExpression.Right, primaryKey);
+                            break;
+                    }
+                }
+                else if (methodCall != null && methodCall.Object != null && methodCall.Method.Name == "Equals" && methodCall.Arguments.Count == 1)
+                {
+                    var left = methodCall.Object.NodeType == ExpressionType.Convert ? ((UnaryExpression)methodCall.Object).Operand as MemberExpression : methodCall.Object as MemberExpression;
+                    if (left != null && left.NodeType == ExpressionType.MemberAccess && left.Expression.Type == typeof(T))
+                    {
+                        primaryKey[left.Member.Name] = primaryKey.ContainsKey(left.Member.Name);
+                    }
+
+                    var right = methodCall.Arguments[0].NodeType == ExpressionType.Convert ? ((UnaryExpression)methodCall.Arguments[0]).Operand as MemberExpression : methodCall.Arguments[0] as MemberExpression;
+                    if (right != null && right.NodeType == ExpressionType.MemberAccess && right.Expression.Type == typeof(T))
+                    {
+                        primaryKey[right.Member.Name] = primaryKey.ContainsKey(right.Member.Name);
+                    }
+                }
+            }
+
+            private bool UseLocalContext(Expression<Func<T, bool>> criteria, IEnumerable<string> primaryKey)
+            {
+                if (typeof(T).GetInterfaces().Contains(typeof(ITenant)))
+                {
+                    // Hard-coded TenantId will not be detected when the interface changes
+                    Expression<Func<ITenant, long>> exp = t => t.TenantId;
+                    primaryKey = primaryKey.Concat(new[] { ((MemberExpression)exp.Body).Member.Name });
+                    // primaryKey = primaryKey.Concat(new[] { "TenantId" });
+                }
+                var map = primaryKey.Distinct().ToDictionary(p => p, p => false);
+                ScanForPrimaryKey(criteria.Body, map);
+                return map.All(p => p.Value);
+            }
+
             public T Find(Expression<Func<T, bool>> criteria)
             {
-                return _query.FirstOrDefault(criteria);
+                var primaryKey = _repository.As<IMetaDataProvider>().GetPrimaryKey<T>();
+                if (!UseLocalContext(criteria, primaryKey)) return _query.FirstOrDefault(criteria);
+                var found = _repository.Table<T>().Local.FirstOrDefault(criteria.Compile());
+                return found ?? _query.FirstOrDefault(criteria);
             }
 
             public IEnumerable<T> FindAll(Expression<Func<T, bool>> criteria, int offset = 0, int limit = 0, Sorting<T> orderBy = null)
             {
+                var primaryKey = _repository.As<IMetaDataProvider>().GetPrimaryKey<T>();
+                if (UseLocalContext(criteria, primaryKey))
+                {
+                    var entity = _repository.Table<T>().Local.FirstOrDefault(criteria.Compile());
+                    if (entity != null)
+                    {
+                        return new[] { entity };
+                    }
+                }
                 var query = _query.Where(criteria);
                 return _repository.Page(query, offset, limit, orderBy);
             }
@@ -323,7 +399,7 @@ namespace Yarn.Data.EntityFrameworkProvider
 
             public T Update(T entity)
             {
-                var loadedEntity = Find(_repository.As<IMetaDataProvider>().BuildPrimaryKeyExpression(entity));
+                var loadedEntity = _repository.Table<T>().Find(_repository.As<IMetaDataProvider>().GetPrimaryKeyValue(entity)) ?? Find(_repository.As<IMetaDataProvider>().BuildPrimaryKeyExpression(entity));
                 if (loadedEntity != null)
                 {
                     _repository.Merge(entity, loadedEntity, _paths);
