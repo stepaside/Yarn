@@ -308,37 +308,43 @@ namespace Yarn.Data.EntityFrameworkProvider
                         case ExpressionType.Equal:
                         {
                             var left = binaryExpression.Left.NodeType == ExpressionType.Convert ? ((UnaryExpression)binaryExpression.Left).Operand as MemberExpression : binaryExpression.Left as MemberExpression;
-                            if (left != null && left.NodeType == ExpressionType.MemberAccess && left.Expression.Type == typeof(T))
+                            if (left != null && left.NodeType == ExpressionType.MemberAccess && left.Expression.NodeType == ExpressionType.Parameter && left.Expression.Type == typeof(T))
                             {
                                 primaryKey[left.Member.Name] = primaryKey.ContainsKey(left.Member.Name);
                             }
 
                             var right = binaryExpression.Right.NodeType == ExpressionType.Convert ? ((UnaryExpression)binaryExpression.Right).Operand as MemberExpression : binaryExpression.Right as MemberExpression;
-                            if (right != null && right.NodeType == ExpressionType.MemberAccess && right.Expression.Type == typeof(T))
+                            if (right != null && right.NodeType == ExpressionType.MemberAccess && right.Expression.NodeType == ExpressionType.Parameter && right.Expression.Type == typeof(T))
                             {
                                 primaryKey[right.Member.Name] = primaryKey.ContainsKey(right.Member.Name);
                             }
 
-                        }
-                            break;
 
+                            break;
+                        }
+                        
                         case ExpressionType.And:
                         case ExpressionType.AndAlso:
+                        {
                             ScanForPrimaryKey(binaryExpression.Left, primaryKey);
                             ScanForPrimaryKey(binaryExpression.Right, primaryKey);
                             break;
+                        }
+
+                        default:
+                            throw new InvalidExpressionException();
                     }
                 }
                 else if (methodCall != null && methodCall.Object != null && methodCall.Method.Name == "Equals" && methodCall.Arguments.Count == 1)
                 {
                     var left = methodCall.Object.NodeType == ExpressionType.Convert ? ((UnaryExpression)methodCall.Object).Operand as MemberExpression : methodCall.Object as MemberExpression;
-                    if (left != null && left.NodeType == ExpressionType.MemberAccess && left.Expression.Type == typeof(T))
+                    if (left != null && left.NodeType == ExpressionType.MemberAccess && left.Expression.NodeType == ExpressionType.Parameter && left.Expression.Type == typeof(T))
                     {
                         primaryKey[left.Member.Name] = primaryKey.ContainsKey(left.Member.Name);
                     }
 
                     var right = methodCall.Arguments[0].NodeType == ExpressionType.Convert ? ((UnaryExpression)methodCall.Arguments[0]).Operand as MemberExpression : methodCall.Arguments[0] as MemberExpression;
-                    if (right != null && right.NodeType == ExpressionType.MemberAccess && right.Expression.Type == typeof(T))
+                    if (right != null && right.NodeType == ExpressionType.MemberAccess && right.Expression.NodeType == ExpressionType.Parameter && right.Expression.Type == typeof(T))
                     {
                         primaryKey[right.Member.Name] = primaryKey.ContainsKey(right.Member.Name);
                     }
@@ -354,9 +360,16 @@ namespace Yarn.Data.EntityFrameworkProvider
                     primaryKey = primaryKey.Concat(new[] { ((MemberExpression)exp.Body).Member.Name });
                     // primaryKey = primaryKey.Concat(new[] { "TenantId" });
                 }
-                var map = primaryKey.Distinct().ToDictionary(p => p, p => false);
-                ScanForPrimaryKey(criteria.Body, map);
-                return map.All(p => p.Value);
+                try
+                {
+                    var map = primaryKey.Distinct().ToDictionary(p => p, p => false);
+                    ScanForPrimaryKey(criteria.Body, map);
+                    return map.All(p => p.Value);
+                }
+                catch
+                {
+                    return false;
+                }
             }
 
             public T Find(Expression<Func<T, bool>> criteria)
