@@ -184,11 +184,33 @@ namespace Yarn.Data.EntityFrameworkProvider
         public void Attach<T>(T entity) where T : class
         {
             // TODO: revise attach to be smarter (e.g., support for object graphs)
-            Table<T>().Attach(entity);
+            if (entity == null) return;
+
+            var entry = DbContext.Entry(entity);
+            var dbSet = Table<T>();
+            if (entry == null)
+            {
+                dbSet.Attach(entity);
+            }
+            else if (entry.State == EntityState.Detached)
+            {
+                var comparer = new EntityEqualityComparer<T>(this);
+                var hash = comparer.GetHashCode(entity);
+                var attachedEntity = dbSet.Local.FirstOrDefault(e => comparer.GetHashCode(e) == hash);
+                if (attachedEntity != null)
+                {
+                    entry.State = EntityState.Unchanged;
+                }
+                else
+                {
+                    dbSet.Attach(entity);
+                }
+            }
         }
 
         public void Detach<T>(T entity) where T : class
         {
+            if (entity == null) return;
             ((IObjectContextAdapter)DbContext).ObjectContext.Detach(entity);
         }
 
