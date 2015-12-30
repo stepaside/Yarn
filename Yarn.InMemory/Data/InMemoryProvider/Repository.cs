@@ -4,13 +4,14 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
+using NDatabase.Api.Query;
 using Yarn.Extensions;
 using Yarn.Reflection;
 using Yarn.Specification;
 
 namespace Yarn.Data.InMemoryProvider
 {
-    public class Repository : IRepository, IMetaDataProvider
+    public class Repository : IRepository, IMetaDataProvider, ILoadServiceProvider, IBulkOperationsProvider
     {
         private DataContext _context;
         private readonly IMetaDataProvider _metaDataProvider;
@@ -22,27 +23,15 @@ namespace Yarn.Data.InMemoryProvider
 
         public T GetById<T, ID>(ID id) where T : class
         {
-            return GetById<T, ID>(new[] { id }).FirstOrDefault();
-        }
-
-        public IEnumerable<T> GetById<T, ID>(IList<ID> ids) where T : class
-        {
-            if (typeof(OID).IsAssignableFrom(typeof(T)))
+            if (typeof(OID).IsAssignableFrom(typeof(ID)))
             {
-                return ids.Select(id => (T)_context.Session.GetObjectFromId((OID)id));
+                return (T)_context.Session.GetObjectFromId((OID)id);
             }
-
-            var primaryKey = _metaDataProvider.GetPrimaryKey<T>().First();
-
-            var parameter = Expression.Parameter(typeof(T));
-            var body = Expression.Convert(Expression.PropertyOrField(parameter, primaryKey), typeof(ID));
-            var idSelector = Expression.Lambda<Func<T, ID>>(body, parameter);
-
-            var predicate = idSelector.BuildOrExpression(ids);
-
-            return All<T>().Where(predicate).AsEnumerable();
+            
+            var predicate = _metaDataProvider.BuildPrimaryKeyExpression<T, ID>(id);
+            return All<T>().FirstOrDefault(predicate);
         }
-
+        
         public T Find<T>(ISpecification<T> criteria) where T : class
         {
             return FindAll(criteria).FirstOrDefault();
@@ -198,6 +187,131 @@ namespace Yarn.Data.InMemoryProvider
             return values;
         }
 
+        #endregion
+
+        #region ILoadServiceProvider Members
+
+        ILoadService<T> ILoadServiceProvider.Load<T>() 
+        {
+            return new LoadService<T>(this);
+        }
+        
+        private class LoadService<T> : ILoadService<T>
+            where T : class
+        {
+            private readonly Repository _repository;
+
+            public LoadService(Repository repository)
+            {
+                _repository = repository;
+            }
+
+            public ILoadService<T> Include<TProperty>(Expression<Func<T, TProperty>> path)
+                where TProperty : class
+            {
+                return this;
+            }
+
+            public IQueryable<T> All()
+            {
+                return _repository.All<T>();
+            }
+
+            public void Dispose()
+            {
+                
+            }
+
+            public T Find(ISpecification<T> criteria)
+            {
+                return _repository.Find(criteria);
+            }
+
+            public T Find(Expression<Func<T, bool>> criteria)
+            {
+                return _repository.Find(criteria);
+            }
+
+            public IEnumerable<T> FindAll(ISpecification<T> criteria, int offset = 0, int limit = 0, Sorting<T> orderBy = null)
+            {
+                return _repository.FindAll(criteria, offset, limit, orderBy);
+            }
+
+            public IEnumerable<T> FindAll(Expression<Func<T, bool>> criteria, int offset = 0, int limit = 0, Sorting<T> orderBy = null)
+            {
+                return _repository.FindAll(criteria, offset, limit, orderBy);
+            }
+            
+            public T Update(T entity)
+            {
+                return _repository.Update(entity);
+            }
+        }
+
+        #endregion
+
+        #region IBulkOperationsProvider Members
+
+        IEnumerable<T> IBulkOperationsProvider.GetById<T, ID>(IEnumerable<ID> ids)
+        {
+            if (typeof(OID).IsAssignableFrom(typeof(ID)))
+            {
+                return ids.Select(id => (T)_context.Session.GetObjectFromId((OID)id));
+            }
+
+            var primaryKey = _metaDataProvider.GetPrimaryKey<T>().First();
+
+            var parameter = Expression.Parameter(typeof(T));
+            var body = Expression.Convert(Expression.PropertyOrField(parameter, primaryKey), typeof(ID));
+            var idSelector = Expression.Lambda<Func<T, ID>>(body, parameter);
+
+            var predicate = idSelector.BuildOrExpression(ids.ToList());
+
+            return All<T>().Where(predicate).AsEnumerable();
+        }
+
+        public long Insert<T>(IEnumerable<T> entities) where T : class
+        {
+            var count = entities.Select(entity => _context.Session.Store(entity)).LongCount(id => id != null && id.ObjectId > 0);
+            _context.SaveChanges();
+            return count;
+        }
+
+        public long Update<T>(Expression<Func<T, bool>> criteria, Expression<Func<T, T>> update) where T : class
+        {
+            throw new NotImplementedException();
+        }
+
+        public long Update<T>(params BulkUpdateOperation<T>[] bulkOperations) where T : class
+        {
+            throw new NotImplementedException();
+        }
+
+        public long Delete<T>(IEnumerable<T> entities) where T : class
+        {
+            var count = entities.Select(entity => _context.Session.Delete(entity)).LongCount(id => id != null && id.ObjectId > 0);
+            _context.SaveChanges();
+            return count;
+        }
+
+        public long Delete<T, ID>(IEnumerable<ID> ids) where T : class
+        {
+            var entities = ((IBulkOperationsProvider)this).GetById<T, ID>(ids);
+            return Delete(entities);
+        }
+
+        public long Delete<T>(params Expression<Func<T, bool>>[] criteria) where T : class
+        {
+            var total = criteria.Sum(predicate => _context.Session.AsQueryable<T>().Where(predicate).Select(entity => _context.Session.Delete(entity)).LongCount(id => id != null && id.ObjectId > 0));
+            _context.SaveChanges();
+            return total;
+        }
+
+        public long Delete<T>(params ISpecification<T>[] criteria) where T : class
+        {
+            return Delete(criteria.Select(c => ((Specification<T>)c).Predicate).ToArray());
+        }
+        
         #endregion
     }
 }

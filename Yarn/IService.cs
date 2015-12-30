@@ -7,10 +7,20 @@ using System.Threading.Tasks;
 
 namespace Yarn
 {
-    public interface IService<T> : IDisposable
+    public interface IService<out T> : IDisposable
        where T : class
     {
         // LINQ methods
         IQueryable<T> All();
+    }
+
+    public interface ISimpleService<T, in ID> : IService<T>
+       where T : class
+    {
+        T GetById(ID id);
+
+        bool Save(T entity);
+        void Remove(T entity);
+        T Remove(ID id);
     }
 }

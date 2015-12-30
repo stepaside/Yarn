@@ -41,18 +41,16 @@ namespace Yarn.Reflection
 
         public static object Get(Type targetType, object target, string propertyName)
         {
-            if (target != null)
-            {
-                var propertyKey = Tuple.Create(targetType, propertyName);
-                var getMethod = Getters.GetOrAdd(propertyKey, GenerateGetter);
-                return getMethod(target);
-            }
-            return null;
+            if (target == null) return null;
+            var propertyKey = Tuple.Create(targetType, propertyName);
+            var getMethod = Getters.GetOrAdd(propertyKey, GenerateGetter);
+            return getMethod != null ? getMethod(target) : null;
         }
 
         private static GenericGetter GenerateGetter(Tuple<Type, string> key)
         {
-            return CreateGetMethod(key.Item1.GetProperty(key.Item2), key.Item1);
+            var property = key.Item1.GetProperty(key.Item2);
+            return property == null ? null : CreateGetMethod(property, key.Item1);
         }
 
         #endregion
@@ -71,17 +69,19 @@ namespace Yarn.Reflection
 
         public static void Set(Type targetType, object target, string propertyName, object value)
         {
-            if (target != null)
+            if (target == null) return;
+            var propertyKey = Tuple.Create(targetType, propertyName);
+            var setMethod = Setters.GetOrAdd(propertyKey, GenerateSetter);
+            if (setMethod != null)
             {
-                var propertyKey = Tuple.Create(targetType, propertyName);
-                var setMethod = Setters.GetOrAdd(propertyKey, GenerateSetter);
                 setMethod(target, value);
             }
         }
 
         private static GenericSetter GenerateSetter(Tuple<Type, string> key)
         {
-            return CreateSetMethod(key.Item1.GetProperty(key.Item2), key.Item1);
+            var property = key.Item1.GetProperty(key.Item2);
+            return property == null ? null : CreateSetMethod(property, key.Item1);
         }
 
         #endregion
