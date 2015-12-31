@@ -1,9 +1,5 @@
-﻿using StructureMap;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using System;
+using StructureMap;
 
 namespace Yarn.IoC.StructureMap
 {
@@ -50,7 +46,7 @@ namespace Yarn.IoC.StructureMap
 
         public void Register<TAbstract, TConcrete>(string instanceName = null)
             where TAbstract : class
-            where TConcrete : class, TAbstract, new()
+            where TConcrete : class, TAbstract
         {
             if (instanceName == null)
             {
