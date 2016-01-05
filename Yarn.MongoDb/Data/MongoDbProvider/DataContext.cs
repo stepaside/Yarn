@@ -84,7 +84,7 @@ namespace Yarn.Data.MongoDbProvider
                 builder = builder.Descending(descending.ToArray());
             }
 
-            _database.GetCollection<T>(typeof(T).Name).EnsureIndex(builder, 
+            _database.GetCollection<T>(typeof(T).Name).CreateIndex(builder, 
                                                                     IndexOptions.SetBackground(background)
                                                                                 .SetTimeToLive(ttl)
                                                                                 .SetUnique(unique)

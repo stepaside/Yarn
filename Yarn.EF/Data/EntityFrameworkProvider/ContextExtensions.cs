@@ -11,7 +11,6 @@ using System.Linq;
 using System.Reflection;
 using System.Text;
 using System.Text.RegularExpressions;
-using System.Data.Entity.Core.Metadata.Edm;
 
 namespace Yarn.Data.EntityFrameworkProvider
 {
