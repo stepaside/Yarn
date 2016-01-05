@@ -36,7 +36,7 @@
       <HintPath>..\packages\log4net.2.0.3\lib\net40-full\log4net.dll</HintPath>
     </Reference>
     <Reference Include="Nemo, Version=2.2.0.0, Culture=neutral, processorArchitecture=MSIL">
-      <HintPath>..\packages\Nemo.2.3.0\lib\net40\Nemo.dll</HintPath>
+      <HintPath>..\packages\Nemo.2.3.1\lib\net40\Nemo.dll</HintPath>
       <Private>True</Private>
     </Reference>
     <Reference Include="System" />
