@@ -13,7 +13,7 @@
     <tags>Yarn StructureMap</tags>
     <dependencies>
       <dependency id="Yarn" version="[0.9.7]" />
-      <dependency id="structuremap" version="3.1.6.186" />
+      <dependency id="structuremap" version="4.0.1.318" />
     </dependencies>
   </metadata>
   <files>

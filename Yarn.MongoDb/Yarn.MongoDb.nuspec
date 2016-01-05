@@ -14,7 +14,7 @@
     <dependencies>
       <dependency id="Yarn" version="[0.9.7]" />
       <dependency id="Inflector" version="1.0.0.0" />
-      <dependency id="mongocsharpdriver" version="2.1.1" />
+      <dependency id="mongocsharpdriver" version="2.2.0" />
     </dependencies>
   </metadata>
   <files>
