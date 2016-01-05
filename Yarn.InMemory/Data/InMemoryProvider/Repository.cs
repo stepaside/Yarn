@@ -19,6 +19,7 @@ namespace Yarn.Data.InMemoryProvider
         public Repository(IMetaDataProvider metaDataProvider = null)
         {
             _metaDataProvider = metaDataProvider ?? this;
+            _context = new DataContext();
         }
 
         public T GetById<T, ID>(ID id) where T : class
