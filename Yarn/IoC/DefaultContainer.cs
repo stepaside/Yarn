@@ -1,8 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace Yarn.IoC
 {
@@ -17,9 +14,9 @@ namespace Yarn.IoC
 
         public void Register<TAbstract, TConcrete>(string instanceName = null)
             where TAbstract : class
-            where TConcrete : class, TAbstract, new()
+            where TConcrete : class, TAbstract
         {
-            Func<TAbstract> createInstance = () => new TConcrete();
+            Func<TAbstract> createInstance = Activator.CreateInstance<TConcrete>;
             Register(createInstance, instanceName);
         }
 
