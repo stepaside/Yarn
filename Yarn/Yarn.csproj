@@ -73,6 +73,13 @@
     <Compile Include="Adapters\RepositoryAdapter.cs" />
     <Compile Include="Adapters\SoftDeleteRepository.cs" />
     <Compile Include="BulkUpdateOperation.cs" />
+    <Compile Include="EventSourcing\Aggregate.cs" />
+    <Compile Include="EventSourcing\ConventionEventRouter.cs" />
+    <Compile Include="EventSourcing\DefaultAggregateFactory.cs" />
+    <Compile Include="EventSourcing\IAggregate.cs" />
+    <Compile Include="EventSourcing\IAggregateFactory.cs" />
+    <Compile Include="EventSourcing\IEventRepository.cs" />
+    <Compile Include="EventSourcing\IEventRouter.cs" />
     <Compile Include="Extensions\CascadeExtensions.cs" />
     <Compile Include="Extensions\RepositoryExtensions.cs" />
     <Compile Include="IAuditable.cs" />

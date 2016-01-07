@@ -7,7 +7,7 @@
     <ProjectGuid>{2E57820D-02CC-4325-90C0-F0720BB5C100}</ProjectGuid>
     <OutputType>Library</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
-    <RootNamespace>Yarn.Elasticsearch</RootNamespace>
+    <RootNamespace>Yarn</RootNamespace>
     <AssemblyName>Yarn.Elasticsearch</AssemblyName>
     <TargetFrameworkVersion>v4.5</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
