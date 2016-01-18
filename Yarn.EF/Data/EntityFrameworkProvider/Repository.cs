@@ -866,7 +866,7 @@ namespace Yarn.Data.EntityFrameworkProvider
             return Delete(criteria.Select(spec => ((Specification<T>)spec).Predicate).ToArray());
         }
 
-        protected static Dictionary<string, string> ExtractColumnMappings(Type type, DbContext context)
+        protected static Dictionary<string, string> ExtractColumnMappings(Type type, DbContext context, Stack<Type> visited = null)
         {
             const BindingFlags bindings = BindingFlags.Public | BindingFlags.Instance | BindingFlags.NonPublic;
 
@@ -894,8 +894,15 @@ namespace Yarn.Data.EntityFrameworkProvider
                     var edmMember = mapping.GetType().GetProperty("EdmMember", bindings);
                     result[property.Name] = ((EdmMember)edmMember.GetValue(mapping)).Name;
                 }
-                
-                var complexProperties = t.GetProperties().Where(p => p.PropertyType.IsClass
+
+                if (visited == null)
+                {
+                    visited = new Stack<Type>();
+                }
+                visited.Push(type);
+
+                var complexProperties = t.GetProperties().Where(p => !visited.Contains(p.PropertyType)
+                                            && p.PropertyType.IsClass
                                             && p.PropertyType != typeof(string)
                                             && !typeof(IEnumerable).IsAssignableFrom(p.PropertyType));
 
@@ -904,7 +911,7 @@ namespace Yarn.Data.EntityFrameworkProvider
                     var primaryKey = MetaDataProvider.GetPrimaryKeyFromTypeHierarchy(property.PropertyType, context);
                     if (primaryKey.Length <= 0) continue;
 
-                    var mappings = ExtractColumnMappings(property.PropertyType, context);
+                    var mappings = ExtractColumnMappings(property.PropertyType, context, visited);
                     if (mappings == null) continue;
 
                     for (var i = 0; i < primaryKey.Length; i++)
@@ -921,6 +928,8 @@ namespace Yarn.Data.EntityFrameworkProvider
                         }
                     }
                 }
+
+                visited.Pop();
 
                 return result;
 
