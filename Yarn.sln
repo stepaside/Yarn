@@ -13,6 +13,7 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution 
 		Yarn.Cache\Yarn.Cache.nuspec = Yarn.Cache\Yarn.Cache.nuspec
 		Yarn.EF\Yarn.EF.nuspec = Yarn.EF\Yarn.EF.nuspec
 		Yarn.Elasticsearch\Yarn.Elasticsearch.nuspec = Yarn.Elasticsearch\Yarn.Elasticsearch.nuspec
+		Yarn.GetEventStore\Yarn.GetEventStore.nuspec = Yarn.GetEventStore\Yarn.GetEventStore.nuspec
 		Yarn.InMemory\Yarn.InMemory.nuspec = Yarn.InMemory\Yarn.InMemory.nuspec
 		Yarn.MongoDb\Yarn.MongoDb.nuspec = Yarn.MongoDb\Yarn.MongoDb.nuspec
 		Yarn.Nemo\Yarn.Nemo.nuspec = Yarn.Nemo\Yarn.Nemo.nuspec

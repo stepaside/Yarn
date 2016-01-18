@@ -1,0 +1,23 @@
+﻿<?xml version="1.0"?>
+<package>
+  <metadata>
+    <id>Yarn.GetEventStore</id>
+    <version>0.9.7</version>
+    <title>Yarn.GetEventStore</title>
+    <authors>Max Stepanskiy</authors>
+    <owners>Stepaside, Inc.</owners>
+    <projectUrl>https://github.com/stepaside/Yarn</projectUrl>
+    <requireLicenseAcceptance>false</requireLicenseAcceptance>
+    <description>Yarn GetEventStore Provider</description>
+    <copyright>Copyright © Max Stepanskiy 2012-2015</copyright>
+    <tags>GES GetEventStore Repository</tags>
+    <dependencies>
+      <dependency id="Yarn" version="[0.9.7]" />
+      <dependency id="EventStore.Client" version="3.4.0" />
+	  <dependency id="Newtonsoft.Json" version="7.0.1" />
+    </dependencies>
+  </metadata>
+  <files>
+    <file src="Yarn.GetEventStore.dll" target="lib\net40" />
+  </files>
+</package>
