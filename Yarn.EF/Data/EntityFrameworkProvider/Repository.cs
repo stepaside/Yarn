@@ -181,6 +181,8 @@ namespace Yarn.Data.EntityFrameworkProvider
             return entry.Entity;
         }
 
+        private readonly ConcurrentDictionary<Type, Delegate> _pkCache = new ConcurrentDictionary<Type, Delegate>();
+
         public void Attach<T>(T entity) where T : class
         {
             // TODO: revise attach to be smarter (e.g., support for object graphs)
@@ -194,9 +196,8 @@ namespace Yarn.Data.EntityFrameworkProvider
             }
             else if (entry.State == EntityState.Detached)
             {
-                var comparer = new EntityEqualityComparer<T>(this);
-                var hash = comparer.GetHashCode(entity);
-                var attachedEntity = dbSet.Local.FirstOrDefault(e => comparer.GetHashCode(e) == hash);
+                var findByPrimaryKey = (Func<T, bool>)_pkCache.GetOrAdd(typeof(T), t => this.BuildPrimaryKeyExpression(entity).Compile());
+                var attachedEntity = dbSet.Local.FirstOrDefault(findByPrimaryKey);
                 if (attachedEntity != null)
                 {
                     entry.State = EntityState.Unchanged;
