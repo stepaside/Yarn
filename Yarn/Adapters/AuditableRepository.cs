@@ -61,6 +61,7 @@ namespace Yarn.Adapters
 
             auditable.AuditId = Guid.NewGuid();
             auditable.UpdateDate = DateTime.UtcNow;
+            auditable.UpdateOffset = DateTimeOffset.UtcNow;
             auditable.UpdatedBy = _getOwnerIdentity();
 
             auditable.Cascade((root, item) =>
@@ -73,6 +74,7 @@ namespace Yarn.Adapters
                 else
                 {
                     item.UpdateDate = root.UpdateDate;
+                    item.UpdateOffset = root.UpdateOffset;
                     item.UpdatedBy = root.UpdatedBy;
                 }
                 item.AuditId = root.AuditId;

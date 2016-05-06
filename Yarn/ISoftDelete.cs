@@ -10,6 +10,7 @@ namespace Yarn
     {
         bool IsDeleted { get; set; }
         DateTime? UpdateDate { get; set; }
+        DateTimeOffset? UpdateOffset { get; set; }
         string UpdatedBy { get; set; }
     }
 }

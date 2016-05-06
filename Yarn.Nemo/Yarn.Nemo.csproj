@@ -33,7 +33,7 @@
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="Nemo, Version=2.2.0.0, Culture=neutral, processorArchitecture=MSIL">
-      <HintPath>..\packages\Nemo.2.3.3\lib\net40\Nemo.dll</HintPath>
+      <HintPath>..\packages\Nemo.2.3.4\lib\net40\Nemo.dll</HintPath>
       <Private>True</Private>
     </Reference>
     <Reference Include="System" />

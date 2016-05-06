@@ -5,7 +5,6 @@ using System.Text;
 using System.Threading.Tasks;
 using ElasticLinq;
 using Elasticsearch.Net;
-using Elasticsearch.Net.Connection;
 using Nest;
 
 namespace Yarn.Elasticsearch.Data.ElasticsearchProvider

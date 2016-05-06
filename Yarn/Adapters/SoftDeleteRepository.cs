@@ -85,11 +85,12 @@ namespace Yarn.Adapters
             }
             deleted.IsDeleted = true;
             deleted.UpdateDate = DateTime.UtcNow;
+            deleted.UpdateOffset = DateTimeOffset.UtcNow;
             if (_principal != null)
             {
                 deleted.UpdatedBy = _principal.Identity.Name;
             }
-            return base.Update(entity);
+            return Update(entity);
         }
 
         public override T Remove<T, ID>(ID id)
@@ -99,13 +100,15 @@ namespace Yarn.Adapters
                 return base.Remove<T, ID>(id);
             }
             var entity = base.GetById<T, ID>(id);
-            ((ISoftDelete)entity).IsDeleted = true;
-            ((ISoftDelete)entity).UpdateDate = DateTime.UtcNow;
+            var deleted = (ISoftDelete)entity;
+            deleted.IsDeleted = true;
+            deleted.UpdateDate = DateTime.UtcNow;
+            deleted.UpdateOffset = DateTimeOffset.UtcNow;
             if (_principal != null)
             {
-                ((ISoftDelete)entity).UpdatedBy = _principal.Identity.Name;
+                deleted.UpdatedBy = _principal.Identity.Name;
             }
-            return base.Update(entity);
+            return Update(entity);
         }
 
         public override long Count<T>()

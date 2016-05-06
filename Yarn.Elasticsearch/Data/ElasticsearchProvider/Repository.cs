@@ -1,4 +1,5 @@
 ﻿using System.Linq;
+using Nest;
 using Yarn.Reflection;
 using Yarn.Specification;
 
@@ -15,7 +16,7 @@ namespace Yarn.Elasticsearch.Data.ElasticsearchProvider
 
         public T GetById<T, ID>(ID id) where T : class
         {
-            var response = _context.Session.Client.Get<T>(s => s.Id(id + ""));
+            var response = _context.Session.Client.Get(DocumentPath<T>.Id(new Id(id + "")));
             return response.Found ? response.Source : null;
         }
 
@@ -65,19 +66,19 @@ namespace Yarn.Elasticsearch.Data.ElasticsearchProvider
 
         public T Remove<T>(T entity) where T : class
         {
-            var response = _context.Session.Client.Delete<T>(d => d.IdFrom(entity));
+            var response = _context.Session.Client.Delete(new DocumentPath<T>(entity));
             return response.Found ? entity : null;
         }
 
         public T Remove<T, ID>(ID id) where T : class
         {
-            _context.Session.Client.Delete<T>(d => d.Id(id + ""));
+            _context.Session.Client.Delete(DocumentPath<T>.Id(new Id(id + "")));
             return null;
         }
 
         public T Update<T>(T entity) where T : class
         {
-            var response = _context.Session.Client.Update<T>(u => u.Doc(entity));
+            var response = _context.Session.Client.Update<T>(new UpdateRequest<T, T>(new DocumentPath<T>(entity)));
             return response.IsValid ? entity : null;
         }
 
@@ -123,8 +124,8 @@ namespace Yarn.Elasticsearch.Data.ElasticsearchProvider
 
         string[] IMetaDataProvider.GetPrimaryKey<T>()
         {
-            var response = _context.Session.Client.GetMapping<T>();
-            return response.IsValid && response.Mapping != null && response.Mapping.IdFieldMappingDescriptor != null ? new[] { response.Mapping.IdFieldMappingDescriptor.Path } : new string[] { };
+            var idPropertyName = _context.Session.Client.Infer.Id((T)Activator.CreateDelegate(typeof(T))());
+            return idPropertyName != null ? new string[] { idPropertyName } : new string[] { };
         }
 
         object[] IMetaDataProvider.GetPrimaryKeyValue<T>(T entity)
