@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 
 namespace Yarn.IoC
 {
@@ -20,5 +21,8 @@ namespace Yarn.IoC
 
         TAbstract Resolve<TAbstract>(string instanceName = null)
            where TAbstract : class;
+
+        IEnumerable<TAbstract> ResolveAll<TAbstract>()
+            where TAbstract : class;
     }
 }
