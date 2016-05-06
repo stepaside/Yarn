@@ -9,9 +9,10 @@ using System.Threading.Tasks;
 
 namespace Yarn
 {
-    public interface ILoadService<T> : IEntityLoadService<T>
+    public interface ILoadService<T> : IDisposable
         where T : class
     {
+        ILoadService<T> Include<TProperty>(Expression<Func<T, TProperty>> path) where TProperty : class;
         IQueryable<T> All();
 
         T Update(T entity);
