@@ -32,7 +32,7 @@ namespace Yarn.Data.MongoDbProvider
 
         }
         
-        public T GetById<T, ID>(ID id) where T : class
+        public T GetById<T, TKey>(TKey id) where T : class
         {
             return GetCollection<T>().FindOneByIdAs<T>(BsonValue.Create(id));
         }
@@ -81,9 +81,9 @@ namespace Yarn.Data.MongoDbProvider
             return null;
         }
 
-        public T Remove<T, ID>(ID id) where T : class
+        public T Remove<T, TKey>(TKey id) where T : class
         {
-            var entity = GetById<T, ID>(id);
+            var entity = GetById<T, TKey>(id);
             var result = GetCollection<T>().Remove(Query.EQ("_id", BsonValue.Create(id)));
             return result.DocumentsAffected > 0 ? entity : null;
         }
@@ -302,7 +302,7 @@ namespace Yarn.Data.MongoDbProvider
 
         #region IBulkOperationsProvider Members
 
-        public IEnumerable<T> GetById<T, ID>(IEnumerable<ID> ids) where T : class
+        public IEnumerable<T> GetById<T, TKey>(IEnumerable<TKey> ids) where T : class
         {
             var primaryKey = ((IMetaDataProvider)this).GetPrimaryKey<T>().First();
             var query = Query.In(primaryKey, new BsonArray(ids));
@@ -374,7 +374,7 @@ namespace Yarn.Data.MongoDbProvider
             return Delete<T, object>(ids);
         }
 
-        public long Delete<T, ID>(IEnumerable<ID> ids) where T : class
+        public long Delete<T, TKey>(IEnumerable<TKey> ids) where T : class
         {
             var primaryKey = ((IMetaDataProvider)this).GetPrimaryKey<T>().First();
             var query = Query.In(primaryKey, new BsonArray(ids));

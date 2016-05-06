@@ -33,7 +33,7 @@ namespace Yarn.Data.RavenDbProvider
             _queryCustomization = queryCustomization;
         }
 
-        public T GetById<T, ID>(ID id) where T : class
+        public T GetById<T, TKey>(TKey id) where T : class
         {
             return _context.Session.Load<T>(id.ToString());
         }
@@ -85,9 +85,9 @@ namespace Yarn.Data.RavenDbProvider
             return entity;
         }
 
-        public T Remove<T, ID>(ID id) where T : class
+        public T Remove<T, TKey>(TKey id) where T : class
         {
-            var entity = GetById<T, ID>(id);
+            var entity = GetById<T, TKey>(id);
             if (entity != null)
             {
                 _context.Session.Delete(entity);
@@ -220,7 +220,7 @@ namespace Yarn.Data.RavenDbProvider
         
         #endregion
 
-        public IEnumerable<T> GetById<T, ID>(IEnumerable<ID> ids) where T : class
+        public IEnumerable<T> GetById<T, TKey>(IEnumerable<TKey> ids) where T : class
         {
             return _context.Session.Load<T>(ids.Select(i => i.ToString()));
         }
@@ -254,7 +254,7 @@ namespace Yarn.Data.RavenDbProvider
             throw new NotImplementedException();
         }
 
-        public long Delete<T, ID>(IEnumerable<ID> ids) where T : class
+        public long Delete<T, TKey>(IEnumerable<TKey> ids) where T : class
         {
             throw new NotImplementedException();
         }

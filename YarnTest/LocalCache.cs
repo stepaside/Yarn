@@ -12,7 +12,7 @@ namespace YarnTest
     {
         private MemoryCache _cache = new MemoryCache("LocalCache");
         private CacheItemPolicy _policy;
-        private static readonly object _locker = new object();
+        private static readonly object Locker = new object();
 
         public LocalCache() : this(10) { }
 
@@ -66,7 +66,7 @@ namespace YarnTest
 
         public uint Increment(string key, uint initial = 1, uint delta = 1)
         {
-            lock (_locker)
+            lock (Locker)
             {
                 uint current;
                 if (!Get(key, out current))

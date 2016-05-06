@@ -10,7 +10,7 @@ namespace Yarn
     public interface IRepository : IDisposable
     {
         // Retrieve methods
-        T GetById<T, ID>(ID id) where T : class;
+        T GetById<T, TKey>(TKey id) where T : class;
         T Find<T>(ISpecification<T> criteria) where T : class;
         T Find<T>(Expression<Func<T, bool>> criteria) where T : class;
         IEnumerable<T> FindAll<T>(ISpecification<T> criteria, int offset = 0, int limit = 0, Sorting<T> orderBy = null) where T : class;
@@ -22,7 +22,7 @@ namespace Yarn
         // DML methods
         T Add<T>(T entity) where T : class;
         T Remove<T>(T entity) where T : class;
-        T Remove<T, ID>(ID id) where T : class;
+        T Remove<T, TKey>(TKey id) where T : class;
         T Update<T>(T entity) where T : class;
                 
         // Count methods

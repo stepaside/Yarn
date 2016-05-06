@@ -38,7 +38,7 @@ namespace Yarn.Data.NHibernateProvider
         where TDialect : Dialect
     {
         private static ConcurrentDictionary<string, Tuple<ISessionFactory, NHibernate.Cfg.Configuration>> _sessionFactories = new ConcurrentDictionary<string, Tuple<ISessionFactory, NHibernate.Cfg.Configuration>>();
-        protected PersistenceConfiguration<TThisConfiguration, TConnectionString> _configuration = null;
+        protected PersistenceConfiguration<TThisConfiguration, TConnectionString> Configuration = null;
         private readonly string _prefix;
         private readonly string _nameOrConnectionString;
         private readonly string _assemblyNameOrLocation;
@@ -53,7 +53,7 @@ namespace Yarn.Data.NHibernateProvider
                                         string assemblyNameOrLocation = null,
                                         Assembly configurationAssembly = null)
         {
-            _configuration = configuration;
+            Configuration = configuration;
             _prefix = prefix;
             _nameOrConnectionString = nameOrConnectionString;
             _configurationAssembly = configurationAssembly;
@@ -101,7 +101,7 @@ namespace Yarn.Data.NHibernateProvider
             NHibernate.Cfg.Configuration config = null;
 
             var sessionFactory = Fluently.Configure()
-                .Database(_configuration.Dialect<TDialect>().ConnectionString(_connectionString))
+                .Database(Configuration.Dialect<TDialect>().ConnectionString(_connectionString))
                 //.Mappings(m => m.AutoMappings.Add(AutoMap.Assembly(assembly)))
                 .Mappings(m => m.FluentMappings.AddFromAssembly(configurationAssembly))
                 .ExposeConfiguration(c => config = c)

@@ -8,7 +8,7 @@ namespace Yarn.Data.NHibernateProvider
 {
     public static class NHibernateExtensions
     {
-        public static bool Delete<T, ID>(this ISession session, ID id)
+        public static bool Delete<T, TKey>(this ISession session, TKey id)
         {
             var queryString = string.Format("delete {0} where id = :id",
                                             typeof(T));

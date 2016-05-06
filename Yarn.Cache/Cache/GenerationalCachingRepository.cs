@@ -50,7 +50,7 @@ namespace Yarn.Cache
 
         #region IRepository Members
 
-        public T GetById<T, ID>(ID id) where T : class
+        public T GetById<T, TKey>(TKey id) where T : class
         {
             var key = CacheKey<T>("GetById", new[] { new { Name = "id", Value = ConvertId(id) } }, false);
             T item;
@@ -59,16 +59,16 @@ namespace Yarn.Cache
                 return item;
             }
 
-            item = _repository.GetById<T, ID>(id);
+            item = _repository.GetById<T, TKey>(id);
             SetWriteThroughCache(key, item);
 
             return item;
         }
 
-        public IEnumerable<T> GetById<T, ID>(IList<ID> ids) where T : class
+        public IEnumerable<T> GetById<T, TKey>(IList<TKey> ids) where T : class
         {
             var items = new List<T>();
-            var missingIds = new Dictionary<string, ID>();
+            var missingIds = new Dictionary<string, TKey>();
             foreach (var id in ids)
             {
                 var key = CacheKey<T>("GetById", new[] { new { Name = "id", Value = ConvertId(id) } }, false);
@@ -93,7 +93,7 @@ namespace Yarn.Cache
             {
                 foreach (var missingId in missingIds)
                 {
-                    var item = _repository.GetById<T, ID>(missingId.Value);
+                    var item = _repository.GetById<T, TKey>(missingId.Value);
                     if (item != null)
                     {
                         items.Add(item);
@@ -193,11 +193,11 @@ namespace Yarn.Cache
             }
         }
 
-        public T Remove<T, ID>(ID id) where T : class
+        public T Remove<T, TKey>(TKey id) where T : class
         {
             try
             {
-                return _repository.Remove<T, ID>(id);
+                return _repository.Remove<T, TKey>(id);
             }
             finally
             {
@@ -384,7 +384,7 @@ namespace Yarn.Cache
             _delayedCache.Clear();
         }
 
-        private static string ConvertId<ID>(ID id)
+        private static string ConvertId<TKey>(TKey id)
         {
             var list = id as object[];
             return list != null ? string.Join("|", list.Select(i => i.ToString())) : id.ToString();

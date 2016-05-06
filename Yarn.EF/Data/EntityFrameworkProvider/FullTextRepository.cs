@@ -24,7 +24,7 @@ namespace Yarn.Data.EntityFrameworkProvider
             {
                 if (_fullTextProvider == null)
                 {
-                    _fullTextProvider = ObjectContainer.Current.Resolve<IFullTextProvider>(_prefix);
+                    _fullTextProvider = ObjectContainer.Current.Resolve<IFullTextProvider>(Prefix);
                     _fullTextProvider.DataContext = this.DataContext;
                 }
                 return _fullTextProvider;

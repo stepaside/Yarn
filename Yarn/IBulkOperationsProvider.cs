@@ -9,7 +9,7 @@ namespace Yarn
 {
     public interface IBulkOperationsProvider
     {
-        IEnumerable<T> GetById<T, ID>(IEnumerable<ID> ids) where T : class;
+        IEnumerable<T> GetById<T, TKey>(IEnumerable<TKey> ids) where T : class;
 
         long Insert<T>(IEnumerable<T> entities) where T : class;
 
@@ -19,7 +19,7 @@ namespace Yarn
 
         long Delete<T>(IEnumerable<T> entities) where T : class;
 
-        long Delete<T, ID>(IEnumerable<ID> ids) where T : class;
+        long Delete<T, TKey>(IEnumerable<TKey> ids) where T : class;
 
         long Delete<T>(params Expression<Func<T, bool>>[] criteria) where T : class;
 

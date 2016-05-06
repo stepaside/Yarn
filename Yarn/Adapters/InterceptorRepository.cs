@@ -21,9 +21,9 @@ namespace Yarn.Adapters
             _interceptorFactory = interceptorFactory;
         }
 
-        public override T GetById<T, ID>(ID id)
+        public override T GetById<T, TKey>(TKey id)
         {
-            Func<ID, T> f = base.GetById<T, ID>;
+            Func<TKey, T> f = base.GetById<T, TKey>;
             return Intercept(() => f(id), f.Method, new object[] { id });
         }
         
@@ -69,9 +69,9 @@ namespace Yarn.Adapters
             return Intercept(() => f(entity), f.Method, new object[] { entity });
         }
 
-        public override T Remove<T, ID>(ID id)
+        public override T Remove<T, TKey>(TKey id)
         {
-            Func<ID, T> f = base.Remove<T, ID>;
+            Func<TKey, T> f = base.Remove<T, TKey>;
             return Intercept(() => f(id), f.Method, new object[] { id });
         }
 

@@ -31,12 +31,12 @@ namespace Yarn.Data.NemoProvider
             _context = new DataContext(configuration != null ? configuration.DefaultConnectionName : connectionName, connectionString, transaction);
         }
 
-        public T GetById<T, ID>(ID id) where T : class
+        public T GetById<T, TKey>(TKey id) where T : class
         {
             var property = GetPrimaryKey<T>().First();
             return _useStoredProcedures
                 ? ObjectFactory.Retrieve<T>("GetById", parameters: new[] { new Param { Name = property, Value = id } }, connection: Connection).FirstOrDefault() 
-                : ObjectFactory.Select(this.BuildPrimaryKeyExpression<T, ID>(id), connection: Connection).FirstOrDefault();
+                : ObjectFactory.Select(this.BuildPrimaryKeyExpression<T, TKey>(id), connection: Connection).FirstOrDefault();
         }
 
         public T Find<T>(ISpecification<T> criteria) where T : class
@@ -79,9 +79,9 @@ namespace Yarn.Data.NemoProvider
             return entity.Delete() ? entity : null;
         }
 
-        public T Remove<T, ID>(ID id) where T : class
+        public T Remove<T, TKey>(TKey id) where T : class
         {
-            var entity = GetById<T, ID>(id);
+            var entity = GetById<T, TKey>(id);
             return Remove(entity);
         }
 
@@ -157,11 +157,11 @@ namespace Yarn.Data.NemoProvider
             private readonly Repository _repository;
             private readonly List<Tuple<Type[], LambdaExpression[]>> _types;
 
-            private readonly static MethodInfo _selectMethod = typeof(ObjectFactory).GetMethods().First(m => m.Name == "Select" && m.GetGenericArguments().Length == 1);
-            private readonly static MethodInfo _includeMethod2 = typeof(ObjectFactory).GetMethods().First(m => m.Name == "Include" && m.GetGenericArguments().Length == 2);
-            private readonly static MethodInfo _includeMethod3 = typeof(ObjectFactory).GetMethods().First(m => m.Name == "Include" && m.GetGenericArguments().Length == 3);
-            private readonly static MethodInfo _includeMethod4 = typeof(ObjectFactory).GetMethods().First(m => m.Name == "Include" && m.GetGenericArguments().Length == 4);
-            private readonly static MethodInfo _includeMethod5 = typeof(ObjectFactory).GetMethods().First(m => m.Name == "Include" && m.GetGenericArguments().Length == 5);
+            private readonly static MethodInfo SelectMethod = typeof(ObjectFactory).GetMethods().First(m => m.Name == "Select" && m.GetGenericArguments().Length == 1);
+            private readonly static MethodInfo IncludeMethod2 = typeof(ObjectFactory).GetMethods().First(m => m.Name == "Include" && m.GetGenericArguments().Length == 2);
+            private readonly static MethodInfo IncludeMethod3 = typeof(ObjectFactory).GetMethods().First(m => m.Name == "Include" && m.GetGenericArguments().Length == 3);
+            private readonly static MethodInfo IncludeMethod4 = typeof(ObjectFactory).GetMethods().First(m => m.Name == "Include" && m.GetGenericArguments().Length == 4);
+            private readonly static MethodInfo IncludeMethod5 = typeof(ObjectFactory).GetMethods().First(m => m.Name == "Include" && m.GetGenericArguments().Length == 5);
 
             public LoadService(Repository repository)
             {
@@ -289,16 +289,16 @@ namespace Yarn.Data.NemoProvider
                         switch (types.Item1.Length)
                         {
                             case 2:
-                                method = _includeMethod2;
+                                method = IncludeMethod2;
                                 break;
                             case 3:
-                                method = _includeMethod3;
+                                method = IncludeMethod3;
                                 break;
                             case 4:
-                                method = _includeMethod4;
+                                method = IncludeMethod4;
                                 break;
                             case 5:
-                                method = _includeMethod5;
+                                method = IncludeMethod5;
                                 break;
                         }
 
@@ -354,16 +354,16 @@ namespace Yarn.Data.NemoProvider
                         switch (types.Item1.Length)
                         {
                             case 2:
-                                method = _includeMethod2;
+                                method = IncludeMethod2;
                                 break;
                             case 3:
-                                method = _includeMethod3;
+                                method = IncludeMethod3;
                                 break;
                             case 4:
-                                method = _includeMethod4;
+                                method = IncludeMethod4;
                                 break;
                             case 5:
-                                method = _includeMethod5;
+                                method = IncludeMethod5;
                                 break;
                         }
 

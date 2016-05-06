@@ -52,7 +52,7 @@ namespace Yarn.Adapters
             }
         }
 
-        public override T GetById<T, ID>(ID id)
+        public override T GetById<T, TKey>(TKey id)
         {
             try
             {
@@ -60,7 +60,7 @@ namespace Yarn.Adapters
                 {
                     Failback();
                 }
-                return _current.GetById<T, ID>(id);
+                return _current.GetById<T, TKey>(id);
             }
             catch (Exception ex)
             {
@@ -70,7 +70,7 @@ namespace Yarn.Adapters
                 }
                 if (_strategy == FailoverStrategy.ReplicationOnly) throw;
                 Failover();
-                return _current.GetById<T, ID>(id);
+                return _current.GetById<T, TKey>(id);
             }
         }
 
@@ -232,18 +232,18 @@ namespace Yarn.Adapters
             return result;
         }
 
-        public override T Remove<T, ID>(ID id)
+        public override T Remove<T, TKey>(TKey id)
         {
-            var result = _current.Remove<T, ID>(id);
+            var result = _current.Remove<T, TKey>(id);
             if (!_allowInconsistentReplication)
             {
-                _other.Remove<T, ID>(id);
+                _other.Remove<T, TKey>(id);
             }
             else
             {
                 try
                 {
-                    _other.Remove<T, ID>(id);
+                    _other.Remove<T, TKey>(id);
                 }
                 catch (Exception ex)
                 {

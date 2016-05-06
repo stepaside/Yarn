@@ -14,7 +14,7 @@ namespace Yarn.Elasticsearch.Data.ElasticsearchProvider
             _context = new DataContext(connection, userName, password);
         }
 
-        public T GetById<T, ID>(ID id) where T : class
+        public T GetById<T, TKey>(TKey id) where T : class
         {
             var response = _context.Session.Client.Get(DocumentPath<T>.Id(new Id(id + "")));
             return response.Found ? response.Source : null;
@@ -70,7 +70,7 @@ namespace Yarn.Elasticsearch.Data.ElasticsearchProvider
             return response.Found ? entity : null;
         }
 
-        public T Remove<T, ID>(ID id) where T : class
+        public T Remove<T, TKey>(TKey id) where T : class
         {
             _context.Session.Client.Delete(DocumentPath<T>.Id(new Id(id + "")));
             return null;
@@ -134,7 +134,7 @@ namespace Yarn.Elasticsearch.Data.ElasticsearchProvider
             return new[] { PropertyAccessor.Get(entity, idPropertyName) };
         }
 
-        public System.Collections.Generic.IEnumerable<T> GetById<T, ID>(System.Collections.Generic.IEnumerable<ID> ids) where T : class
+        public System.Collections.Generic.IEnumerable<T> GetById<T, TKey>(System.Collections.Generic.IEnumerable<TKey> ids) where T : class
         {
             var response = _context.Session.Client.MultiGet(m => m.GetMany<T>(ids.Select(id => id + "")));
             return response.IsValid ? response.SourceMany<T>(ids.Select(id => id + "")) : Enumerable.Empty<T>();
@@ -162,7 +162,7 @@ namespace Yarn.Elasticsearch.Data.ElasticsearchProvider
             return response.Items.LongCount();
         }
 
-        public long Delete<T, ID>(System.Collections.Generic.IEnumerable<ID> ids) where T : class
+        public long Delete<T, TKey>(System.Collections.Generic.IEnumerable<TKey> ids) where T : class
         {
             var response = _context.Session.Client.Bulk(b => b.DeleteMany(ids.Select(id => id + "")));
             return response.Items.LongCount();

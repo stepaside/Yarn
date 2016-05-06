@@ -8,9 +8,9 @@ using NHibernate.Dialect;
 
 namespace Yarn.Data.NHibernateProvider.SqliteClient
 {
-    public abstract class SQLiteDataContext : NHibernateDataContext<SQLiteConfiguration, ConnectionStringBuilder, SQLiteDialect>
+    public abstract class SqLiteDataContext : NHibernateDataContext<SQLiteConfiguration, ConnectionStringBuilder, SQLiteDialect>
     {
-        public SQLiteDataContext(SQLiteConfiguration configuration, 
+        public SqLiteDataContext(SQLiteConfiguration configuration, 
                                 string prefix = null, 
                                 string nameOrConnectionString = null, 
                                 string assemblyNameOrLocation = null,
@@ -25,7 +25,7 @@ namespace Yarn.Data.NHibernateProvider.SqliteClient
 
             NHibernate.Cfg.Configuration config = null;
             var sessionFactory = Fluently.Configure()
-                .Database(_configuration)
+                .Database(Configuration)
                 .Mappings(m => m.FluentMappings.AddFromAssembly(assembly))
                 .ExposeConfiguration(c => config = c)
                 .BuildSessionFactory();

@@ -26,7 +26,7 @@ namespace Yarn.Data.EntityFrameworkProvider
 
         private static readonly ScriptGeneratorMigrationInitializer<DbContext> DbInitializer = new ScriptGeneratorMigrationInitializer<DbContext>();
 
-        protected readonly string _prefix;
+        protected readonly string Prefix;
         private readonly bool _lazyLoadingEnabled;
         private readonly bool _proxyCreationEnabled;
         private readonly bool _autoDetectChangesEnabled;
@@ -43,7 +43,7 @@ namespace Yarn.Data.EntityFrameworkProvider
         private string _modelKey;
         private string _source;
 
-        protected Lazy<DbContext> _context = null;
+        protected Lazy<DbContext> Context = null;
 
         public DataContext() : this(prefix: null)
         {
@@ -61,7 +61,7 @@ namespace Yarn.Data.EntityFrameworkProvider
             Type dbContextType = null,
             DataContextLifeCycle lifeCycle = DataContextLifeCycle.DataContextCache)
         {
-            _prefix = prefix;
+            Prefix = prefix;
             _lazyLoadingEnabled = lazyLoadingEnabled;
             _proxyCreationEnabled = proxyCreationEnabled;
             _autoDetectChangesEnabled = autoDetectChangesEnabled;
@@ -74,13 +74,13 @@ namespace Yarn.Data.EntityFrameworkProvider
                 _assemblyNameOrLocation = assemblyNameOrLocation;
             }
             _dbContextType = dbContextType;
-            _context = new Lazy<DbContext>(InitializeDbContext, true);
+            Context = new Lazy<DbContext>(InitializeDbContext, true);
             _lifeCycle = lifeCycle;
         }
 
         private DbContext InitializeDbContext()
         {
-            var context = _prefix == null ? GetDefaultDbContext() : CreateDbContext(_prefix);
+            var context = Prefix == null ? GetDefaultDbContext() : CreateDbContext(Prefix);
             _source = context.Database.Connection.ConnectionString;
             return context;
         }
@@ -251,7 +251,7 @@ namespace Yarn.Data.EntityFrameworkProvider
 
         public virtual DbContext Session
         {
-            get { return _context.Value; }
+            get { return Context.Value; }
         }
 
         public string Source
@@ -306,14 +306,14 @@ namespace Yarn.Data.EntityFrameworkProvider
         {
             if (!disposing) return;
 
-            if (_context == null) return;
+            if (Context == null) return;
             
             if (_contextKey != null && _lifeCycle == DataContextLifeCycle.DataContextCache)
             {
                 DataContextCache.Current.Cleanup(_contextKey);
             }
-            _context.Value.Dispose();
-            _context = null;
+            Context.Value.Dispose();
+            Context = null;
         }
     }
 }

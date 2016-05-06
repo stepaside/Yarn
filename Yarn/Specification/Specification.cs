@@ -39,7 +39,7 @@ namespace Yarn.Specification
             return Apply(new[] { item }.AsQueryable()).Any();
         }
 
-        public IQueryable<T> Apply(IQueryable<T> query)
+        public virtual IQueryable<T> Apply(IQueryable<T> query)
         {
             return query.Where(Predicate);
         }

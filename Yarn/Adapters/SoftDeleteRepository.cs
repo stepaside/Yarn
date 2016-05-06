@@ -23,9 +23,9 @@ namespace Yarn.Adapters
             _principal = principal;
         }
 
-        public override T GetById<T, ID>(ID id)
+        public override T GetById<T, TKey>(TKey id)
         {
-            var entity = base.GetById<T, ID>(id);
+            var entity = base.GetById<T, TKey>(id);
             if (entity is ISoftDelete && ((ISoftDelete)entity).IsDeleted)
             {
                 return null;
@@ -93,13 +93,13 @@ namespace Yarn.Adapters
             return Update(entity);
         }
 
-        public override T Remove<T, ID>(ID id)
+        public override T Remove<T, TKey>(TKey id)
         {
             if (!typeof(ISoftDelete).IsAssignableFrom(typeof(T)))
             {
-                return base.Remove<T, ID>(id);
+                return base.Remove<T, TKey>(id);
             }
-            var entity = base.GetById<T, ID>(id);
+            var entity = base.GetById<T, TKey>(id);
             var deleted = (ISoftDelete)entity;
             deleted.IsDeleted = true;
             deleted.UpdateDate = DateTime.UtcNow;

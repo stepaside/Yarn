@@ -25,21 +25,21 @@ namespace Yarn.Data.NHibernateProvider
     public class Repository : IRepository, IMetaDataProvider, ILoadServiceProvider
     {
         private IDataContext<ISession> _context;
-        protected readonly string _dataContextInstanceName;
+        protected readonly string DataContextInstanceName;
 
         public Repository() : this(null) { }
 
         public Repository(string dataContextInstanceName = null)
         {
-            _dataContextInstanceName = dataContextInstanceName;
+            DataContextInstanceName = dataContextInstanceName;
         }
 
-        public T GetById<T, ID>(ID id) where T : class
+        public T GetById<T, TKey>(TKey id) where T : class
         {
-            return GetById<T, ID>(id, null);
+            return GetById<T, TKey>(id, null);
         }
 
-        public T GetById<T, ID>(ID id, LockMode lockMode) where T : class
+        public T GetById<T, TKey>(TKey id, LockMode lockMode) where T : class
         {
             var session = Session;
             if (lockMode != null)
@@ -49,7 +49,7 @@ namespace Yarn.Data.NHibernateProvider
             return session.Get<T>(id);
         }
 
-        public IEnumerable<T> GetById<T, ID>(IList<ID> ids) where T : class
+        public IEnumerable<T> GetById<T, TKey>(IList<TKey> ids) where T : class
         {
             var session = Session;
             var criteria = session.CreateCriteria<T>();
@@ -59,12 +59,12 @@ namespace Yarn.Data.NHibernateProvider
             return criteria.Future<T>();
         }
 
-        public T LoadById<T, ID>(ID id) where T : class
+        public T LoadById<T, TKey>(TKey id) where T : class
         {
-            return LoadById<T, ID>(id, null);
+            return LoadById<T, TKey>(id, null);
         }
 
-        public T LoadById<T, ID>(ID id, LockMode lockMode) where T : class
+        public T LoadById<T, TKey>(TKey id, LockMode lockMode) where T : class
         {
             var session = Session;
             if (lockMode != null)
@@ -122,9 +122,9 @@ namespace Yarn.Data.NHibernateProvider
             return entity;
         }
 
-        public T Remove<T, ID>(ID id) where T : class
+        public T Remove<T, TKey>(TKey id) where T : class
         {
-            var entity = GetById<T, ID>(id);
+            var entity = GetById<T, TKey>(id);
             Session.Delete(entity);
             return entity;
             //var result = this.Session.Delete<T, ID>(id);
@@ -185,7 +185,7 @@ namespace Yarn.Data.NHibernateProvider
             {
                 if (_context == null)
                 {
-                    _context = ObjectContainer.Current.Resolve<IDataContext<ISession>>(_dataContextInstanceName);
+                    _context = ObjectContainer.Current.Resolve<IDataContext<ISession>>(DataContextInstanceName);
                 }
                 return _context;
             }

@@ -22,14 +22,14 @@ namespace Yarn.Data.InMemoryProvider
             _context = new DataContext();
         }
 
-        public T GetById<T, ID>(ID id) where T : class
+        public T GetById<T, TKey>(TKey id) where T : class
         {
-            if (typeof(OID).IsAssignableFrom(typeof(ID)))
+            if (typeof(OID).IsAssignableFrom(typeof(TKey)))
             {
                 return (T)_context.Session.GetObjectFromId((OID)id);
             }
             
-            var predicate = _metaDataProvider.BuildPrimaryKeyExpression<T, ID>(id);
+            var predicate = _metaDataProvider.BuildPrimaryKeyExpression<T, TKey>(id);
             return All<T>().FirstOrDefault(predicate);
         }
         
@@ -71,7 +71,7 @@ namespace Yarn.Data.InMemoryProvider
             return entity;
         }
 
-        public T Remove<T, ID>(ID id) where T : class
+        public T Remove<T, TKey>(TKey id) where T : class
         {
             var oid = id as OID;
             if (oid != null)
@@ -82,7 +82,7 @@ namespace Yarn.Data.InMemoryProvider
             }
             else
             {
-                var entity = GetById<T, ID>(id);
+                var entity = GetById<T, TKey>(id);
                 if (entity != null)
                 {
                     Remove(entity);
@@ -253,9 +253,9 @@ namespace Yarn.Data.InMemoryProvider
 
         #region IBulkOperationsProvider Members
 
-        IEnumerable<T> IBulkOperationsProvider.GetById<T, ID>(IEnumerable<ID> ids)
+        IEnumerable<T> IBulkOperationsProvider.GetById<T, TKey>(IEnumerable<TKey> ids)
         {
-            if (typeof(OID).IsAssignableFrom(typeof(ID)))
+            if (typeof(OID).IsAssignableFrom(typeof(TKey)))
             {
                 return ids.Select(id => (T)_context.Session.GetObjectFromId((OID)id));
             }
@@ -263,8 +263,8 @@ namespace Yarn.Data.InMemoryProvider
             var primaryKey = _metaDataProvider.GetPrimaryKey<T>().First();
 
             var parameter = Expression.Parameter(typeof(T));
-            var body = Expression.Convert(Expression.PropertyOrField(parameter, primaryKey), typeof(ID));
-            var idSelector = Expression.Lambda<Func<T, ID>>(body, parameter);
+            var body = Expression.Convert(Expression.PropertyOrField(parameter, primaryKey), typeof(TKey));
+            var idSelector = Expression.Lambda<Func<T, TKey>>(body, parameter);
 
             var predicate = idSelector.BuildOrExpression(ids.ToList());
 
@@ -295,9 +295,9 @@ namespace Yarn.Data.InMemoryProvider
             return count;
         }
 
-        public long Delete<T, ID>(IEnumerable<ID> ids) where T : class
+        public long Delete<T, TKey>(IEnumerable<TKey> ids) where T : class
         {
-            var entities = ((IBulkOperationsProvider)this).GetById<T, ID>(ids);
+            var entities = ((IBulkOperationsProvider)this).GetById<T, TKey>(ids);
             return Delete(entities);
         }
 

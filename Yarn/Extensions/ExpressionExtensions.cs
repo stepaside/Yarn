@@ -30,7 +30,7 @@ namespace Yarn.Extensions
             return first.Compose(second, Expression.OrElse);
         }
 
-        public static Expression<Func<T, bool>> BuildOrExpression<T, ID>(this Expression<Func<T, ID>> valueSelector, IList<ID> values)
+        public static Expression<Func<T, bool>> BuildOrExpression<T, TKey>(this Expression<Func<T, TKey>> valueSelector, IList<TKey> values)
             where T : class
         {
             if (null == valueSelector)
@@ -49,7 +49,7 @@ namespace Yarn.Extensions
             }
 
             var p = valueSelector.Parameters.Single();
-            var equals = values.Select(value => (Expression)Expression.Equal(valueSelector.Body, Expression.Constant(value, typeof(ID))));
+            var equals = values.Select(value => (Expression)Expression.Equal(valueSelector.Body, Expression.Constant(value, typeof(TKey))));
             var body = equals.Aggregate(Expression.OrElse);
             return Expression.Lambda<Func<T, bool>>(body, p);
         }
@@ -74,13 +74,13 @@ namespace Yarn.Extensions
             return (Expression<Func<T, bool>>)Evaluator.PartialEval(predicate);
         }
 
-        public static Expression<Func<T, bool>> BuildPrimaryKeyExpression<T, ID>(this IMetaDataProvider repository, ID id)
+        public static Expression<Func<T, bool>> BuildPrimaryKeyExpression<T, TKey>(this IMetaDataProvider repository, TKey id)
             where T : class
         {
             var primaryKey = repository.GetPrimaryKey<T>().First();
             var parameter = Expression.Parameter(typeof(T));
-            var left = Expression.Convert(Expression.PropertyOrField(parameter, primaryKey), typeof(ID));
-            var body = Expression.Equal(left, Expression.Constant(id, typeof(ID)));
+            var left = Expression.Convert(Expression.PropertyOrField(parameter, primaryKey), typeof(TKey));
+            var body = Expression.Equal(left, Expression.Constant(id, typeof(TKey)));
             var predicate = Expression.Lambda<Func<T, bool>>(body, parameter);
             return (Expression<Func<T, bool>>)Evaluator.PartialEval(predicate);
         }
@@ -115,6 +115,34 @@ namespace Yarn.Extensions
 
             var lambdaExpression = covariantReturnType ? Expression.Lambda(typeof(Func<,>).MakeGenericType(type, typeof(object)), expression, parameter) : Expression.Lambda(expression, parameter);
             return lambdaExpression;
+        }
+
+        public static MemberExpression GetMemberInfo(this Expression method)
+        {
+            var lambda = method as LambdaExpression;
+            if (lambda == null)
+            {
+                throw new ArgumentNullException("method");
+            }
+
+            MemberExpression memberExpr = null;
+            switch (lambda.Body.NodeType)
+            {
+                case ExpressionType.Convert:
+                    memberExpr =
+                        ((UnaryExpression)lambda.Body).Operand as MemberExpression;
+                    break;
+                case ExpressionType.MemberAccess:
+                    memberExpr = lambda.Body as MemberExpression;
+                    break;
+            }
+
+            if (memberExpr == null)
+            {
+                throw new ArgumentException("method");
+            }
+
+            return memberExpr;
         }
     }
 }

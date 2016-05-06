@@ -7,7 +7,7 @@ using System.Reflection;
 
 namespace Yarn.Data.NHibernateProvider.SqliteClient
 {
-    public class FileDataContext : SQLiteDataContext
+    public class FileDataContext : SqLiteDataContext
     {
         public FileDataContext() : this(null, null, null, null) { }
 

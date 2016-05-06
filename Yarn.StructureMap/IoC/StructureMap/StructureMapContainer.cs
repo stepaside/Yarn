@@ -16,9 +16,7 @@ namespace Yarn.IoC.StructureMap
 
         public bool IsRegistered<TAbstract>(string instanceName = null) where TAbstract : class
         {
-            if (instanceName == null)
-                return _container.TryGetInstance<TAbstract>() != null;
-            return _container.TryGetInstance<TAbstract>(instanceName) != null;
+            return instanceName == null ? _container.TryGetInstance<TAbstract>() != null : _container.TryGetInstance<TAbstract>(instanceName) != null;
         }
 
         public void Register<TAbstract>(Func<TAbstract> createInstanceFactory, string instanceName = null) where TAbstract : class

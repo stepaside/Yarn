@@ -22,9 +22,9 @@ namespace Yarn.Adapters
             Repository = repository;
         }
 
-        public virtual T GetById<T, ID>(ID id) where T : class
+        public virtual T GetById<T, TKey>(TKey id) where T : class
         {
-            return Repository.GetById<T, ID>(id);
+            return Repository.GetById<T, TKey>(id);
         }
 
         public virtual T Find<T>(ISpecification<T> criteria) where T : class
@@ -62,9 +62,9 @@ namespace Yarn.Adapters
             return Repository.Remove(entity);
         }
 
-        public virtual T Remove<T, ID>(ID id) where T : class
+        public virtual T Remove<T, TKey>(TKey id) where T : class
         {
-            return Repository.Remove<T, ID>(id);
+            return Repository.Remove<T, TKey>(id);
         }
 
         public virtual T Update<T>(T entity) where T : class

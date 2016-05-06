@@ -35,7 +35,7 @@ namespace Yarn.Data.EntityFrameworkProvider
         {
         }
 
-        public async Task<T> GetByIdAsync<T, ID>(ID id) where T : class
+        public async Task<T> GetByIdAsync<T, TKey>(TKey id) where T : class
         {
             return await Table<T>().FindAsync(id);
         }
@@ -88,13 +88,13 @@ namespace Yarn.Data.EntityFrameworkProvider
         {
             get
             {
-                if (_context == null)
+                if (Context == null)
                 {
-                    _context = new DataContextAsync(_prefix, _lazyLoadingEnabled, _proxyCreationEnabled,
-                        _autoDetectChangesEnabled, _validateOnSaveEnabled, _migrationEnabled, _nameOrConnectionString,
-                        _assemblyNameOrLocation, _configurationAssembly, _dbContextType, _lifeCycle);
+                    Context = new DataContextAsync(Prefix, LazyLoadingEnabled, ProxyCreationEnabled,
+                        AutoDetectChangesEnabled, ValidateOnSaveEnabled, MigrationEnabled, NameOrConnectionString,
+                        AssemblyNameOrLocation, ConfigurationAssembly, DbContextType, LifeCycle);
                 }
-                return (IDataContextAsync)_context;
+                return (IDataContextAsync)Context;
             }
         }
     }

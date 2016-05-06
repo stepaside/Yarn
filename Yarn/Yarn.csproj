@@ -86,10 +86,13 @@
     <Compile Include="IDataContextAsync.cs" />
     <Compile Include="Data\DbFactory.cs" />
     <Compile Include="Data\FullTextProvider.cs" />
+    <Compile Include="IEntityLoadService.cs" />
+    <Compile Include="IEntityRepositoryAsync.cs" />
     <Compile Include="ILoadService.cs" />
     <Compile Include="IoC\DefaultContainer.cs" />
     <Compile Include="Extensions\ExpressionExtensions.cs" />
     <Compile Include="IoC\IContainerAdapter.cs" />
+    <Compile Include="IQueryResult.cs" />
     <Compile Include="Linq\Expressions\CastRemoverVisitor.cs" />
     <Compile Include="Linq\Expressions\ParameterRebinder.cs" />
     <Compile Include="IoC\IContainer.cs" />
@@ -97,7 +100,7 @@
     <Compile Include="DataContextCache.cs" />
     <Compile Include="IRepositoryAsync.cs" />
     <Compile Include="IBulkOperationsProvider.cs" />
-    <Compile Include="IService.cs" />
+    <Compile Include="IEntityRepository.cs" />
     <Compile Include="IFullTextProvider.cs" />
     <Compile Include="IFullTextRepository.cs" />
     <Compile Include="ILoadServiceProvider.cs" />
@@ -110,6 +113,7 @@
     <Compile Include="ObjectContainer.cs" />
     <Compile Include="ParamList.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="Queries\QueryResult.cs" />
     <Compile Include="Reflection\Activator.cs" />
     <Compile Include="Linq\Expressions\Evaluator.cs" />
     <Compile Include="Linq\Expressions\LocalCollectionExpander.cs" />
@@ -121,6 +125,7 @@
     <Compile Include="Specification\AndSpecification.cs" />
     <Compile Include="Specification\CompositeSpecification.cs" />
     <Compile Include="Specification\OrSpecification.cs" />
+    <Compile Include="Specification\PagedSpecification.cs" />
     <Compile Include="Specification\Specification.cs" />
   </ItemGroup>
   <ItemGroup>

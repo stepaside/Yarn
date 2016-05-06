@@ -22,9 +22,9 @@ namespace Yarn.Adapters
             _owner = owner;
         }
         
-        public override T GetById<T, ID>(ID id)
+        public override T GetById<T, TKey>(TKey id)
         {
-            var result = base.GetById<T, ID>(id);
+            var result = base.GetById<T, TKey>(id);
             var tenant = result as ITenant;
             if (tenant == null)
             {
@@ -107,18 +107,18 @@ namespace Yarn.Adapters
             throw new InvalidOperationException();
         }
 
-        public override T Remove<T, ID>(ID id)
+        public override T Remove<T, TKey>(TKey id)
         {
             if (typeof(ITenant).IsAssignableFrom(typeof(T)))
             {
-                var entity = base.GetById<T, ID>(id);
+                var entity = base.GetById<T, TKey>(id);
                 if (((ITenant)entity).TenantId == _owner.TenantId)
                 {
                     return base.Remove(entity);
                 }
                 throw new InvalidOperationException();
             }
-            return base.Remove<T, ID>(id);
+            return base.Remove<T, TKey>(id);
         }
 
         public override T Update<T>(T entity)

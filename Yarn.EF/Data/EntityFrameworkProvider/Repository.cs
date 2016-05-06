@@ -27,22 +27,22 @@ namespace Yarn.Data.EntityFrameworkProvider
 {
     public class Repository : IRepository, IMetaDataProvider, ILoadServiceProvider, IBulkOperationsProvider
     {
-        private static readonly ConcurrentDictionary<Type, Dictionary<string, string>> _columnMappings = new ConcurrentDictionary<Type, Dictionary<string, string>>();
+        private static readonly ConcurrentDictionary<Type, Dictionary<string, string>> ColumnMappings = new ConcurrentDictionary<Type, Dictionary<string, string>>();
 
-        protected IDataContext<DbContext> _context;
+        protected IDataContext<DbContext> Context;
 
-        protected readonly string _prefix;
-        protected readonly bool _lazyLoadingEnabled;
-        protected readonly bool _proxyCreationEnabled;
-        protected readonly bool _autoDetectChangesEnabled;
-        protected readonly bool _validateOnSaveEnabled;
-        protected readonly bool _migrationEnabled;
-        protected readonly string _nameOrConnectionString;
-        protected readonly string _assemblyNameOrLocation;
-        protected readonly Assembly _configurationAssembly;
-        protected readonly Type _dbContextType;
-        protected readonly bool _mergeOnUpdate;
-        protected readonly DataContextLifeCycle _lifeCycle;
+        protected readonly string Prefix;
+        protected readonly bool LazyLoadingEnabled;
+        protected readonly bool ProxyCreationEnabled;
+        protected readonly bool AutoDetectChangesEnabled;
+        protected readonly bool ValidateOnSaveEnabled;
+        protected readonly bool MigrationEnabled;
+        protected readonly string NameOrConnectionString;
+        protected readonly string AssemblyNameOrLocation;
+        protected readonly Assembly ConfigurationAssembly;
+        protected readonly Type DbContextType;
+        protected readonly bool MergeOnUpdate;
+        protected readonly DataContextLifeCycle LifeCycle;
 
         public Repository() : this(prefix: null)
         {
@@ -61,24 +61,24 @@ namespace Yarn.Data.EntityFrameworkProvider
             bool mergeOnUpdate = false,
             DataContextLifeCycle lifeCycle = DataContextLifeCycle.DataContextCache)
         {
-            _prefix = prefix;
-            _lazyLoadingEnabled = lazyLoadingEnabled;
-            _proxyCreationEnabled = proxyCreationEnabled;
-            _autoDetectChangesEnabled = autoDetectChangesEnabled;
-            _validateOnSaveEnabled = validateOnSaveEnabled;
-            _migrationEnabled = migrationEnabled;
-            _nameOrConnectionString = nameOrConnectionString;
-            _configurationAssembly = configurationAssembly;
-            if (_configurationAssembly != null)
+            Prefix = prefix;
+            LazyLoadingEnabled = lazyLoadingEnabled;
+            ProxyCreationEnabled = proxyCreationEnabled;
+            AutoDetectChangesEnabled = autoDetectChangesEnabled;
+            ValidateOnSaveEnabled = validateOnSaveEnabled;
+            MigrationEnabled = migrationEnabled;
+            NameOrConnectionString = nameOrConnectionString;
+            ConfigurationAssembly = configurationAssembly;
+            if (ConfigurationAssembly != null)
             {
-                _assemblyNameOrLocation = assemblyNameOrLocation;
+                AssemblyNameOrLocation = assemblyNameOrLocation;
             }
-            _dbContextType = dbContextType;
-            _mergeOnUpdate = mergeOnUpdate;
-            _lifeCycle = lifeCycle;
+            DbContextType = dbContextType;
+            MergeOnUpdate = mergeOnUpdate;
+            LifeCycle = lifeCycle;
         }
 
-        public T GetById<T, ID>(ID id) where T : class
+        public T GetById<T, TKey>(TKey id) where T : class
         {
             return Table<T>().Find(id);
         }
@@ -129,9 +129,9 @@ namespace Yarn.Data.EntityFrameworkProvider
             return Table<T>().Remove(entity);
         }
 
-        public T Remove<T, ID>(ID id) where T : class
+        public T Remove<T, TKey>(TKey id) where T : class
         {
-            var result = GetById<T, ID>(id);
+            var result = GetById<T, TKey>(id);
             if (result != null)
             {
                 Remove(result);
@@ -156,7 +156,7 @@ namespace Yarn.Data.EntityFrameworkProvider
                 if (attachedEntity != null)
                 {
                     // Update only root attributes for lazy loaded entities
-                    if (DbContext.Configuration.LazyLoadingEnabled || !_mergeOnUpdate)
+                    if (DbContext.Configuration.LazyLoadingEnabled || !MergeOnUpdate)
                     {
                         var attachedEntry = DbContext.Entry(attachedEntity);
                         attachedEntry.CurrentValues.SetValues(entity);
@@ -249,9 +249,9 @@ namespace Yarn.Data.EntityFrameworkProvider
         {
             get
             {
-                return _context ?? (_context = new DataContext(_prefix, _lazyLoadingEnabled, _proxyCreationEnabled,
-                    _autoDetectChangesEnabled, _validateOnSaveEnabled, _migrationEnabled, _nameOrConnectionString,
-                    _assemblyNameOrLocation, _configurationAssembly, _dbContextType, _lifeCycle));
+                return Context ?? (Context = new DataContext(Prefix, LazyLoadingEnabled, ProxyCreationEnabled,
+                    AutoDetectChangesEnabled, ValidateOnSaveEnabled, MigrationEnabled, NameOrConnectionString,
+                    AssemblyNameOrLocation, ConfigurationAssembly, DbContextType, LifeCycle));
             }
         }
 
@@ -265,10 +265,10 @@ namespace Yarn.Data.EntityFrameworkProvider
         {
             if (disposing)
             {
-                if (_context != null)
+                if (Context != null)
                 {
-                    _context.Dispose();
-                    _context = null;
+                    Context.Dispose();
+                    Context = null;
                 }
             }
         }
@@ -453,13 +453,13 @@ namespace Yarn.Data.EntityFrameworkProvider
 
         #region IBulkOperationsProvider Members
 
-        public IEnumerable<T> GetById<T, ID>(IEnumerable<ID> ids) where T : class
+        public IEnumerable<T> GetById<T, TKey>(IEnumerable<TKey> ids) where T : class
         {
             var primaryKey = ((IMetaDataProvider)this).GetPrimaryKey<T>().First();
 
             var parameter = Expression.Parameter(typeof(T));
-            var body = Expression.Convert(Expression.PropertyOrField(parameter, primaryKey), typeof(ID));
-            var idSelector = Expression.Lambda<Func<T, ID>>(body, parameter);
+            var body = Expression.Convert(Expression.PropertyOrField(parameter, primaryKey), typeof(TKey));
+            var idSelector = Expression.Lambda<Func<T, TKey>>(body, parameter);
 
             var predicate = idSelector.BuildOrExpression(ids.ToArray());
 
@@ -468,9 +468,9 @@ namespace Yarn.Data.EntityFrameworkProvider
 
         public long Insert<T>(IEnumerable<T> entities) where T : class
         {
-            using (var dataContext = new DataContext(_prefix, _lazyLoadingEnabled, _proxyCreationEnabled,
-                _autoDetectChangesEnabled, _validateOnSaveEnabled, _migrationEnabled, _nameOrConnectionString,
-                _assemblyNameOrLocation, _configurationAssembly, _dbContextType))
+            using (var dataContext = new DataContext(Prefix, LazyLoadingEnabled, ProxyCreationEnabled,
+                AutoDetectChangesEnabled, ValidateOnSaveEnabled, MigrationEnabled, NameOrConnectionString,
+                AssemblyNameOrLocation, ConfigurationAssembly, DbContextType))
             {
                 dataContext.Session.Set<T>().AddRange(entities);
 
@@ -720,7 +720,7 @@ namespace Yarn.Data.EntityFrameworkProvider
             return Delete<T, object>(ids);
         }
 
-        public long Delete<T, ID>(IEnumerable<ID> ids) where T : class
+        public long Delete<T, TKey>(IEnumerable<TKey> ids) where T : class
         {
             var primaryKey = ((IMetaDataProvider)this).GetPrimaryKey<T>().First();
 
@@ -871,7 +871,7 @@ namespace Yarn.Data.EntityFrameworkProvider
         {
             const BindingFlags bindings = BindingFlags.Public | BindingFlags.Instance | BindingFlags.NonPublic;
 
-            return _columnMappings.GetOrAdd(type, t =>
+            return ColumnMappings.GetOrAdd(type, t =>
             {
                 var result = new Dictionary<string, string>();
 
