@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using StructureMap;
 
 namespace Yarn.IoC.StructureMap
@@ -61,6 +62,11 @@ namespace Yarn.IoC.StructureMap
         public TAbstract Resolve<TAbstract>(string instanceName = null) where TAbstract : class
         {
             return instanceName == null ? _container.GetInstance<TAbstract>() : _container.GetInstance<TAbstract>(instanceName);
+        }
+
+        public IEnumerable<TAbstract> ResolveAll<TAbstract>() where TAbstract : class
+        {
+            return _container.GetAllInstances<TAbstract>();
         }
 
         public void Dispose()

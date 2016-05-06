@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 
 namespace Yarn.IoC
 {
@@ -68,6 +69,11 @@ namespace Yarn.IoC
 
             const string errorMessageFormat = "Could not find mapping for type '{0}'";
             throw new InvalidOperationException(string.Format(errorMessageFormat, typeof(TAbstract).FullName));
+        }
+
+        public IEnumerable<TAbstract> ResolveAll<TAbstract>() where TAbstract : class
+        {
+            return _mappings.Where(kvp => kvp.Key.Item1 == typeof (TAbstract)).Select(kvp => kvp.Value()).OfType<TAbstract>();
         }
 
         public void Dispose()
