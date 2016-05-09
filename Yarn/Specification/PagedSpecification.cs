@@ -5,11 +5,13 @@ using Yarn.Extensions;
 
 namespace Yarn.Specification
 {
-    public class PagedSpecification<T> : Specification<T>
+    public class PagedSpecification<T> : ISpecification<T>
     {
-        public PagedSpecification(Expression<Func<T, bool>> predicate) : base(predicate)
-        {
+        private readonly Specification<T> _criteria;
 
+        public PagedSpecification(Specification<T> criteria)
+        {
+            _criteria = criteria;
         }
 
         public int PageSize { get; private set; }
@@ -82,9 +84,15 @@ namespace Yarn.Specification
             }
         }
 
-        public override IQueryable<T> Apply(IQueryable<T> query)
+
+        public bool IsSatisfiedBy(T item)
         {
-            query = base.Apply(query);
+            return Apply(new[] { item }.AsQueryable()).Any();
+        }
+
+        public IQueryable<T> Apply(IQueryable<T> query)
+        {
+            query = _criteria.Apply(query);
             
             if (Sorting != null && Sorting.OrderBy != null)
             {
