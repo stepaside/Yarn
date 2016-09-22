@@ -24,7 +24,7 @@ namespace Yarn.Data.EntityFrameworkProvider.SqlClient
         {
             var dbContext = ((IDataContext<DbContext>)DataContext).Session;
             var objectContext = ((IObjectContextAdapter)dbContext).ObjectContext;
-            var tableName = objectContext.GetTableName<T>();
+            var tableName = dbContext.GetTableName<T>();
 
             var queryText = new StringBuilder();
             queryText.AppendFormat("select * from {0} as t where contains(", tableName);

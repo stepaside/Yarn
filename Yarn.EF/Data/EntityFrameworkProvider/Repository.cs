@@ -18,6 +18,7 @@ using System.Reflection;
 using System.Text;
 using System.Text.RegularExpressions;
 using System.Transactions;
+using EntityFramework.MappingAPI.Extensions;
 using Yarn.Extensions;
 using Yarn.Linq.Expressions;
 using Yarn.Reflection;
@@ -867,73 +868,13 @@ namespace Yarn.Data.EntityFrameworkProvider
             return Delete(criteria.Select(spec => ((Specification<T>)spec).Predicate).ToArray());
         }
 
-        protected static Dictionary<string, string> ExtractColumnMappings(Type type, DbContext context, Stack<Type> visited = null)
+        protected static Dictionary<string, string> ExtractColumnMappings(Type type, DbContext context)
         {
-            const BindingFlags bindings = BindingFlags.Public | BindingFlags.Instance | BindingFlags.NonPublic;
-
             return ColumnMappings.GetOrAdd(type, t =>
             {
-                var result = new Dictionary<string, string>();
-
-                var objectContext = ((IObjectContextAdapter)context).ObjectContext;
-
-                var ocModel = objectContext.MetadataWorkspace.GetItemCollection(DataSpace.OCSpace);
-                var ocItem = ocModel.FirstOrDefault(o => o.GetType().Name == "ObjectTypeMapping" && ((EdmType)o.GetType().GetProperty("ClrType", bindings).GetValue(o)).FullName == t.FullName);
-
-                if (ocItem == null)
-                {
-                    return result;
-                }
-
-                var getMemberMapForClrMember = ocItem.GetType().GetMethod("GetMemberMapForClrMember", bindings);
-                var clrType = (EdmType)ocItem.GetType().GetProperty("ClrType", bindings).GetValue(ocItem);
-
-                var properties = (IList)clrType.GetType().GetProperty("Properties", bindings).GetValue(clrType);
-                foreach (var property in properties.Cast<EdmProperty>())
-                {
-                    var mapping = getMemberMapForClrMember.Invoke(ocItem, new object[] { property.Name, false });
-                    var edmMember = mapping.GetType().GetProperty("EdmMember", bindings);
-                    result[property.Name] = ((EdmMember)edmMember.GetValue(mapping)).Name;
-                }
-
-                if (visited == null)
-                {
-                    visited = new Stack<Type>();
-                }
-                visited.Push(type);
-
-                var complexProperties = t.GetProperties().Where(p => !visited.Contains(p.PropertyType)
-                                            && p.PropertyType.IsClass
-                                            && p.PropertyType != typeof(string)
-                                            && !typeof(IEnumerable).IsAssignableFrom(p.PropertyType));
-
-                foreach (var property in complexProperties)
-                {
-                    var primaryKey = MetaDataProvider.GetPrimaryKeyFromTypeHierarchy(property.PropertyType, context);
-                    if (primaryKey.Length <= 0) continue;
-
-                    var mappings = ExtractColumnMappings(property.PropertyType, context, visited);
-                    if (mappings == null) continue;
-
-                    for (var i = 0; i < primaryKey.Length; i++)
-                    {
-                        string columnName;
-                        if (!mappings.TryGetValue(primaryKey[i], out columnName)) continue;
-                        if (i == 0)
-                        {
-                            result[property.Name] = "[" + property.Name + "_" + columnName + "]";
-                        }
-                        else
-                        {
-                            result[property.Name] += "|[" + property.Name + "_" + columnName + "]";
-                        }
-                    }
-                }
-
-                visited.Pop();
-
+                var map = context.Db(type);
+                var result = map.Properties.ToDictionary(p => p.PropertyName, p => p.ColumnName);
                 return result;
-
             });
         }
 
