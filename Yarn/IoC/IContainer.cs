@@ -22,7 +22,13 @@ namespace Yarn.IoC
         TAbstract Resolve<TAbstract>(string instanceName = null)
            where TAbstract : class;
 
+        object Resolve(Type serviceType, string instanceName = null);
+
         IEnumerable<TAbstract> ResolveAll<TAbstract>()
             where TAbstract : class;
+
+        IEnumerable<object> ResolveAll(Type serviceType);
     }
+
+   
 }

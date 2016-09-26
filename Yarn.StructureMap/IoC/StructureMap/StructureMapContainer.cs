@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using StructureMap;
+using System.Linq;
 
 namespace Yarn.IoC.StructureMap
 {
@@ -72,6 +73,16 @@ namespace Yarn.IoC.StructureMap
         public void Dispose()
         {
             _container.Dispose();
+        }
+
+        public object Resolve(Type serviceType, string instanceName = null)
+        {
+            return instanceName == null ? _container.GetInstance(serviceType) : _container.GetInstance(serviceType, instanceName);
+        }
+
+        public IEnumerable<object> ResolveAll(Type serviceType)
+        {
+            return _container.GetAllInstances(serviceType).Cast<object>();
         }
 
         public Container Container

@@ -92,6 +92,7 @@
     <Compile Include="IoC\DefaultContainer.cs" />
     <Compile Include="Extensions\ExpressionExtensions.cs" />
     <Compile Include="IoC\IContainerAdapter.cs" />
+    <Compile Include="IoC\INestedContainerProvider.cs" />
     <Compile Include="IQueryResult.cs" />
     <Compile Include="Linq\Expressions\CastRemoverVisitor.cs" />
     <Compile Include="Linq\Expressions\ParameterRebinder.cs" />

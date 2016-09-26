@@ -4,13 +4,18 @@ using System.Linq;
 
 namespace Yarn.IoC
 {
-    public class DefaultContainer : IContainer
+    public class DefaultContainer : IContainer, INestedContainerProvider
     {
         private readonly Dictionary<Tuple<Type, string>, Func<object>> _mappings;
 
         public DefaultContainer()
         {
             _mappings = new Dictionary<Tuple<Type, string>, Func<object>>();
+        }
+
+        private DefaultContainer(IDictionary<Tuple<Type, string>, Func<object>> mappings)
+        {
+            _mappings = new Dictionary<Tuple<Type, string>, Func<object>>(mappings);
         }
 
         public void Register<TAbstract, TConcrete>(string instanceName = null)
@@ -58,17 +63,7 @@ namespace Yarn.IoC
         public TAbstract Resolve<TAbstract>(string instanceName = null) 
             where TAbstract : class
         {
-            var key = Tuple.Create(typeof(TAbstract), instanceName);
-            Func<object> createInstance;
-
-            if (_mappings.TryGetValue(key, out createInstance))
-            {
-                var instance = createInstance();
-                return (TAbstract)instance;
-            }
-
-            const string errorMessageFormat = "Could not find mapping for type '{0}'";
-            throw new InvalidOperationException(string.Format(errorMessageFormat, typeof(TAbstract).FullName));
+            return (TAbstract)Resolve(typeof(TAbstract), instanceName);
         }
 
         public IEnumerable<TAbstract> ResolveAll<TAbstract>() where TAbstract : class
@@ -79,6 +74,31 @@ namespace Yarn.IoC
         public void Dispose()
         {
             _mappings.Clear();
+        }
+
+        public object Resolve(Type serviceType, string instanceName = null)
+        {
+            var key = Tuple.Create(serviceType, instanceName);
+            Func<object> createInstance;
+
+            if (_mappings.TryGetValue(key, out createInstance))
+            {
+                var instance = createInstance();
+                return instance;
+            }
+
+            const string errorMessageFormat = "Could not find mapping for type '{0}'";
+            throw new InvalidOperationException(string.Format(errorMessageFormat, serviceType.FullName));
+        }
+
+        public IEnumerable<object> ResolveAll(Type serviceType)
+        {
+            return _mappings.Where(kvp => kvp.Key.Item1 == serviceType).Select(kvp => kvp.Value());
+        }
+
+        public IContainer GetNestedContainer()
+        {
+            return new DefaultContainer(_mappings);
         }
     }
 }
