@@ -12,10 +12,10 @@ using MongoDB.Driver.Builders;
 
 namespace Yarn.Data.MongoDbProvider
 {
-    public class DataContext : IDataContext<MongoDatabase>
+    public class DataContext : IDataContext<IMongoDatabase>
     {
         private readonly string _prefix;
-        private MongoDatabase _database;
+        private IMongoDatabase _database;
         private MongoUrl _url;
         private readonly string _connectionString;
 
@@ -27,7 +27,7 @@ namespace Yarn.Data.MongoDbProvider
             _connectionString = connectionString;
         }
 
-        protected MongoDatabase GetMongoDatabase(string prefix , string connectionString)
+        protected IMongoDatabase GetMongoDatabase(string prefix , string connectionString)
         {
             _url = new MongoUrl(connectionString ?? ConfigurationManager.AppSettings.Get(prefix));
             var dbName = _url.DatabaseName;
@@ -36,8 +36,7 @@ namespace Yarn.Data.MongoDbProvider
                 dbName = ConfigurationManager.AppSettings.Get(prefix + ".Database");
             }
             var client = new MongoClient(_url);
-            var server = client.GetServer();
-            return server.GetDatabase(dbName);
+            return client.GetDatabase(dbName);
         }
 
         protected virtual string DefaultPrefix
@@ -48,7 +47,7 @@ namespace Yarn.Data.MongoDbProvider
             }
         }
 
-        protected MongoDatabase GetDefaultMongoDatabase()
+        protected IMongoDatabase GetDefaultMongoDatabase()
         {
             return GetMongoDatabase(DefaultPrefix , _connectionString);
         }
@@ -58,48 +57,19 @@ namespace Yarn.Data.MongoDbProvider
             // No transaction support
         }
 
-        public void CreateIndex<T>(Tuple<string, bool>[] names, bool background = true, TimeSpan ttl = new TimeSpan(), bool unique = false, bool dropDups = false, bool sparse = false)
+        public void CreateIndex<T>(Expression<Func<T, object>> field, bool ascending = true, bool background = true, TimeSpan? ttl = null, bool? unique = null, bool? sparse = null)
         {
-            var ascending = new List<string>();
-            var descending = new List<string>();
-            foreach (var n in names)
-            {
-                if (n.Item2)
-                {
-                    ascending.Add(n.Item1);
-                }
-                else
-                {
-                    descending.Add(n.Item1);
-                }
-            }
-
-            var builder = new IndexKeysBuilder();
-            if (ascending.Count > 0)
-            {
-                builder = builder.Ascending(ascending.ToArray());
-            }
-            if (descending.Count > 0)
-            {
-                builder = builder.Descending(descending.ToArray());
-            }
-
-            _database.GetCollection<T>(typeof(T).Name).CreateIndex(builder, 
-                                                                    IndexOptions.SetBackground(background)
-                                                                                .SetTimeToLive(ttl)
-                                                                                .SetUnique(unique)
-                                                                                .SetDropDups(dropDups)
-                                                                                .SetSparse(sparse));
+            var index = ascending ? Builders<T>.IndexKeys.Ascending(field) : Builders<T>.IndexKeys.Descending(field);
+            _database.GetCollection<T>(typeof(T).Name).Indexes.CreateOne(index, new CreateIndexOptions { Background = background, ExpireAfter = ttl, Unique = unique, Sparse = sparse });
         }
 
-        public MongoDatabase Session
+        public IMongoDatabase Session
         {
             get
             {
                 if (_database == null)
                 {
                     _database = _prefix == null ? GetDefaultMongoDatabase() : GetMongoDatabase(_prefix , _connectionString);
-                    _database.Server.Connect();
                 }
                 return _database;
             }

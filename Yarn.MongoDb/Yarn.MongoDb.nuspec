@@ -2,7 +2,7 @@
 <package>
   <metadata>
     <id>Yarn.MongoDb</id>
-    <version>1.0.0</version>
+    <version>1.0.1</version>
     <title>Yarn.MongoDb</title>
     <authors>Max Stepanskiy</authors>
     <owners>Stepaside, Inc.</owners>
