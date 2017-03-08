@@ -91,7 +91,7 @@ namespace Yarn.Data.MongoDbProvider
         public T Update<T>(T entity) where T : class
         {
             var filter = this.BuildPrimaryKeyExpression(entity);
-            var result = GetCollection<T>().UpdateOne(new ExpressionFilterDefinition<T>(filter), new ObjectUpdateDefinition<T>(entity), new UpdateOptions { IsUpsert = true });
+            var result = GetCollection<T>().ReplaceOne(new ExpressionFilterDefinition<T>(filter), entity, new UpdateOptions { IsUpsert = true });
             return result.IsAcknowledged && result.IsModifiedCountAvailable && result.ModifiedCount == 1 ? entity : null;
         }
 
