@@ -17,6 +17,8 @@ Here is what it currently supports:
 - MongoDB
 - In-memory object storage
 - <a href="https://github.com/stepaside/Nemo" target="_blank">Nemo</a> (micro-ORM library)
+- EventStore
+- Elasticsearch
 
 ### Quick example of the pattern usage
 
