@@ -18,7 +18,7 @@ Here is what it currently supports:
 - In-memory object storage
 - <a href="https://github.com/stepaside/Nemo" target="_blank">Nemo</a> (micro-ORM library)
 
-###Quick example of the pattern usage###
+### Quick example of the pattern usage
 
 ```c#
 // Bind IRepository to specific implementation (this should happen during application startup)
@@ -31,7 +31,7 @@ var category = repo.GetById<Category, int>(1000);
 var categories = repo.GetByIdList<Category, int>(new[] { 1000, 1100 });
 ```
 
-###IoC with Yarn###
+### IoC with Yarn
 
 ```c#
 // Yarn provides a simple IoC container implementation
@@ -62,7 +62,7 @@ var repo = ObjectContainer.Current.Resolve<IRepository>("Lazy");
 
 ```
 
-###Slightly more sophisticated example utilizing multiple implementations of IRepository###
+### Slightly more sophisticated example utilizing multiple implementations of IRepository
 
 ```c#
 // Bind IRepository to specific implementation (this should happen during application startup)
@@ -78,7 +78,7 @@ var repo = ObjectContainer.Current.Resolve<IRepository>("ef");
 var category = repo.GetById<Category, int>(1000);
 ```
 
-###NHibernate implementation of IRepository###
+### NHibernate implementation of IRepository
 
 ```c#
 // With NHibernate one must specify implementation of the data context to be used with repository
@@ -96,7 +96,7 @@ var repo = ObjectContainer.Current.Resolve<IRepository>("nh");
 var categories = repo.FindAll<Category>(c => c.Name.Contains("cat"), offset: 50, limit: 10);
 ```
 
-###Full text search implementation with IRepository###
+### Full text search implementation with IRepository
 
 - EF
 
@@ -121,7 +121,7 @@ var categories = repo.FindAll<Category>(c => c.Name.Contains("cat"), offset: 50,
   var categories = ((IFullTextRepository)repo).FullText.Seach<Category>("hello world");
   ```
   
-###Specification pattern implementation with IRepository###
+### Specification pattern implementation with IRepository
 
 ```c#
 // Bind IRepository to specific implementation (this should happen during application startup)
@@ -135,7 +135,7 @@ var spec = new Specification<Category>(c => c.Name.Contains("hello")).Or(c => c.
 var categories = repo.FindAll<Category>(spec);
 ```
 
-###Utilizing caching with IRepository###
+### Utilizing caching with IRepository
 
 ```c#
 // Implement a cache provider to support caching of your choice
@@ -165,7 +165,7 @@ var categories1 = cachedRepo.FindAll<Category>(spec);
 var categories2 = cachedRepo.FindAll<Category>(spec);
 ```
 
-###Passing parameters to repository/data context constructor during initialization###
+### Passing parameters to repository/data context constructor during initialization
 
 ```c#
 // Bind IRepository to specific implementation
@@ -184,7 +184,7 @@ ObjectContainer.Current.Register<IDataContext>(
                                                               configurationAssembly: typeof(Customer).Assembly));
 ```
 
-###Eager loading###
+### Eager loading
 
 ```c#
 // Bind IRepository to specific implementation (this should happen during application startup)
@@ -201,7 +201,7 @@ var customer = repo.As<ILoadServiceProvider>()
                   .Find(c => c.CustomerID == "ALFKI");
 ```
 
-###Object graph merging###
+### Object graph merging
 
 ```c#
 // Bind IRepository to specific implementation (this should happen during application startup)
@@ -220,7 +220,7 @@ var mergedCustomer = repo.As<ILoadServiceProvider>()
                   .Update(customer);
 ```
 
-###Repository adapters###
+### Repository adapters
 
 ```c#
 // Auditable adapter will automatically populate audit information 
@@ -250,7 +250,7 @@ var repo = ObjectContainer.Current.Resolve<IRepository>().WithSoftDelete().WihAu
 
 ```
 
-###Bulk operations###
+### Bulk operations
 
 ```c#
 // Bind IRepository to specific implementation (this should happen during application startup)
@@ -275,7 +275,7 @@ bulk.Delete<Customer>(c => c.City == "London");
 bulk.Update<Customer>(c => c.City == "New York", c => new Customer { City = c.City + " City" });
 ```
 
-###Quick Interceptor###
+### Quick Interceptor
 
 ```c#
 public class LogInterceptor : IDisposable
