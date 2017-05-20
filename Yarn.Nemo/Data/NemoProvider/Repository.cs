@@ -20,9 +20,11 @@ namespace Yarn.Data.NemoProvider
 {
     public class Repository : IRepository, IMetaDataProvider, ILoadServiceProvider
     {
-        private readonly bool _useStoredProcedures;
+        // ReSharper disable once InconsistentNaming
+        protected readonly bool _useStoredProcedures;
+        // ReSharper disable once InconsistentNaming
+        protected readonly IConfiguration _configuration;
         private readonly IDataContext _context;
-        private readonly IConfiguration _configuration;
 
         public Repository(bool useStoredProcedures, IConfiguration configuration = null, string connectionName = null, string connectionString = null, DbTransaction transaction = null)
         {
@@ -58,7 +60,7 @@ namespace Yarn.Data.NemoProvider
         {
             if (orderBy != null)
             {
-                return ObjectFactory.Select(criteria, connection: Connection, page: limit > 0 ? offset / limit + 1 : 0, pageSize: limit, orderBy: Tuple.Create(orderBy.OrderBy, orderBy.Reverse ? SortingOrder.Descending : SortingOrder.Ascending));
+                return ObjectFactory.Select(criteria, connection: Connection, page: limit > 0 ? offset / limit + 1 : 0, pageSize: limit, orderBy: new Nemo.Sorting<T> { OrderBy = orderBy.OrderBy, Reverse = orderBy.Reverse });
             }
             return ObjectFactory.Select(criteria, connection: Connection, page: limit > 0 ? offset / limit + 1 : 0, pageSize: limit);
         }
@@ -92,7 +94,7 @@ namespace Yarn.Data.NemoProvider
 
         public long Count<T>() where T : class
         {
-            return ObjectFactory.Count<T>();
+            return ObjectFactory.Count<T>(connection: Connection);
         }
 
         public long Count<T>(ISpecification<T> criteria) where T : class
@@ -133,7 +135,16 @@ namespace Yarn.Data.NemoProvider
 
         public void Dispose()
         {
-            _context.Dispose();
+            Dispose(true);
+            GC.SuppressFinalize(this);
+        }
+
+        protected virtual void Dispose(bool disposing)
+        {
+            if (disposing)
+            {
+                _context.Dispose();
+            }
         }
 
         public string[] GetPrimaryKey<T>() where T : class
