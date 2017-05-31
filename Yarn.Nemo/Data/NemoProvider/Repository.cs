@@ -291,7 +291,7 @@ namespace Yarn.Data.NemoProvider
                 {
 
                     var result = sorting != null
-                        ? ObjectFactory.Select(criteria, page: limit > 0 ? offset / limit + 1 : 0, pageSize: limit, orderBy: new[] { Tuple.Create(sorting.OrderBy, sorting.Reverse ? SortingOrder.Descending : SortingOrder.Ascending) })
+                        ? ObjectFactory.Select(criteria, page: limit > 0 ? offset / limit + 1 : 0, pageSize: limit, orderBy: new[] { new Nemo.Sorting<T> { OrderBy = sorting.OrderBy, Reverse = sorting.Reverse } })
                         : ObjectFactory.Select(criteria, page: limit > 0 ? offset / limit + 1 : 0, pageSize: limit);
 
                     foreach (var types in _types)
