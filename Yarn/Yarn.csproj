@@ -86,6 +86,7 @@
     <Compile Include="IDataContextAsync.cs" />
     <Compile Include="Data\DbFactory.cs" />
     <Compile Include="Data\FullTextProvider.cs" />
+    <Compile Include="IEntityKeySelector.cs" />
     <Compile Include="IEntityLoadService.cs" />
     <Compile Include="IEntityRepositoryAsync.cs" />
     <Compile Include="ILoadService.cs" />

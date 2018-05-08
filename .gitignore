@@ -6,3 +6,5 @@ obj
 /Yarn.sln.docstates.suo
 packages
 *.nupkg
+/.vs/Yarn/v15*
+/Yarn.sln.DotSettings.user

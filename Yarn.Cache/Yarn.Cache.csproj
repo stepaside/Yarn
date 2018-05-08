@@ -42,6 +42,8 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Cache\EntityCachingStrategy.cs" />
+    <Compile Include="Cache\GenerationalEntityCachingRepository.cs" />
     <Compile Include="Cache\GenerationalCachingRepository.cs" />
     <Compile Include="Cache\CachingStrategy.cs" />
     <Compile Include="Cache\CacheExtensions.cs" />

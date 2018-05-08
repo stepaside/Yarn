@@ -18,6 +18,6 @@
     </dependencies>
   </metadata>
   <files>
-    <file src="Yarn.Elasticsearch.dll" target="lib\net40" />
+    <file src="Yarn.Elasticsearch.dll" target="lib\net45" />
   </files>
 </package>

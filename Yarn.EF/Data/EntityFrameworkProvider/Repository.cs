@@ -18,7 +18,6 @@ using System.Reflection;
 using System.Text;
 using System.Text.RegularExpressions;
 using System.Transactions;
-using EntityFramework.MappingAPI.Extensions;
 using Yarn.Extensions;
 using Yarn.Linq.Expressions;
 using Yarn.Reflection;
@@ -872,8 +871,8 @@ namespace Yarn.Data.EntityFrameworkProvider
         {
             return ColumnMappings.GetOrAdd(type, t =>
             {
-                var map = context.Db(type);
-                var result = map.Properties.ToDictionary(p => p.PropertyName, p => p.ColumnName);
+                var map = context.GetColumns(type);
+                var result = map.ToDictionary(p => p.PropertyName, p => p.ColumnName);
                 return result;
             });
         }
@@ -1067,11 +1066,11 @@ namespace Yarn.Data.EntityFrameworkProvider
                     return new object[] { };
                 }
 
-                var method = typeof(IMetaDataProvider).GetMethod("GetPrimaryKeyValue").MakeGenericMethod(entity.GetType());
-                return (object[])method.Invoke(_repository.As<IMetaDataProvider>(), new[] { entity });
+                var method = typeof(IMetaDataProvider).GetMethod("GetPrimaryKeyValue")?.MakeGenericMethod(entity.GetType());
+                return (object[])method?.Invoke(_repository.As<IMetaDataProvider>(), new[] { entity });
             }
 
-            public bool Equals(object x, object y)
+            bool IEqualityComparer<object>.Equals(object x, object y)
             {
                 return ArraysEqual(GetPrimaryKey(x), GetPrimaryKey(y));
             }

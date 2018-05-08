@@ -54,7 +54,10 @@ namespace Yarn.Data.NHibernateProvider
             var session = Session;
             var criteria = session.CreateCriteria<T>();
             var idsRestriction = Restrictions.Disjunction();
-            ids.ForEach(id => idsRestriction.Add(Restrictions.IdEq(id)));
+            foreach (var id in ids)
+            {
+                idsRestriction.Add(Restrictions.IdEq(id));
+            }
             criteria.Add(idsRestriction);
             return criteria.Future<T>();
         }
@@ -139,11 +142,7 @@ namespace Yarn.Data.NHibernateProvider
 
         public void Attach<T>(T entity) where T : class
         {
-            var session = Session;
-            var persister = session.GetSessionImplementation().GetEntityPersister(NHibernateProxyHelper.GuessClass(entity).FullName, entity);
-            var fields = persister.GetPropertyValues(entity, Session.ActiveEntityMode);
-            var id = persister.GetIdentifier(entity, session.ActiveEntityMode);
-            var entry = session.GetSessionImplementation().PersistenceContext.AddEntry(entity, Status.Loaded, fields, null, id, null, LockMode.None, true, persister, true, false);
+            Session.Merge(entity);
         }
 
         public void Detach<T>(T entity) where T : class

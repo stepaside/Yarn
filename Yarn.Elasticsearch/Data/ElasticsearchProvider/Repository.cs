@@ -60,14 +60,14 @@ namespace Yarn.Elasticsearch.Data.ElasticsearchProvider
 
         public T Add<T>(T entity) where T : class
         {
-            var response = _context.Session.Client.Index(entity);
-            return response.Created ? entity : null;
+            var response = _context.Session.Client.Index(entity, d => d.Index<T>());
+            return response.IsValid ? entity : null;
         }
 
         public T Remove<T>(T entity) where T : class
         {
             var response = _context.Session.Client.Delete(new DocumentPath<T>(entity));
-            return response.Found ? entity : null;
+            return response.IsValid ? entity : null;
         }
 
         public T Remove<T, TKey>(TKey id) where T : class

@@ -40,7 +40,7 @@ namespace Yarn.EventSourcing.GetEventStoreProvider
         public async Task<T> GetByIdAsync<T>(Guid id) where T : class, IAggregate
         {
             var list = new List<object>();
-            var start = 0;
+            var start = 0L;
             var streamName = GetStreamName<T>(id);
             StreamEventsSlice streamEventsSlice;
             do
