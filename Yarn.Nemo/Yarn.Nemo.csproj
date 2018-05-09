@@ -34,7 +34,7 @@
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="Nemo, Version=0.0.0.0, Culture=neutral, processorArchitecture=MSIL">
-      <HintPath>..\packages\Nemo.2.5.1\lib\net452\Nemo.dll</HintPath>
+      <HintPath>..\packages\Nemo.2.5.2\lib\net452\Nemo.dll</HintPath>
     </Reference>
     <Reference Include="System" />
     <Reference Include="System.ComponentModel.DataAnnotations" />

@@ -5,6 +5,8 @@ using System.Data.Common;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
+using System.Text;
+using System.Transactions;
 using Nemo;
 using Nemo.Collections.Extensions;
 using Nemo.Configuration;
@@ -18,27 +20,35 @@ using Yarn.Specification;
 
 namespace Yarn.Data.NemoProvider
 {
-    public class Repository : IRepository, IMetaDataProvider, ILoadServiceProvider
+    public class Repository : IRepository, IMetaDataProvider, ILoadServiceProvider, IBulkOperationsProvider
     {
         // ReSharper disable once InconsistentNaming
         protected readonly bool _useStoredProcedures;
         // ReSharper disable once InconsistentNaming
-        protected readonly IConfiguration _configuration;
         private readonly IDataContext _context;
 
         public Repository(bool useStoredProcedures, IConfiguration configuration = null, string connectionName = null, string connectionString = null, DbTransaction transaction = null)
         {
             _useStoredProcedures = useStoredProcedures;
-            _configuration = configuration;
             _context = new DataContext(configuration != null ? configuration.DefaultConnectionName : connectionName, connectionString, transaction);
+        }
+
+        private void SetConfiguration<T>() where T : class
+        {
+            if (!_useStoredProcedures) return;
+            var config = ConfigurationFactory.CloneCurrentConfiguration().SetGenerateDeleteSql(true).SetGenerateInsertSql(true).SetGenerateUpdateSql(true);
+            ConfigurationFactory.Set<T>(config);
         }
 
         public T GetById<T, TKey>(TKey id) where T : class
         {
-            var property = GetPrimaryKey<T>().First();
-            return _useStoredProcedures
-                ? ObjectFactory.Retrieve<T>("GetById", parameters: new[] { new Param { Name = property, Value = id } }, connection: Connection).FirstOrDefault() 
-                : ObjectFactory.Select(this.BuildPrimaryKeyExpression<T, TKey>(id), connection: Connection).FirstOrDefault();
+            if (_useStoredProcedures)
+            {
+                var property = GetPrimaryKey<T>().First();
+                return ObjectFactory.Retrieve<T>("GetById", parameters: new[] { new Param { Name = property, Value = id } }, connection: Connection).FirstOrDefault();
+            }
+
+            return ObjectFactory.Select(this.BuildPrimaryKeyExpression<T, TKey>(id), connection: Connection, selectOption: SelectOption.FirstOrDefault).FirstOrDefault();
         }
 
         public T Find<T>(ISpecification<T> criteria) where T : class
@@ -73,27 +83,32 @@ namespace Yarn.Data.NemoProvider
 
         public T Add<T>(T entity) where T : class
         {
+            SetConfiguration<T>();
             return entity.Insert() ? entity : null;
         }
-
+        
         public T Remove<T>(T entity) where T : class
         {
+            SetConfiguration<T>();
             return entity.Delete() ? entity : null;
         }
 
         public T Remove<T, TKey>(TKey id) where T : class
         {
+            SetConfiguration<T>();
             var entity = GetById<T, TKey>(id);
             return Remove(entity);
         }
 
         public T Update<T>(T entity) where T : class
         {
+            SetConfiguration<T>();
             return entity.Update() ? entity : null;
         }
 
         public long Count<T>() where T : class
         {
+            SetConfiguration<T>();
             return ObjectFactory.Count<T>(connection: Connection);
         }
 
@@ -104,22 +119,26 @@ namespace Yarn.Data.NemoProvider
 
         public long Count<T>(Expression<Func<T, bool>> criteria) where T : class
         {
+            SetConfiguration<T>();
             return ObjectFactory.Count(criteria, connection: Connection);
         }
 
         public IQueryable<T> All<T>() where T : class
         {
+            SetConfiguration<T>();
             //return LinqExtensions.Defer(() => ObjectFactory.Select<T>()).AsQueryable();
             return new NemoQueryable<T>(Connection);
         }
 
         public void Detach<T>(T entity) where T : class
         {
+            SetConfiguration<T>();
             entity.Detach();
         }
 
         public void Attach<T>(T entity) where T : class
         {
+            SetConfiguration<T>();
             entity.Attach();
         }
 
@@ -168,11 +187,11 @@ namespace Yarn.Data.NemoProvider
             private readonly Repository _repository;
             private readonly List<Tuple<Type[], LambdaExpression[]>> _types;
 
-            private readonly static MethodInfo SelectMethod = typeof(ObjectFactory).GetMethods().First(m => m.Name == "Select" && m.GetGenericArguments().Length == 1);
-            private readonly static MethodInfo IncludeMethod2 = typeof(ObjectFactory).GetMethods().First(m => m.Name == "Include" && m.GetGenericArguments().Length == 2);
-            private readonly static MethodInfo IncludeMethod3 = typeof(ObjectFactory).GetMethods().First(m => m.Name == "Include" && m.GetGenericArguments().Length == 3);
-            private readonly static MethodInfo IncludeMethod4 = typeof(ObjectFactory).GetMethods().First(m => m.Name == "Include" && m.GetGenericArguments().Length == 4);
-            private readonly static MethodInfo IncludeMethod5 = typeof(ObjectFactory).GetMethods().First(m => m.Name == "Include" && m.GetGenericArguments().Length == 5);
+            private static readonly MethodInfo SelectMethod = typeof(ObjectFactory).GetMethods().First(m => m.Name == "Select" && m.GetGenericArguments().Length == 1);
+            private static readonly MethodInfo IncludeMethod2 = typeof(ObjectFactory).GetMethods().First(m => m.Name == "Include" && m.GetGenericArguments().Length == 2);
+            private static readonly MethodInfo IncludeMethod3 = typeof(ObjectFactory).GetMethods().First(m => m.Name == "Include" && m.GetGenericArguments().Length == 3);
+            private static readonly MethodInfo IncludeMethod4 = typeof(ObjectFactory).GetMethods().First(m => m.Name == "Include" && m.GetGenericArguments().Length == 4);
+            private static readonly MethodInfo IncludeMethod5 = typeof(ObjectFactory).GetMethods().First(m => m.Name == "Include" && m.GetGenericArguments().Length == 5);
 
             public LoadService(Repository repository)
             {
@@ -431,6 +450,62 @@ namespace Yarn.Data.NemoProvider
                     WalkTree((BinaryExpression)body.Right, body.NodeType, ref parameters, map);
                 }
             }
+        }
+
+        public IEnumerable<T> GetById<T, TKey>(IEnumerable<TKey> ids) where T : class
+        {
+            if (_useStoredProcedures)
+            {
+                var property = GetPrimaryKey<T>().First();
+                var idList = ids.Select(k => k.ToString()).ToDelimitedString(",");
+                return ObjectFactory.Retrieve<T>("GetById", parameters: new[] { new Param { Name = property + "List", Value = idList } }, connection: Connection);
+            }
+
+            var primaryKey = ((IMetaDataProvider)this).GetPrimaryKey<T>().First();
+
+            var parameter = Expression.Parameter(typeof(T));
+            var body = Expression.Convert(Expression.PropertyOrField(parameter, primaryKey), typeof(TKey));
+            var idSelector = Expression.Lambda<Func<T, TKey>>(body, parameter);
+
+            var predicate = idSelector.BuildOrExpression(ids.ToArray());
+
+            return ObjectFactory.Select(predicate, connection: Connection);
+        }
+
+        public long Insert<T>(IEnumerable<T> entities) where T : class
+        {
+            return ObjectFactory.Insert(entities);
+        }
+
+        public long Update<T>(Expression<Func<T, bool>> criteria, Expression<Func<T, T>> update) where T : class
+        {
+            return Update<T>(new BulkUpdateOperation<T> { Criteria = criteria, Update = update });
+        }
+
+        public long Update<T>(params BulkUpdateOperation<T>[] bulkOperations) where T : class
+        {
+            throw new NotImplementedException();
+        }
+
+        public long Delete<T>(IEnumerable<T> entities) where T : class
+        {
+            var ids = entities.Select(e => ((IMetaDataProvider)this).GetPrimaryKeyValue(e).First());
+            return Delete<T, object>(ids);
+        }
+
+        public long Delete<T, TKey>(IEnumerable<TKey> ids) where T : class
+        {
+            throw new NotImplementedException();
+        }
+
+        public long Delete<T>(params Expression<Func<T, bool>>[] criteria) where T : class
+        {
+            throw new NotImplementedException();
+        }
+
+        public long Delete<T>(params ISpecification<T>[] criteria) where T : class
+        {
+            return Delete(criteria.Select(spec => ((Specification<T>)spec).Predicate).ToArray());
         }
     }
 }
