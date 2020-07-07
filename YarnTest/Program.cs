@@ -23,9 +23,9 @@ namespace YarnTest
     {
         static void Main(string[] args)
         {
-            ObjectContainer.Current.Register<IRepository>(() => new Repository("Yarn.EF2", false, false), "EF");
+            ObjectContainer.Current.Register<IRepository>(() => new Repository(false, false, nameOrConnectionString: "Yarn.EF2.Connection"), "EF");
 
-            ObjectContainer.Current.Register<IRepository>(() => new Repository(null, false, false, dbContextType: typeof(NorthwindEntities)), "EF2");
+            ObjectContainer.Current.Register<IRepository>(() => new Repository(false, false, dbContextType: typeof(NorthwindEntities)), "EF2");
 
             ObjectContainer.Current.Register<IRepository>(() => new Yarn.Data.InMemoryProvider.Repository(), "InMemory");
             

@@ -1,12 +1,10 @@
 using MongoDB.Bson;
 using MongoDB.Bson.Serialization;
 using MongoDB.Driver;
-using MongoDB.Driver.Builders;
 using MongoDB.Driver.Linq;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
-using System.Data.Entity.Design.PluralizationServices;
 using System.Globalization;
 using System.Linq;
 using System.Linq.Expressions;
@@ -17,19 +15,12 @@ namespace Yarn.Data.MongoDbProvider
 {
     public class Repository : IRepository, IMetaDataProvider, IBulkOperationsProvider
     {
-        private readonly PluralizationService _pluralizer = PluralizationService.CreateService(CultureInfo.CurrentCulture);
         private readonly ConcurrentDictionary<Type, object> _collections = new ConcurrentDictionary<Type, object>();
         private IDataContext<IMongoDatabase> _context;
-        private readonly string _prefix;
         private readonly string _connectionString;
 
-        public Repository() : this(null)
+        public Repository(string connectionString = null)
         {
-        }
-
-        public Repository(string prefix = null, string connectionString = null)
-        {
-            _prefix = prefix;
             _connectionString = connectionString;
         }
 
@@ -91,7 +82,7 @@ namespace Yarn.Data.MongoDbProvider
         public T Update<T>(T entity) where T : class
         {
             var filter = this.BuildPrimaryKeyExpression(entity);
-            var result = GetCollection<T>().ReplaceOne(new ExpressionFilterDefinition<T>(filter), entity, new UpdateOptions { IsUpsert = true });
+            var result = GetCollection<T>().ReplaceOne(new ExpressionFilterDefinition<T>(filter), entity, new ReplaceOptions { IsUpsert = true });
             return result.IsAcknowledged && result.IsModifiedCountAvailable && result.ModifiedCount == 1 ? entity : null;
         }
 
@@ -112,7 +103,7 @@ namespace Yarn.Data.MongoDbProvider
 
         public long Count<T>() where T : class
         {
-            return GetCollection<T>().Count(new BsonDocument());
+            return GetCollection<T>().CountDocuments(new FilterDefinitionBuilder<T>().Empty);
         }
 
         public long Count<T>(Expression<Func<T, bool>> criteria) where T : class
@@ -138,7 +129,7 @@ namespace Yarn.Data.MongoDbProvider
                     if ((args.TryGetValue("collection", out collection) && collection is string)
                         && (args.TryGetValue("pipeline", out pipeline) && pipeline is BsonArray))
                     {
-                        items = _context.Session.RunCommand(new BsonDocumentCommand<List<T>>(new CommandDocument
+                        items = _context.Session.RunCommand(new BsonDocumentCommand<List<T>>(new BsonDocument
                         {
                             { "aggregate", (string)collection },
                             { "pipeline", (BsonArray)pipeline }
@@ -153,7 +144,7 @@ namespace Yarn.Data.MongoDbProvider
                         && args.TryGetValue("map", out map) && (map is string || map is BsonJavaScript)
                         && args.TryGetValue("reduce", out reduce) && (reduce is string || reduce is BsonJavaScript))
                     {
-                        var commandDoc = new CommandDocument { { "mapReduce", (string)collection } };
+                        var commandDoc = new BsonDocument { { "mapReduce", (string)collection } };
 
                         var s1 = map as string;
                         if (s1 != null)
@@ -238,7 +229,7 @@ namespace Yarn.Data.MongoDbProvider
 
         public IDataContext DataContext
         {
-            get { return _context ?? (_context = new DataContext(_prefix, _connectionString)); }
+            get { return _context ?? (_context = new DataContext(_connectionString)); }
         }
 
         public void Dispose()
@@ -261,10 +252,6 @@ namespace Yarn.Data.MongoDbProvider
             return (IMongoCollection<T>)_collections.GetOrAdd(typeof(T), type =>
             {
                 var name = type.Name.ToLower();
-                if (_pluralizer.IsSingular(name))
-                {
-                    name = _pluralizer.Pluralize(name);
-                }
                 var database = Database;
 
                 var filter = new BsonDocument("name", name);
@@ -319,7 +306,7 @@ namespace Yarn.Data.MongoDbProvider
 
         public long Update<T>(Expression<Func<T, bool>> criteria, Expression<Func<T, T>> update) where T : class
         {
-            UpdateBuilder builder = null;
+            UpdateDefinition<T> updateDefinition = null;
             var expression = (MemberInitExpression)update.Body;
             foreach (var binding in expression.Bindings)
             {
@@ -338,19 +325,19 @@ namespace Yarn.Data.MongoDbProvider
                     value = lambda.Compile().DynamicInvoke();
                 }
 
-                if (builder == null)
+                if (updateDefinition == null)
                 {
-                    builder = MongoDB.Driver.Builders.Update.Set(name, BsonValue.Create(value));
+                    updateDefinition = Builders<T>.Update.Set(name, BsonValue.Create(value));
                 }
                 else
                 {
-                    builder.Set(name, BsonValue.Create(value));
+                    updateDefinition.Set(name, BsonValue.Create(value));
                 }
             }
 
-            if (builder == null) return 0L;
+            if (updateDefinition == null) return 0L;
 
-            var result = GetCollection<T>().UpdateMany(new ExpressionFilterDefinition<T>(criteria), new BsonDocumentUpdateDefinition<T>(builder.ToBsonDocument()), new UpdateOptions { IsUpsert = false });
+            var result = GetCollection<T>().UpdateMany(new ExpressionFilterDefinition<T>(criteria), new BsonDocumentUpdateDefinition<T>(updateDefinition.ToBsonDocument()), new UpdateOptions { IsUpsert = false });
             return result.IsAcknowledged && result.IsModifiedCountAvailable ? result.ModifiedCount : 0;
         }
 

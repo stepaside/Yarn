@@ -31,7 +31,6 @@ namespace Yarn.Data.EntityFrameworkProvider
 
         protected IDataContext<DbContext> Context;
 
-        protected readonly string Prefix;
         protected readonly bool LazyLoadingEnabled;
         protected readonly bool ProxyCreationEnabled;
         protected readonly bool AutoDetectChangesEnabled;
@@ -44,12 +43,7 @@ namespace Yarn.Data.EntityFrameworkProvider
         protected readonly bool MergeOnUpdate;
         protected readonly DataContextLifeCycle LifeCycle;
 
-        public Repository() : this(prefix: null)
-        {
-        }
-
-        public Repository(string prefix = null,
-            bool lazyLoadingEnabled = true,
+        public Repository(bool lazyLoadingEnabled = true,
             bool proxyCreationEnabled = true,
             bool autoDetectChangesEnabled = false,
             bool validateOnSaveEnabled = true,
@@ -61,7 +55,6 @@ namespace Yarn.Data.EntityFrameworkProvider
             bool mergeOnUpdate = false,
             DataContextLifeCycle lifeCycle = DataContextLifeCycle.DataContextCache)
         {
-            Prefix = prefix;
             LazyLoadingEnabled = lazyLoadingEnabled;
             ProxyCreationEnabled = proxyCreationEnabled;
             AutoDetectChangesEnabled = autoDetectChangesEnabled;
@@ -249,7 +242,7 @@ namespace Yarn.Data.EntityFrameworkProvider
         {
             get
             {
-                return Context ?? (Context = new DataContext(Prefix, LazyLoadingEnabled, ProxyCreationEnabled,
+                return Context ?? (Context = new DataContext(LazyLoadingEnabled, ProxyCreationEnabled,
                     AutoDetectChangesEnabled, ValidateOnSaveEnabled, MigrationEnabled, NameOrConnectionString,
                     AssemblyNameOrLocation, ConfigurationAssembly, DbContextType, LifeCycle));
             }
@@ -468,7 +461,7 @@ namespace Yarn.Data.EntityFrameworkProvider
 
         public long Insert<T>(IEnumerable<T> entities) where T : class
         {
-            using (var dataContext = new DataContext(Prefix, LazyLoadingEnabled, ProxyCreationEnabled,
+            using (var dataContext = new DataContext(LazyLoadingEnabled, ProxyCreationEnabled,
                 AutoDetectChangesEnabled, ValidateOnSaveEnabled, MigrationEnabled, NameOrConnectionString,
                 AssemblyNameOrLocation, ConfigurationAssembly, DbContextType))
             {

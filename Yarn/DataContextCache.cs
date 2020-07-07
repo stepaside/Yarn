@@ -1,4 +1,4 @@
-﻿using System.Runtime.Remoting.Messaging;
+﻿using System.Collections.Concurrent;
 using System.Web;
 
 namespace Yarn
@@ -13,34 +13,17 @@ namespace Yarn
 
         public object Get(string name)
         {
-            var context = HttpContext.Current;
-            return context != null ? context.Items[name] : CallContext.GetData(name);
+            return CallContext.LogicalGetData(name);
         }
 
         public void Set(string name, object value)
         {
-            var context = HttpContext.Current;
-            if (context != null)
-            {
-                context.Items[name] = value;
-            }
-            else
-            {
-                CallContext.SetData(name, value);
-            }
+           CallContext.LogicalSetData(name, value);
         }
 
         public void Cleanup(string name)
         {
-            var context = HttpContext.Current;
-            if (context != null)
-            {
-                context.Items.Remove(name);
-            }
-            else
-            {
-                CallContext.FreeNamedDataSlot(name);
-            }
+            CallContext.FreeNamedDataSlot(name);
         }
 
         static DataContextCache()

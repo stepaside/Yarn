@@ -20,9 +20,7 @@ namespace Yarn.Data.EntityFrameworkProvider
 {
     public class DataContextAsync : DataContext, IDataContextAsync<DbContext>
     {
-        public DataContextAsync() : this(prefix: null) { }
-
-        public DataContextAsync(string prefix = null,
+        public DataContextAsync(
             bool lazyLoadingEnabled = true,
             bool proxyCreationEnabled = false,
             bool autoDetectChangesEnabled = false,
@@ -34,7 +32,7 @@ namespace Yarn.Data.EntityFrameworkProvider
             Type dbContextType = null,
             DataContextLifeCycle lifeCycle = DataContextLifeCycle.DataContextCache)
             : base(
-                prefix, lazyLoadingEnabled, proxyCreationEnabled, autoDetectChangesEnabled, validateOnSaveEnabled,
+                lazyLoadingEnabled, proxyCreationEnabled, autoDetectChangesEnabled, validateOnSaveEnabled,
                 migrationEnabled, nameOrConnectionString, assemblyNameOrLocation, configurationAssembly, dbContextType, lifeCycle)
         {
 

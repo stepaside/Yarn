@@ -1,10 +1,10 @@
 ﻿using Raven.Client;
-using Raven.Client.Linq;
+using Raven.Client.Documents.Linq;
+using Raven.Client.Documents.Session;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
-using Raven.Client.Shard;
 using Yarn;
 using Yarn.Extensions;
 using Yarn.Specification;
@@ -15,21 +15,11 @@ namespace Yarn.Data.RavenDbProvider
     {
         private IDataContext<IDocumentSession> _context;
         private readonly Action<IDocumentQueryCustomization> _queryCustomization;
-        private readonly string _prefix;
-        private readonly IShardAccessStrategy _accessStrategy;
-        private readonly IShardResolutionStrategy _resolutionStrategy;
-        private readonly IDictionary<string, string> _shards;
         private readonly string _connectionString;
 
-        public Repository() : this(prefix: null) { }
-
-        public Repository(string prefix = null, string connectionString = null, IDictionary<string, string> shards = null, IShardAccessStrategy accessStrategy = null, IShardResolutionStrategy resolutionStrategy = null, Action<IDocumentQueryCustomization> queryCustomization = null)
+        public Repository(string connectionString = null, Action<IDocumentQueryCustomization> queryCustomization = null)
         {
-            _prefix = prefix;
             _connectionString = connectionString;
-            _shards = shards;
-            _accessStrategy = accessStrategy;
-            _resolutionStrategy = resolutionStrategy;
             _queryCustomization = queryCustomization;
         }
 
@@ -119,23 +109,19 @@ namespace Yarn.Data.RavenDbProvider
 
         public long Count<T>() where T : class
         {
-            RavenQueryStatistics stats;
+            QueryStatistics stats;
             _context.Session.Query<T>().Statistics(out stats);
             return stats.TotalResults;
         }
 
         public long Count<T>(Expression<Func<T, bool>> criteria) where T : class
         {
-            RavenQueryStatistics stats;
-            _context.Session.Query<T>().Where(criteria).Statistics(out stats);
-            return stats.TotalResults;
+            return _context.Session.Query<T>().Where(criteria).LongCount();
         }
 
         public long Count<T>(ISpecification<T> criteria) where T : class
         {
-            RavenQueryStatistics stats;
-            ((IRavenQueryable<T>)criteria.Apply(_context.Session.Query<T>())).Statistics(out stats);
-            return stats.TotalResults;
+            return criteria.Apply(_context.Session.Query<T>()).LongCount();
         }
 
         public IList<T> Execute<T>(string command, ParamList parameters) where T : class
@@ -187,9 +173,7 @@ namespace Yarn.Data.RavenDbProvider
         {
             get
             {
-                return _context ??
-                       (_context =
-                           _shards != null ? new DataContext(_shards, _accessStrategy, _resolutionStrategy) : _connectionString != null ? new DataContext(_connectionString) : new DataContext(_prefix, _accessStrategy, _resolutionStrategy));
+                return _context ?? (_context = new DataContext(_connectionString));
             }
         }
 
@@ -222,7 +206,7 @@ namespace Yarn.Data.RavenDbProvider
 
         public IEnumerable<T> GetById<T, TKey>(IEnumerable<TKey> ids) where T : class
         {
-            return _context.Session.Load<T>(ids.Select(i => i.ToString()));
+            return _context.Session.Load<T>(ids.Select(i => i.ToString())).Values;
         }
 
         public long Insert<T>(IEnumerable<T> entities) where T : class

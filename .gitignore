@@ -8,3 +8,5 @@ packages
 *.nupkg
 /.vs/Yarn/v15*
 /Yarn.sln.DotSettings.user
+/.vs/Yarn/v16/Server/*
+/.vs/slnx.sqlite

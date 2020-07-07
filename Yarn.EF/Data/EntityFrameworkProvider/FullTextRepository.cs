@@ -10,12 +10,7 @@ namespace Yarn.Data.EntityFrameworkProvider
     {
         private IFullTextProvider _fullTextProvider;
 
-        public FullTextRepository()
-            : this(null)
-        { }
-
-        public FullTextRepository(string contextKey = null)
-            : base(contextKey)
+        public FullTextRepository() : base()
         { }
 
         public IFullTextProvider FullText
@@ -24,7 +19,7 @@ namespace Yarn.Data.EntityFrameworkProvider
             {
                 if (_fullTextProvider == null)
                 {
-                    _fullTextProvider = ObjectContainer.Current.Resolve<IFullTextProvider>(Prefix);
+                    _fullTextProvider = ObjectContainer.Current.Resolve<IFullTextProvider>();
                     _fullTextProvider.DataContext = this.DataContext;
                 }
                 return _fullTextProvider;
