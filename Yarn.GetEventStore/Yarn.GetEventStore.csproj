@@ -1,7 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <RootNamespace>Yarn</RootNamespace>
-    <TargetFramework>netstandard2.0</TargetFramework>
+    <TargetFrameworks>netstandard2.0;netstandard2.1</TargetFrameworks>
     <AssemblyTitle>Yarn.Events</AssemblyTitle>
     <Company>Stepaside, Inc.</Company>
     <Product>Yarn.Events</Product>
