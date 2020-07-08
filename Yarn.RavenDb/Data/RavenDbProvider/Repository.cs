@@ -90,17 +90,7 @@ namespace Yarn.Data.RavenDbProvider
             _context.Session.Store(entity);
             return entity;
         }
-
-        public void Attach<T>(T entity) where T : class
-        {
-            throw new NotImplementedException();
-        }
-
-        public void Detach<T>(T entity) where T : class
-        {
-            _context.Session.Advanced.Evict(entity);
-        }
-
+        
         public IQueryable<T> All<T>() where T : class
         {
             var query = _context.Session.Query<T>();

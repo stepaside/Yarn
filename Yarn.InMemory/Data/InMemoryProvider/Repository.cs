@@ -116,17 +116,7 @@ namespace Yarn.Data.InMemoryProvider
         {
             return _context.Session.AsQueryable<T>();
         }
-
-        public void Detach<T>(T entity) where T : class
-        {
-            Remove(entity);
-        }
-
-        public void Attach<T>(T entity) where T : class
-        {
-            Update(entity); 
-        }
-
+        
         protected IOdb Database
         {
             get

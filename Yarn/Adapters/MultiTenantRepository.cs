@@ -157,47 +157,7 @@ namespace Yarn.Adapters
             Expression<Func<T, bool>> filter = e => ((ITenant)e).TenantId == _owner.TenantId;
             return typeof(ITenant).IsAssignableFrom(typeof(T)) ? base.All<T>().Where(CastRemoverVisitor<ITenant>.Convert(filter)) : base.All<T>();
         }
-
-        public override void Detach<T>(T entity)
-        {
-            var tenant = entity as ITenant;
-            if (tenant != null)
-            {
-                if (tenant.TenantId == _owner.TenantId)
-                {
-                    base.Detach(entity);
-                }
-                else
-                {
-                    throw new InvalidOperationException();
-                }
-            }
-            else
-            {
-                base.Detach(entity);
-            }
-        }
-
-        public override void Attach<T>(T entity)
-        {
-            var tenant = entity as ITenant;
-            if (tenant != null)
-            {
-                if (tenant.TenantId == _owner.TenantId)
-                {
-                    base.Attach(entity);
-                }
-                else
-                {
-                    throw new InvalidOperationException();
-                }
-            }
-            else
-            {
-                base.Attach(entity);
-            }
-        }
-        
+    
         public long TenantId
         {
             get { return _owner.TenantId; }

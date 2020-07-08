@@ -16,15 +16,10 @@ namespace Yarn.Extensions
             {
                 if (sorting == null)
                 {
-                    sorting = new Sorting<T>();
-                }
-
-                if (sorting.OrderBy == null)
-                {
                     var primaryKey = ((IMetaDataProvider)repository).GetPrimaryKey<T>().First();
                     var parameter = Expression.Parameter(typeof(T));
                     var body = Expression.Convert(Expression.PropertyOrField(parameter, primaryKey), typeof(T).GetProperty(primaryKey).PropertyType);
-                    sorting.OrderBy = Expression.Lambda<Func<T, object>>(body, parameter);
+                    sorting = new Sorting<T>(Expression.Lambda<Func<T, object>>(body, parameter));
                 }
 
                 query = (sorting.Reverse ? query.OrderByDescending(sorting.OrderBy) : query.OrderBy(sorting.OrderBy)).Skip(offset);

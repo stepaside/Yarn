@@ -25,10 +25,11 @@ namespace Yarn.Data.EntityFrameworkProvider
             Assembly configurationAssembly = null,
             Type dbContextType = null,
             bool mergeOnUpdate = false,
-            DataContextLifeCycle lifeCycle = DataContextLifeCycle.DataContextCache)
+            DataContextLifeCycle lifeCycle = DataContextLifeCycle.DataContextCache,
+            bool commitOnCrud = true)
             : base(
                 lazyLoadingEnabled, proxyCreationEnabled, autoDetectChangesEnabled, validateOnSaveEnabled,
-                migrationEnabled, nameOrConnectionString, assemblyNameOrLocation, configurationAssembly, dbContextType, mergeOnUpdate, lifeCycle)
+                migrationEnabled, nameOrConnectionString, assemblyNameOrLocation, configurationAssembly, dbContextType, mergeOnUpdate, lifeCycle, commitOnCrud)
         {
         }
 

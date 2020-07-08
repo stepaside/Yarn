@@ -42,7 +42,7 @@ namespace Yarn.Specification
             if (propertyName == null) throw new ArgumentNullException("propertyName");
             ValidatePropertyName(propertyName);
 
-            Sorting = new Sorting<T> { Path = propertyName };
+            Sorting = new Sorting<T>(propertyName);
             return this;
         }
 
@@ -51,7 +51,7 @@ namespace Yarn.Specification
             if (propertyName == null) throw new ArgumentNullException("propertyName");
             ValidatePropertyName(propertyName);
 
-            Sorting = new Sorting<T> { Path = propertyName, Reverse = true };
+            Sorting = new Sorting<T>(propertyName, true);
             return this;
         }
 
@@ -59,7 +59,7 @@ namespace Yarn.Specification
         {
             if (propertySelector == null) throw new ArgumentNullException("propertySelector");
 
-            Sorting = new Sorting<T> { OrderBy = propertySelector };
+            Sorting = new Sorting<T>(propertySelector);
             return this;
         }
         
@@ -67,7 +67,7 @@ namespace Yarn.Specification
         {
             if (propertySelector == null) throw new ArgumentNullException("propertySelector");
 
-            Sorting = new Sorting<T> { OrderBy = propertySelector, Reverse = true };
+            Sorting = new Sorting<T>(propertySelector, true);
             return this;
         }
 

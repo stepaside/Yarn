@@ -129,19 +129,7 @@ namespace Yarn.Data.NemoProvider
             //return LinqExtensions.Defer(() => ObjectFactory.Select<T>()).AsQueryable();
             return new NemoQueryable<T>(Connection);
         }
-
-        public void Detach<T>(T entity) where T : class
-        {
-            SetConfiguration<T>();
-            entity.Detach();
-        }
-
-        public void Attach<T>(T entity) where T : class
-        {
-            SetConfiguration<T>();
-            entity.Attach();
-        }
-
+        
         public DbConnection Connection
         {
             get { return ((IDataContext<DbConnection>)_context).Session; }

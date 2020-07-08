@@ -247,17 +247,7 @@ namespace Yarn.Cache
         {
             return _repository.All<T>();
         }
-
-        public void Detach<T>(T entity) where T : class
-        {
-            _repository.Detach(entity);
-        }
-
-        public void Attach<T>(T entity) where T : class
-        {
-            _repository.Attach(entity);
-        }
-
+        
         public IDataContext DataContext
         {
             get

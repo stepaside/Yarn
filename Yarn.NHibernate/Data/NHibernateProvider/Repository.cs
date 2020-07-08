@@ -139,17 +139,7 @@ namespace Yarn.Data.NHibernateProvider
             Session.Merge(entity);
             return entity;
         }
-
-        public void Attach<T>(T entity) where T : class
-        {
-            Session.Merge(entity);
-        }
-
-        public void Detach<T>(T entity) where T : class
-        {
-            Session.Evict(entity);
-        }
-
+        
         public IQueryable<T> All<T>() where T : class
         {
             return Session.Query<T>();

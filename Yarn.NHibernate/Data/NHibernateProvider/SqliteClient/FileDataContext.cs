@@ -19,13 +19,8 @@ namespace Yarn.Data.NHibernateProvider.SqliteClient
 
         public FileDataContext(string nameOrConnectionString = null, Assembly configurationAssembly = null) : this(null, nameOrConnectionString, null, configurationAssembly) { }
 
-        public FileDataContext(string prefix = null, string nameOrConnectionString = null, string assemblyNameOrLocation = null, Assembly configurationAssembly = null) :
-            base(SQLiteConfiguration.Standard.UsingFile(GetFileName(prefix)).ShowSql(), prefix, nameOrConnectionString, assemblyNameOrLocation, configurationAssembly)
+        public FileDataContext(string fileName = null, string nameOrConnectionString = null, string assemblyNameOrLocation = null, Assembly configurationAssembly = null) :
+            base(fileName != null ? SQLiteConfiguration.Standard.UsingFile(fileName).ShowSql() : SQLiteConfiguration.Standard, nameOrConnectionString, assemblyNameOrLocation, configurationAssembly)
         { }
-        
-        private static string GetFileName(string prefix)
-        {
-            return (prefix ?? "NHibernate.SqliteClient") + ".db";
-        }
     }
 }

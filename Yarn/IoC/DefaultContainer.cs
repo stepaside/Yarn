@@ -4,18 +4,19 @@ using System.Linq;
 
 namespace Yarn.IoC
 {
+
     public class DefaultContainer : IContainer, INestedContainerProvider
     {
-        private readonly Dictionary<Tuple<Type, string>, Func<object>> _mappings;
+        private readonly Dictionary<(Type, string), Func<object>> _mappings;
 
         public DefaultContainer()
         {
-            _mappings = new Dictionary<Tuple<Type, string>, Func<object>>();
+            _mappings = new Dictionary<(Type, string), Func<object>>();
         }
 
-        private DefaultContainer(IDictionary<Tuple<Type, string>, Func<object>> mappings)
+        private DefaultContainer(IDictionary<(Type, string), Func<object>> mappings)
         {
-            _mappings = new Dictionary<Tuple<Type, string>, Func<object>>(mappings);
+            _mappings = new Dictionary<(Type, string), Func<object>>(mappings);
         }
 
         public void Register<TAbstract, TConcrete>(string instanceName = null)
@@ -42,12 +43,11 @@ namespace Yarn.IoC
                 throw new ArgumentNullException("createInstanceFactory");
             }
 
-            var key = Tuple.Create(typeof(TAbstract), instanceName);
+            var key = (Type: typeof(TAbstract), InstanceName: instanceName);
 
             if (_mappings.ContainsKey(key))
             {
-                const string errorMessageFormat = "The requested mapping already exists - Instance Name: {0} ({1})";
-                throw new InvalidOperationException(string.Format(errorMessageFormat, key.Item2 ?? "[null]", key.Item1.FullName));
+                throw new InvalidOperationException($"The requested mapping already exists - Instance Name: {key.InstanceName ?? "[null]"} ({key.Type.FullName})");
             }
 
             _mappings.Add(key, createInstanceFactory as Func<object>);
@@ -56,7 +56,7 @@ namespace Yarn.IoC
         public bool IsRegistered<TAbstract>(string instanceName = null)
             where TAbstract : class
         {
-            var key = Tuple.Create(typeof(TAbstract), instanceName);
+            var key = (Type: typeof(TAbstract), InstanceName: instanceName);
             return _mappings.ContainsKey(key);
         }
 
@@ -78,10 +78,9 @@ namespace Yarn.IoC
 
         public object Resolve(Type serviceType, string instanceName = null)
         {
-            var key = Tuple.Create(serviceType, instanceName);
-            Func<object> createInstance;
-
-            if (_mappings.TryGetValue(key, out createInstance))
+            var key = (Type: serviceType, InstanceName: instanceName);
+            
+            if (_mappings.TryGetValue(key, out var createInstance))
             {
                 var instance = createInstance();
                 return instance;

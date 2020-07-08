@@ -85,17 +85,7 @@ namespace Yarn.Data.MongoDbProvider
             var result = GetCollection<T>().ReplaceOne(new ExpressionFilterDefinition<T>(filter), entity, new ReplaceOptions { IsUpsert = true });
             return result.IsAcknowledged && result.IsModifiedCountAvailable && result.ModifiedCount == 1 ? entity : null;
         }
-
-        public void Attach<T>(T entity) where T : class
-        {
-            Update(entity);
-        }
-
-        public void Detach<T>(T entity) where T : class
-        {
-            Remove(entity);
-        }
-
+              
         public IQueryable<T> All<T>() where T : class
         {
             return GetCollection<T>().AsQueryable();

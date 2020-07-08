@@ -9,29 +9,25 @@ using Yarn.Extensions;
 namespace Yarn
 {
     public class Sorting<T>
-    {
-        private Lazy<Expression<Func<T, object>>> _orderBy;
-        private Lazy<string> _path;
-
-        public Expression<Func<T, object>> OrderBy
+    {  
+        public Sorting(Expression<Func<T, object>> orderBy, bool reverse = false)
         {
-            get { return _orderBy != null ? _orderBy.Value : null; }
-            set
-            {
-                _orderBy = new Lazy<Expression<Func<T,object>>>(() => value);
-                _path = new Lazy<string>(() => value == null ? null : value.Body.ToString());
-            }
+            OrderBy = orderBy;
+            Path = orderBy?.Body?.ToString();
+            Reverse = reverse;
         }
 
-        public string Path
+        public Sorting(string path, bool reverse = false)
         {
-            get { return _path != null ? _path.Value : null; }
-            set
-            {
-                _path = new Lazy<string>(() => value);
-                _orderBy = new Lazy<Expression<Func<T, object>>>(() => value == null ? null : typeof(T).BuildLambdaExpression(value) as Expression<Func<T, object>>);
-            }
+            OrderBy = path != null ? typeof(T).BuildLambdaExpression(path) as Expression<Func<T, object>> : null;
+            Path = path;
+            Reverse = reverse;
         }
+
+
+        public Expression<Func<T, object>> OrderBy { get; }
+        
+        public string Path { get; }
         
         public bool Reverse { get; set; }
 

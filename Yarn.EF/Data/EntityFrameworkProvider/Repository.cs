@@ -42,6 +42,7 @@ namespace Yarn.Data.EntityFrameworkProvider
         protected readonly Type DbContextType;
         protected readonly bool MergeOnUpdate;
         protected readonly DataContextLifeCycle LifeCycle;
+        protected readonly bool CommitOnCrud;
 
         public Repository(bool lazyLoadingEnabled = true,
             bool proxyCreationEnabled = true,
@@ -53,7 +54,8 @@ namespace Yarn.Data.EntityFrameworkProvider
             Assembly configurationAssembly = null,
             Type dbContextType = null,
             bool mergeOnUpdate = false,
-            DataContextLifeCycle lifeCycle = DataContextLifeCycle.DataContextCache)
+            DataContextLifeCycle lifeCycle = DataContextLifeCycle.DataContextCache,
+            bool commitOnCrud = true)
         {
             LazyLoadingEnabled = lazyLoadingEnabled;
             ProxyCreationEnabled = proxyCreationEnabled;
@@ -114,12 +116,33 @@ namespace Yarn.Data.EntityFrameworkProvider
 
         public T Add<T>(T entity) where T : class
         {
-            return Table<T>().Add(entity);
+            try
+            {
+                return Table<T>().Add(entity);
+            }
+            finally
+            {
+                if (CommitOnCrud)
+                {
+                    DbContext?.SaveChanges();
+                }
+            }
         }
 
         public T Remove<T>(T entity) where T : class
         {
-            return Table<T>().Remove(entity);
+            try
+            {
+
+                return Table<T>().Remove(entity);
+            }
+            finally
+            {
+                if (CommitOnCrud)
+                {
+                    DbContext?.SaveChanges();
+                }
+            }
         }
 
         public T Remove<T, TKey>(TKey id) where T : class
@@ -171,41 +194,13 @@ namespace Yarn.Data.EntityFrameworkProvider
             {
                 entry.State = EntityState.Modified;
             }
+
+            if (CommitOnCrud)
+            {
+                DbContext?.SaveChanges();
+            }
+
             return entry.Entity;
-        }
-
-        private readonly ConcurrentDictionary<Type, Delegate> _pkCache = new ConcurrentDictionary<Type, Delegate>();
-
-        public void Attach<T>(T entity) where T : class
-        {
-            // TODO: revise attach to be smarter (e.g., support for object graphs)
-            if (entity == null) return;
-
-            var entry = DbContext.Entry(entity);
-            var dbSet = Table<T>();
-            if (entry == null)
-            {
-                dbSet.Attach(entity);
-            }
-            else if (entry.State == EntityState.Detached)
-            {
-                var findByPrimaryKey = (Func<T, bool>)_pkCache.GetOrAdd(typeof(T), t => this.BuildPrimaryKeyExpression(entity).Compile());
-                var attachedEntity = dbSet.Local.FirstOrDefault(findByPrimaryKey);
-                if (attachedEntity != null)
-                {
-                    entry.State = EntityState.Unchanged;
-                }
-                else
-                {
-                    dbSet.Attach(entity);
-                }
-            }
-        }
-
-        public void Detach<T>(T entity) where T : class
-        {
-            if (entity == null) return;
-            ((IObjectContextAdapter)DbContext).ObjectContext.Detach(entity);
         }
 
         public IQueryable<T> All<T>() where T : class
@@ -895,6 +890,11 @@ namespace Yarn.Data.EntityFrameworkProvider
             finally
             {
                 context.Configuration.AutoDetectChangesEnabled = autoDetectChangesEnabled;
+
+                if (CommitOnCrud)
+                {
+                    context?.SaveChanges();
+                }
             }
         }
 

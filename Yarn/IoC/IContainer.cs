@@ -29,6 +29,4 @@ namespace Yarn.IoC
 
         IEnumerable<object> ResolveAll(Type serviceType);
     }
-
-   
 }

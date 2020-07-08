@@ -20,7 +20,7 @@ namespace Yarn.Data.NHibernateProvider.SqliteClient
         public InMemoryDataContext(string nameOrConnectionString = null, Assembly configurationAssembly = null) : this(null, nameOrConnectionString, null, configurationAssembly) { }
 
         public InMemoryDataContext(string prefix = null, string nameOrConnectionString = null, string assemblyNameOrLocation = null, Assembly configurationAssembly = null) :
-            base(SQLiteConfiguration.Standard.InMemory().ShowSql(), prefix, nameOrConnectionString, assemblyNameOrLocation, configurationAssembly)
+            base(SQLiteConfiguration.Standard.InMemory().ShowSql(), nameOrConnectionString, assemblyNameOrLocation, configurationAssembly)
         { }
     }
 }

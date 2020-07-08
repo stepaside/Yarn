@@ -301,19 +301,7 @@ namespace Yarn.Adapters
                 return _current.All<T>();
             }
         }
-
-        public override void Detach<T>(T entity)
-        {
-            _current.Detach(entity);
-            _other.Detach(entity);
-        }
-
-        public override void Attach<T>(T entity)
-        {
-            _current.Attach(entity);
-            _other.Attach(entity);
-        }
-
+                
         public override IDataContext DataContext
         {
             get { return new FailoverDataContext(_current.DataContext, _other.DataContext); }

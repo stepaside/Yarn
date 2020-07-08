@@ -33,10 +33,6 @@ namespace Yarn
         // LINQ methods
         IQueryable<T> All<T>() where T : class;
 
-        // Unit of work methods
-        void Detach<T>(T entity) where T : class;
-        void Attach<T>(T entity) where T : class;
-
         IDataContext DataContext { get; }
     }
 }

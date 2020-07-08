@@ -11,34 +11,28 @@ namespace Yarn.Data.NHibernateProvider.SqliteClient
     public abstract class SqLiteDataContext : NHibernateDataContext<SQLiteConfiguration, ConnectionStringBuilder, SQLiteDialect>
     {
         public SqLiteDataContext(SQLiteConfiguration configuration, 
-                                string prefix = null, 
                                 string nameOrConnectionString = null, 
                                 string assemblyNameOrLocation = null,
                                 Assembly configurationAssembly = null)
-            : base(configuration, prefix, nameOrConnectionString, assemblyNameOrLocation, configurationAssembly)
+            : base(configuration, nameOrConnectionString, assemblyNameOrLocation, configurationAssembly)
         { }
 
-        protected override Tuple<ISessionFactory, NHibernate.Cfg.Configuration> ConfigureSessionFactory(string factoryKey)
+        protected override Tuple<ISessionFactory, NHibernate.Cfg.Configuration> ConfigureSessionFactory()
         {
-            var assemblyKey = factoryKey + ".Model";
-            var assembly = Assembly.Load(ConfigurationManager.AppSettings.Get(assemblyKey));
+            var configurationAssembly = _configurationAssembly;
+            if (configurationAssembly == null)
+            {
+                configurationAssembly = Uri.IsWellFormedUriString(_assemblyNameOrLocation, UriKind.Absolute) ? Assembly.LoadFrom(_assemblyNameOrLocation) : Assembly.Load(_assemblyNameOrLocation);
+            }
 
             NHibernate.Cfg.Configuration config = null;
             var sessionFactory = Fluently.Configure()
                 .Database(Configuration)
-                .Mappings(m => m.FluentMappings.AddFromAssembly(assembly))
+                .Mappings(m => m.FluentMappings.AddFromAssembly(configurationAssembly))
                 .ExposeConfiguration(c => config = c)
                 .BuildSessionFactory();
 
             return Tuple.Create(sessionFactory, config);
-        }
-
-        protected override string DefaultPrefix
-        {
-            get
-            {
-                return "NHibernate.SqliteClient";
-            }
         }
     }
 }

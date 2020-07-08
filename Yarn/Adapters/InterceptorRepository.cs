@@ -86,19 +86,7 @@ namespace Yarn.Adapters
             Func<IQueryable<T>> f = base.All<T>;
             return Intercept(f, f.Method, new object[] { });
         }
-
-        public override void Detach<T>(T entity)
-        {
-            Action<T> f = base.Detach;
-            InterceptNoResult(() => f(entity), f.Method, new object[] { entity });
-        }
-
-        public override void Attach<T>(T entity)
-        {
-            Action<T> f= base.Attach;
-            InterceptNoResult(() => f(entity), f.Method, new object[] { entity });
-        }
-
+               
         public override ILoadService<T> Load<T>()
         {
             return new LoadService<T>(this, base.Load<T>(), _interceptorFactory);

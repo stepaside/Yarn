@@ -92,16 +92,6 @@ namespace Yarn.Adapters
             return Repository.All<T>();
         }
 
-        public virtual void Detach<T>(T entity) where T : class
-        {
-            Repository.Detach(entity);
-        }
-
-        public virtual void Attach<T>(T entity) where T : class
-        {
-            Repository.Attach(entity);
-        }
-
         public virtual IDataContext DataContext
         {
             get { return Repository.DataContext; }

@@ -8,10 +8,4 @@ namespace Yarn.EventSourcing
         T GetById<T>(Guid id) where T : class, IAggregate;
         void Save<T>(T aggregate) where T : class, IAggregate;
     }
-
-    public interface IEventRepositoryAsync : IEventRepository
-    {
-        Task<T> GetByIdAsync<T>(Guid id) where T : class, IAggregate;
-        Task SaveAsync<T>(T aggregate) where T : class, IAggregate;
-    }
 }

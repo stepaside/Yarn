@@ -54,6 +54,21 @@ namespace Yarn.Extensions
             return Expression.Lambda<Func<T, bool>>(body, p);
         }
 
+        public static Expression<Func<T, bool>> BuildPrimaryKeyExpression<T>(this T entity, Func<T, IEnumerable<Tuple<string, object>>> getPrimaryKey)
+            where T : class
+        {
+            Expression<Func<T, bool>> predicate = null;
+            foreach (var value in getPrimaryKey(entity) ?? Enumerable.Empty<Tuple<string, object>>())
+            {
+                var parameter = Expression.Parameter(typeof(T));
+                var left = Expression.Convert(Expression.PropertyOrField(parameter, value.Item1), value.Item2.GetType());
+                var body = Expression.Equal(left, Expression.Constant(value.Item2));
+                predicate = predicate == null ? Expression.Lambda<Func<T, bool>>(body, parameter) : predicate.And(Expression.Lambda<Func<T, bool>>(body, parameter));
+            }
+
+            return (Expression<Func<T, bool>>)Evaluator.PartialEval(predicate);
+        }
+
         public static Expression<Func<T, bool>> BuildPrimaryKeyExpression<T>(this IMetaDataProvider repository, T entity)
             where T : class
         {

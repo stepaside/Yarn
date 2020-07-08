@@ -61,11 +61,6 @@ namespace Yarn.Data.CassandraProvider
             return Session.GetTable<T>();
         }
 
-        public void Attach<T>(T entity) where T : class
-        {
-            
-        }
-
         public long Count<T>() where T : class
         {
             return Session.GetTable<T>().LongCount();
@@ -79,11 +74,6 @@ namespace Yarn.Data.CassandraProvider
         public long Count<T>(ISpecification<T> criteria) where T : class
         {
             return Count(((Specification<T>)criteria).Predicate);
-        }
-
-        public void Detach<T>(T entity) where T : class
-        {
-            
         }
 
         public void Dispose()
