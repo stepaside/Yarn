@@ -45,6 +45,8 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Yarn.GetEventStore", "Yarn.
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Yarn.Cassandra", "Yarn.Cassandra\Yarn.Cassandra.csproj", "{04DB1638-CA8F-4834-9759-EAC1D37F0C3B}"
 EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Yarn.Lamar", "Yarn.Lamar\Yarn.Lamar.csproj", "{C010465E-FA4C-4B61-9EF6-8846A5B63C40}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -99,6 +101,10 @@ Global
 		{04DB1638-CA8F-4834-9759-EAC1D37F0C3B}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{04DB1638-CA8F-4834-9759-EAC1D37F0C3B}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{04DB1638-CA8F-4834-9759-EAC1D37F0C3B}.Release|Any CPU.Build.0 = Release|Any CPU
+		{C010465E-FA4C-4B61-9EF6-8846A5B63C40}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{C010465E-FA4C-4B61-9EF6-8846A5B63C40}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{C010465E-FA4C-4B61-9EF6-8846A5B63C40}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{C010465E-FA4C-4B61-9EF6-8846A5B63C40}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

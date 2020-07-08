@@ -1,16 +1,16 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <RootNamespace>Yarn</RootNamespace>
-    <TargetFramework>netstandard2.0</TargetFramework>
+    <TargetFrameworks>netstandard2.0;netstandard2.1</TargetFrameworks>
     <SolutionDir Condition="$(SolutionDir) == '' Or $(SolutionDir) == '*Undefined*'">..\</SolutionDir>
-    <AssemblyTitle>Yarn.StructureMap</AssemblyTitle>
-    <Product>Yarn.StructureMap</Product>
-    <Description>Yarn StructureMap Provider</Description>
+    <AssemblyTitle>Yarn.Lamar</AssemblyTitle>
+    <Product>Yarn.Lamar</Product>
+    <Description>Yarn Lamar Provider</Description>
     <OutputPath>bin\$(Configuration)\</OutputPath>
-    <PackageId>Yarn.StructureMap</PackageId>
-    <PackageTags>Yarn StructureMap</PackageTags>
-    <PackageVersion>1.1.0</PackageVersion>
-    <AssemblyVersion>1.1.0</AssemblyVersion>
+    <PackageId>Yarn.Lamar</PackageId>
+    <PackageTags>Yarn Lamar</PackageTags>
+    <PackageVersion>1.0.0</PackageVersion>
+    <AssemblyVersion>1.0.0</AssemblyVersion>
     <Authors>Max Stepanskiy</Authors>
     <Company>Stepaside, Inc.</Company>
     <Copyright>Copyright © Max Stepanskiy 2012-2020</Copyright>
@@ -31,7 +31,7 @@
     <Error Condition="!Exists('$(SolutionDir)\.nuget\NuGet.targets')" Text="$([System.String]::Format('$(ErrorText)', '$(SolutionDir)\.nuget\NuGet.targets'))" />
   </Target>
   <ItemGroup>
-    <PackageReference Include="StructureMap" Version="4.7.1" />
+    <PackageReference Include="Lamar.Microsoft.DependencyInjection" Version="4.3.0" />
     <PackageReference Include="System.Reflection.Emit.Lightweight" Version="4.7.0" />
   </ItemGroup>
   <ItemGroup>
