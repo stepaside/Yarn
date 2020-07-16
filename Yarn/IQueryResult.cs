@@ -2,8 +2,7 @@
 
 namespace Yarn
 {
-    public interface IQueryResult<out T> 
-        where T : class
+    public interface IQueryResult<T> 
     {
         IEnumerable<T> Items { get; }
 
