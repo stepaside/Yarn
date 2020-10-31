@@ -9,14 +9,15 @@
     <OutputPath>bin\$(Configuration)\</OutputPath>
     <PackageId>Yarn.Nemo</PackageId>
     <PackageTags>Nemo Repository</PackageTags>
-    <PackageVersion>1.1.0</PackageVersion>
-    <AssemblyVersion>1.1.0</AssemblyVersion>
+    <PackageVersion>1.1.1</PackageVersion>
+    <AssemblyVersion>1.1.1</AssemblyVersion>
     <Authors>Max Stepanskiy</Authors>
     <Company>Stepaside, Inc.</Company>
     <Copyright>Copyright © Max Stepanskiy 2012-2020</Copyright>
     <PackageProjectUrl>https://github.com/stepaside/Yarn</PackageProjectUrl>
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
-    <LangVersion>8.0</LangVersion>
+    <RequireLicenseAcceptance>false</RequireLicenseAcceptance>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <DebugType>full</DebugType>

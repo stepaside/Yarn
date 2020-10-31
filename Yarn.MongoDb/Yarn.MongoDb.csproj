@@ -16,6 +16,8 @@
     <OutputPath>bin\$(Configuration)\</OutputPath>
     <PackageId>Yarn.MongoDb</PackageId>
     <PackageTags>Mongo MongoDB Repository</PackageTags>
+    <RequireLicenseAcceptance>false</RequireLicenseAcceptance>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <DebugType>full</DebugType>

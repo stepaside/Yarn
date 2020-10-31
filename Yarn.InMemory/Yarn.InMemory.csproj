@@ -16,6 +16,8 @@
     <PackageId>Yarn.InMemory</PackageId>
     <PackageTags>Inmemory In-memory Repository</PackageTags>
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+    <RequireLicenseAcceptance>false</RequireLicenseAcceptance>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <DebugType>full</DebugType>

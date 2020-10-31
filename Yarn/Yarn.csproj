@@ -17,6 +17,8 @@
     <PackageId>Yarn</PackageId>
     <PackageProjectUrl>https://github.com/stepaside/Yarn</PackageProjectUrl>
     <PackageTags>Repository Repository-Pattern</PackageTags>
+    <RequireLicenseAcceptance>false</RequireLicenseAcceptance>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <DebugType>full</DebugType>
