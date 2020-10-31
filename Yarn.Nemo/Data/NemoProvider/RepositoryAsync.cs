@@ -66,7 +66,7 @@ namespace Yarn.Data.NemoProvider
         {
             if (orderBy != null)
             {
-                return ObjectFactory.SelectAsync(criteria, connection: Connection, page: limit > 0 ? offset / limit + 1 : 0, pageSize: limit, orderBy: new Nemo.Sorting<T> { OrderBy = orderBy.OrderBy, Reverse = orderBy.Reverse }).ToEnumerableAsync();
+                return ObjectFactory.SelectAsync(criteria, connection: Connection, page: limit > 0 ? offset / limit + 1 : 0, pageSize: limit, orderBy: orderBy.ToArray().Select(s => new Nemo.Sorting<T> { OrderBy = s.OrderBy, Reverse = s.Reverse }).ToArray()).ToEnumerableAsync();
             }
             return ObjectFactory.SelectAsync(criteria, connection: Connection, page: limit > 0 ? offset / limit + 1 : 0, pageSize: limit).ToEnumerableAsync();
         }
@@ -86,7 +86,7 @@ namespace Yarn.Data.NemoProvider
             var property = GetPrimaryKey<T>().First();
             return _useStoredProcedures
                 ? (await ObjectFactory.RetrieveAsync<T>("GetById", parameters: new[] { new Param { Name = property, Value = id } }, connection: Connection)).FirstOrDefault()
-                : await ObjectFactory.SelectAsync(this.BuildPrimaryKeyExpression<T, TKey>(id), connection: Connection).FirstOrDefault();
+                : await ObjectFactory.SelectAsync(this.BuildPrimaryKeyExpression<T, TKey>(id), connection: Connection).FirstOrDefaultAsync();
         }
     }
 }

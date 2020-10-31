@@ -96,7 +96,7 @@ namespace Yarn.Specification
             
             if (Sorting != null && Sorting.OrderBy != null)
             {
-                query = Sorting.Reverse ? query.OrderByDescending(Sorting.OrderBy) : query.OrderBy(Sorting.OrderBy);
+                query = Sorting.Apply(query);
             }
 
             if (PageNumber >= 1)

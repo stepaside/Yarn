@@ -22,11 +22,15 @@ namespace Yarn.Extensions
                     sorting = new Sorting<T>(Expression.Lambda<Func<T, object>>(body, parameter));
                 }
 
-                query = (sorting.Reverse ? query.OrderByDescending(sorting.OrderBy) : query.OrderBy(sorting.OrderBy)).Skip(offset);
+                query = sorting.Apply(query).Skip(offset);
             }
             if (limit > 0)
             {
                 query = query.Take(limit);
+            }
+            if (offset == 0 && limit == 0 && sorting?.OrderBy != null)
+            {
+                query = sorting.Apply(query);
             }
             return query;
         }

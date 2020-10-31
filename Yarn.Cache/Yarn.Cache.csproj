@@ -11,8 +11,8 @@
     <PackageId>Yarn.Cache</PackageId>
     <PackageProjectUrl>https://github.com/stepaside/Yarn</PackageProjectUrl>
     <PackageTags>Cache Repository</PackageTags>
-    <PackageVersion>1.1.0</PackageVersion>
-    <AssemblyVersion>1.1.0</AssemblyVersion>
+    <PackageVersion>1.1.1</PackageVersion>
+    <AssemblyVersion>1.1.1</AssemblyVersion>
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
     <OutputPath>bin\$(Configuration)\</OutputPath>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>

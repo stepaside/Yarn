@@ -24,6 +24,7 @@ namespace Yarn
             Reverse = reverse;
         }
 
+        private Sorting<T> _previous;
 
         public Expression<Func<T, object>> OrderBy { get; }
         
@@ -31,9 +32,64 @@ namespace Yarn
         
         public bool Reverse { get; set; }
 
+        public Sorting<T> Then(Sorting<T> next)
+        {
+            next._previous = this;
+            return next;
+        }
+
+        public Sorting<T> Then(Expression<Func<T, object>> orderBy, bool reverse = false)
+        {
+            return Then(new Sorting<T>(orderBy, reverse));
+        }
+
         public override string ToString()
         {
-            return Path + " " + (Reverse ? "DESC" : "ASC");
+            var orderBy = $"{Path} {(Reverse ? "DESC" : "ASC")}"; 
+            if (_previous != null)
+            {
+                orderBy = $"{_previous}, {orderBy}";
+            }
+            return orderBy;
+        }
+
+        public IQueryable<T> Apply(IQueryable<T> query)
+        {
+            var items = ToArray();
+            var first = true;
+            foreach(var item in items)
+            {
+                if (!first && query is IOrderedQueryable<T> ordered)
+                {
+                    query = item.Reverse ? ordered.ThenByDescending(item.OrderBy) : ordered.ThenBy(item.OrderBy);
+                }
+                else
+                {
+                    query = item.Reverse ? query.OrderByDescending(item.OrderBy) : query.OrderBy(item.OrderBy);
+                    first = false;
+                }
+            }
+            return query;
+        }
+
+        public Sorting<T>[] ToArray()
+        {
+            if (_previous == null)
+            {
+                return new Sorting<T>[] { this };
+            }
+            else
+            {
+                var stack = new Stack<Sorting<T>>();
+                var current = this;
+                while (current != null)
+                {
+                    stack.Push(current);
+                    current = current._previous;
+                }
+
+                return stack.ToArray();
+            }
         }
     }
 }

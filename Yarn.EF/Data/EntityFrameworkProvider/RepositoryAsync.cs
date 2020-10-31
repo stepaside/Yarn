@@ -51,14 +51,14 @@ namespace Yarn.Data.EntityFrameworkProvider
         public async Task<IEnumerable<T>> FindAllAsync<T>(ISpecification<T> criteria, int offset = 0, int limit = 0, Sorting<T> orderBy = null) where T : class
         {
             var query = criteria.Apply(Table<T>());
-            query = this.Page<T>(query, offset, limit, orderBy);
+            query = this.Page(query, offset, limit, orderBy);
             return await query.ToListAsync();
         }
 
         public async Task<IEnumerable<T>> FindAllAsync<T>(Expression<Func<T, bool>> criteria, int offset = 0, int limit = 0, Sorting<T> orderBy = null) where T : class
         {
             var query = this.Table<T>().Where(criteria);
-            query = this.Page<T>(query, offset, limit, orderBy);
+            query = this.Page(query, offset, limit, orderBy);
             return await query.ToListAsync();
         }
 
