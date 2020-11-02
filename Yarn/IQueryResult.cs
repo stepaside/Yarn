@@ -6,6 +6,6 @@ namespace Yarn
     {
         IEnumerable<T> Items { get; }
 
-        int TotalCount { get; }
+        long TotalCount { get; }
     }
 }

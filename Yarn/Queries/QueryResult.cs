@@ -6,7 +6,7 @@ namespace Yarn.Queries
     public class QueryResult<T> : IQueryResult<T>
         where T : class
     {
-        public QueryResult(IEnumerable<T> items, int totalCount)
+        public QueryResult(IEnumerable<T> items, long totalCount)
         {
             Items = items;
             TotalCount = totalCount;
@@ -14,6 +14,6 @@ namespace Yarn.Queries
 
         public IEnumerable<T> Items { get; private set; }
 
-        public int TotalCount { get; private set; }
+        public long TotalCount { get; private set; }
     }
 }

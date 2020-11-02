@@ -9,8 +9,8 @@
     <Product>Yarn</Product>
     <Description>Yet Another Repository for .Net</Description>
     <Copyright>Copyright © Max Stepanskiy 2012-2020</Copyright>
-    <PackageVersion>1.1.1</PackageVersion>
-    <AssemblyVersion>1.1.1</AssemblyVersion>
+    <PackageVersion>1.1.2</PackageVersion>
+    <AssemblyVersion>1.1.2</AssemblyVersion>
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
     <OutputPath>bin\$(Configuration)\</OutputPath>
     <Authors>Max Stepanskiy</Authors>
