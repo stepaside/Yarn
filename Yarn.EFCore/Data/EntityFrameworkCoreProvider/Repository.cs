@@ -97,7 +97,6 @@ namespace Yarn.Data.EntityFrameworkCoreProvider
         {
             try
             {
-
                 return Table<T>().Remove(entity).Entity;
             }
             finally
@@ -267,10 +266,10 @@ namespace Yarn.Data.EntityFrameworkCoreProvider
             public ILoadService<T> Include<TProperty>(Expression<Func<T, TProperty>> path)
                 where TProperty : class
             {
-                _query = _query.Include(path);
-                
                 var properties = path.Body.ToString().Split('.').Where(p => !p.StartsWith("Select")).Select(p => p.TrimEnd(')')).Skip(1).ToArray();
                 _paths.Add(properties);
+
+                _query = _query.Include(string.Join(".", properties));
 
                 return this;
             }
