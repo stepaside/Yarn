@@ -15,25 +15,23 @@ namespace Yarn.Data.EntityFrameworkProvider
 {
     public class RepositoryAsync : Repository, IRepositoryAsync
     {
-        public RepositoryAsync(bool lazyLoadingEnabled = true,
-            bool proxyCreationEnabled = true,
-            bool autoDetectChangesEnabled = false,
-            bool validateOnSaveEnabled = true,
-            bool migrationEnabled = false,
-            string nameOrConnectionString = null,
-            string assemblyNameOrLocation = null,
-            Assembly configurationAssembly = null,
-            Type dbContextType = null,
-            bool mergeOnUpdate = false,
-            bool commitOnCrud = true)
-            : base(
-                lazyLoadingEnabled, proxyCreationEnabled, autoDetectChangesEnabled, validateOnSaveEnabled,
-                migrationEnabled, nameOrConnectionString, assemblyNameOrLocation, configurationAssembly, dbContextType, mergeOnUpdate, commitOnCrud)
+        public RepositoryAsync(IDataContextAsync dataContext, RepositoryOptions options)
+            : base(dataContext, options)
+        { }
+
+        public RepositoryAsync(IDataContextAsync dataContext)
+            : this(dataContext, new RepositoryOptions())
+        { }
+
+        public RepositoryAsync(DataContextOptions dataContextOptions, RepositoryOptions options)
+            : base(dataContextOptions, options)
         {
-            Context = new DataContextAsync(lazyLoadingEnabled, proxyCreationEnabled,
-                        autoDetectChangesEnabled, validateOnSaveEnabled, migrationEnabled, nameOrConnectionString,
-                        assemblyNameOrLocation, configurationAssembly, dbContextType);
+            Context = new DataContextAsync(dataContextOptions);
         }
+
+        public RepositoryAsync(DataContextOptions dataContextOptions)
+            : this(dataContextOptions, new RepositoryOptions())
+        { }
 
         public async Task<T> GetByIdAsync<T, TKey>(TKey id) where T : class
         {

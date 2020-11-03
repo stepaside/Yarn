@@ -13,8 +13,12 @@ namespace Yarn.Data.EntityFrameworkCoreProvider
 {
     public class RepositoryAsync : Repository, IRepositoryAsync
     {
-        public RepositoryAsync(IDataContextAsync dataContext, bool mergeOnUpdate = false, bool commitOnCrud = true)
-            : base(dataContext, mergeOnUpdate, commitOnCrud)
+        public RepositoryAsync(IDataContextAsync dataContext, RepositoryOptions options)
+            : base(dataContext, options)
+        { }
+
+        public RepositoryAsync(IDataContextAsync dataContext)
+            : this(dataContext, new RepositoryOptions())
         { }
 
         public async Task<T> GetByIdAsync<T, TKey>(TKey id) where T : class

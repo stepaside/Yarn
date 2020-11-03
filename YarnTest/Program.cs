@@ -25,9 +25,9 @@ namespace YarnTest
     {
         static void Main(string[] args)
         {
-            ObjectContainer.Current.Register<IRepository>(() => new Repository(false, false, nameOrConnectionString: "Yarn.EF2.Connection"), "EF");
+            ObjectContainer.Current.Register<IRepository>(() => new Repository(new DataContextOptions { LazyLoadingEnabled = false, ProxyCreationEnabled = false, NameOrConnectionString = "Yarn.EF2.Connection" }), "EF");
 
-            ObjectContainer.Current.Register<IRepository>(() => new Repository(false, false, dbContextType: typeof(NorthwindEntities)), "EF2");
+            ObjectContainer.Current.Register<IRepository>(() => new Repository(new DataContextOptions { LazyLoadingEnabled = false, ProxyCreationEnabled = false, DbContextType = typeof(NorthwindEntities) }), "EF2");
 
             ObjectContainer.Current.Register<IRepository>(() => new Yarn.Data.InMemoryProvider.Repository(), "InMemory");
 

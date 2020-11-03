@@ -26,8 +26,7 @@ namespace Yarn.Data.EntityFrameworkCoreProvider
 
         public DataContext(T dbContext)
         {
-            if (dbContext == null) throw new ArgumentNullException(nameof(dbContext));
-            _dbContext = dbContext;
+            _dbContext = dbContext ?? throw new ArgumentNullException(nameof(dbContext));
         }        
 
         public void SaveChanges()

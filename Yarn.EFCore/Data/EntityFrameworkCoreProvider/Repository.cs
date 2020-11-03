@@ -26,15 +26,17 @@ namespace Yarn.Data.EntityFrameworkCoreProvider
         private static readonly ConcurrentDictionary<Type, Dictionary<string, string>> ColumnMappings = new ConcurrentDictionary<Type, Dictionary<string, string>>();
 
         private readonly IDataContext _context;
-        private readonly bool _mergeOnUpdate;
-        private readonly bool _commitOnCrud;
+        private readonly RepositoryOptions _options;
 
-        public Repository(IDataContext dataContext, bool mergeOnUpdate = false, bool commitOnCrud = true)
+        public Repository(IDataContext dataContext, RepositoryOptions options)
         {
             _context = dataContext;
-            _mergeOnUpdate = mergeOnUpdate;
-            _commitOnCrud = commitOnCrud;
+            _options = options;
         }
+
+        public Repository(IDataContext dataContext) 
+            : this(dataContext, new RepositoryOptions())
+        { }
 
         public T GetById<T, TKey>(TKey id) where T : class
         {
@@ -84,7 +86,7 @@ namespace Yarn.Data.EntityFrameworkCoreProvider
             }
             finally
             {
-                if (_commitOnCrud)
+                if (_options.CommitOnCrud)
                 {
                     DbContext?.SaveChanges();
                 }
@@ -100,7 +102,7 @@ namespace Yarn.Data.EntityFrameworkCoreProvider
             }
             finally
             {
-                if (_commitOnCrud)
+                if (_options.CommitOnCrud)
                 {
                     DbContext?.SaveChanges();
                 }
@@ -134,7 +136,7 @@ namespace Yarn.Data.EntityFrameworkCoreProvider
                 if (attachedEntity != null)
                 {
                     // Update only root attributes for lazy loaded entities
-                    if (!_mergeOnUpdate)
+                    if (!_options.MergeOnUpdate)
                     {
                         var attachedEntry = DbContext.Entry(attachedEntity);
                         attachedEntry.CurrentValues.SetValues(entity);
@@ -157,7 +159,7 @@ namespace Yarn.Data.EntityFrameworkCoreProvider
                 entry.State = EntityState.Modified;
             }
 
-            if (_commitOnCrud)
+            if (_options.CommitOnCrud)
             {
                 DbContext?.SaveChanges();
             }
@@ -857,7 +859,7 @@ namespace Yarn.Data.EntityFrameworkCoreProvider
             {
                 context.ChangeTracker.AutoDetectChangesEnabled = autoDetectChangesEnabled;
 
-                if (_commitOnCrud)
+                if (_options.CommitOnCrud)
                 {
                     context?.SaveChanges();
                 }

@@ -31,35 +31,27 @@ namespace Yarn.Data.EntityFrameworkProvider
 
         protected IDataContext<DbContext> Context;
 
-        private readonly bool _mergeOnUpdate;
-        private readonly bool _commitOnCrud;
+        private readonly RepositoryOptions _options;
 
-        public Repository(IDataContext dataContext, bool mergeOnUpdate = false, bool commitOnCrud = true)
+        public Repository(IDataContext dataContext, RepositoryOptions options)
         {
             Context = dataContext as IDataContext<DbContext>;
-            _mergeOnUpdate = mergeOnUpdate;
-            _commitOnCrud = commitOnCrud;
+            _options = options;
         }
 
-        public Repository(bool lazyLoadingEnabled = true,
-            bool proxyCreationEnabled = true,
-            bool autoDetectChangesEnabled = false,
-            bool validateOnSaveEnabled = true,
-            bool migrationEnabled = false,
-            string nameOrConnectionString = null,
-            string assemblyNameOrLocation = null,
-            Assembly configurationAssembly = null,
-            Type dbContextType = null,
-            bool mergeOnUpdate = false,
-            bool commitOnCrud = true)
+        public Repository(IDataContext dataContext) 
+            : this (dataContext, new RepositoryOptions())
+        { }
+
+        public Repository(DataContextOptions dataContextOptions, RepositoryOptions options)
         {
-            _mergeOnUpdate = mergeOnUpdate;
-            _commitOnCrud = commitOnCrud;
-
-            Context = new DataContext(lazyLoadingEnabled, proxyCreationEnabled,
-                    autoDetectChangesEnabled, validateOnSaveEnabled, migrationEnabled, nameOrConnectionString,
-                    assemblyNameOrLocation, configurationAssembly, dbContextType);
+            Context = new DataContext(dataContextOptions);
+            _options = options;
         }
+
+        public Repository(DataContextOptions dataContextOptions) 
+            : this(dataContextOptions, new RepositoryOptions())
+        { }
 
         public T GetById<T, TKey>(TKey id) where T : class
         {
@@ -110,7 +102,7 @@ namespace Yarn.Data.EntityFrameworkProvider
             }
             finally
             {
-                if (_commitOnCrud)
+                if (_options.CommitOnCrud)
                 {
                     DbContext?.SaveChanges();
                 }
@@ -126,7 +118,7 @@ namespace Yarn.Data.EntityFrameworkProvider
             }
             finally
             {
-                if (_commitOnCrud)
+                if (_options.CommitOnCrud)
                 {
                     DbContext?.SaveChanges();
                 }
@@ -160,7 +152,7 @@ namespace Yarn.Data.EntityFrameworkProvider
                 if (attachedEntity != null)
                 {
                     // Update only root attributes for lazy loaded entities
-                    if (DbContext.Configuration.LazyLoadingEnabled || !_mergeOnUpdate)
+                    if (DbContext.Configuration.LazyLoadingEnabled || !_options.MergeOnUpdate)
                     {
                         var attachedEntry = DbContext.Entry(attachedEntity);
                         attachedEntry.CurrentValues.SetValues(entity);
@@ -183,7 +175,7 @@ namespace Yarn.Data.EntityFrameworkProvider
                 entry.State = EntityState.Modified;
             }
 
-            if (_commitOnCrud)
+            if (_options.CommitOnCrud)
             {
                 DbContext?.SaveChanges();
             }
@@ -875,7 +867,7 @@ namespace Yarn.Data.EntityFrameworkProvider
             {
                 context.Configuration.AutoDetectChangesEnabled = autoDetectChangesEnabled;
 
-                if (_commitOnCrud)
+                if (_options.CommitOnCrud)
                 {
                     context?.SaveChanges();
                 }

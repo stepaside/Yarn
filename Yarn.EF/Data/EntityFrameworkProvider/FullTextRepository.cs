@@ -10,7 +10,12 @@ namespace Yarn.Data.EntityFrameworkProvider
     {
         private IFullTextProvider _fullTextProvider;
 
-        public FullTextRepository(IFullTextProvider fullTextProvider = null) : base()
+        public FullTextRepository(IFullTextProvider fullTextProvider, IDataContext dataContext, RepositoryOptions options) : base(dataContext, options)
+        {
+            _fullTextProvider = fullTextProvider;
+        }
+
+        public FullTextRepository(IFullTextProvider fullTextProvider, DataContextOptions dataContextOptions, RepositoryOptions options) : base(dataContextOptions, options)
         {
             _fullTextProvider = fullTextProvider;
         }

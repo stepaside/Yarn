@@ -26,18 +26,9 @@ namespace Yarn.Data.EntityFrameworkProvider
 
         private static readonly ScriptGeneratorMigrationInitializer<DbContext> DbInitializer = new ScriptGeneratorMigrationInitializer<DbContext>();
 
-        private readonly bool _lazyLoadingEnabled;
-        private readonly bool _proxyCreationEnabled;
-        private readonly bool _autoDetectChangesEnabled;
-        private readonly bool _validateOnSaveEnabled;
-        private readonly bool _migrationEnabled;
-        private readonly string _nameOrConnectionString;
-        private readonly string _assemblyNameOrLocation;
-        private readonly Assembly _configurationAssembly;
-        private readonly Type _dbContextType;
-
+        private readonly DataContextOptions _options;
+        
         private bool? _codeFirst;
-        private string _contextKey;
         private string _modelKey;
         private string _source;
 
@@ -48,29 +39,9 @@ namespace Yarn.Data.EntityFrameworkProvider
             Context = new Lazy<DbContext>(() => dbContext, true);
         }
 
-        public DataContext(
-            bool lazyLoadingEnabled = true,
-            bool proxyCreationEnabled = true,
-            bool autoDetectChangesEnabled = false,
-            bool validateOnSaveEnabled = true,
-            bool migrationEnabled = false,
-            string nameOrConnectionString = null,
-            string assemblyNameOrLocation = null,
-            Assembly configurationAssembly = null,
-            Type dbContextType = null)
+        public DataContext(DataContextOptions options)
         {
-            _lazyLoadingEnabled = lazyLoadingEnabled;
-            _proxyCreationEnabled = proxyCreationEnabled;
-            _autoDetectChangesEnabled = autoDetectChangesEnabled;
-            _validateOnSaveEnabled = validateOnSaveEnabled;
-            _migrationEnabled = migrationEnabled;
-            _nameOrConnectionString = nameOrConnectionString;
-            _configurationAssembly = configurationAssembly;
-            if (_configurationAssembly != null)
-            {
-                _assemblyNameOrLocation = assemblyNameOrLocation;
-            }
-            _dbContextType = dbContextType;
+            _options = options;
             Context = new Lazy<DbContext>(InitializeDbContext, true);
         }
 
@@ -89,12 +60,12 @@ namespace Yarn.Data.EntityFrameworkProvider
 
         protected DbContext CreateDbContext()
         {
-            var nameOrConnectionString = _nameOrConnectionString;
+            var nameOrConnectionString = _options.NameOrConnectionString;
 
-            _contextKey = _modelKey = nameOrConnectionString;
-            if (_dbContextType != null)
+            _modelKey = nameOrConnectionString;
+            if (_options.DbContextType != null)
             {
-                _modelKey = _dbContextType.FullName;
+                _modelKey = _options.DbContextType.FullName;
             }
 
             DbContext dbContext = null;
@@ -131,10 +102,10 @@ namespace Yarn.Data.EntityFrameworkProvider
                     dbContext = (DbContext)Activator.CreateInstance(modelInfo.DbContextType);
                 }
                 
-                dbContext.Configuration.LazyLoadingEnabled = _lazyLoadingEnabled;
-                dbContext.Configuration.ProxyCreationEnabled = _proxyCreationEnabled;
-                dbContext.Configuration.AutoDetectChangesEnabled = _autoDetectChangesEnabled;
-                dbContext.Configuration.ValidateOnSaveEnabled = _validateOnSaveEnabled;
+                dbContext.Configuration.LazyLoadingEnabled = _options.LazyLoadingEnabled;
+                dbContext.Configuration.ProxyCreationEnabled = _options.ProxyCreationEnabled;
+                dbContext.Configuration.AutoDetectChangesEnabled = _options.AutoDetectChangesEnabled;
+                dbContext.Configuration.ValidateOnSaveEnabled = _options.ValidateOnSaveEnabled;
 
                 _codeFirst = false;
             }
@@ -144,10 +115,10 @@ namespace Yarn.Data.EntityFrameworkProvider
                 var connection = CreateConnection(nameOrConnectionString);
 
                 dbContext = new DbContext(connection, dbModel, true);
-                dbContext.Configuration.LazyLoadingEnabled = _lazyLoadingEnabled;
-                dbContext.Configuration.ProxyCreationEnabled = _proxyCreationEnabled;
-                dbContext.Configuration.AutoDetectChangesEnabled = _autoDetectChangesEnabled;
-                dbContext.Configuration.ValidateOnSaveEnabled = _validateOnSaveEnabled;
+                dbContext.Configuration.LazyLoadingEnabled = _options.LazyLoadingEnabled;
+                dbContext.Configuration.ProxyCreationEnabled = _options.ProxyCreationEnabled;
+                dbContext.Configuration.AutoDetectChangesEnabled = _options.AutoDetectChangesEnabled;
+                dbContext.Configuration.ValidateOnSaveEnabled = _options.ValidateOnSaveEnabled;
 
                 try
                 {
@@ -159,7 +130,7 @@ namespace Yarn.Data.EntityFrameworkProvider
 
                 _codeFirst = true;
 
-                if (_migrationEnabled)
+                if (_options.MigrationEnabled)
                 {
                     Database.SetInitializer(DbInitializer);
                 }
@@ -172,14 +143,14 @@ namespace Yarn.Data.EntityFrameworkProvider
         {
             DbCompiledModel dbModel = null;
             ConstructorInfo dbContextCtor = null;
-            var dbContextType = _dbContextType;
-            var configurationAssembly = _configurationAssembly;
+            var dbContextType = _options.DbContextType;
+            var configurationAssembly = _options.ConfigurationAssembly;
 
             if (dbContextType == null)
             {
                 if (configurationAssembly == null)
                 {
-                    configurationAssembly = Uri.IsWellFormedUriString(_assemblyNameOrLocation, UriKind.Absolute) ? Assembly.LoadFrom(_assemblyNameOrLocation) : Assembly.Load(_assemblyNameOrLocation);
+                    configurationAssembly = Uri.IsWellFormedUriString(_options.AssemblyNameOrLocation, UriKind.Absolute) ? Assembly.LoadFrom(_options.AssemblyNameOrLocation) : Assembly.Load(_options.AssemblyNameOrLocation);
                 }
 
                 dbContextType = configurationAssembly.GetTypes().FirstOrDefault(t => typeof(DbContext).IsAssignableFrom(t));
@@ -187,7 +158,7 @@ namespace Yarn.Data.EntityFrameworkProvider
 
             if (dbContextType == null)
             {
-                var connection = CreateConnection(_nameOrConnectionString);
+                var connection = CreateConnection(_options.NameOrConnectionString);
 
                 var builder = new DbModelBuilder();
                 builder.Configurations.AddFromAssembly(configurationAssembly);

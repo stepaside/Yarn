@@ -12,8 +12,8 @@
     <PackageProjectUrl>https://github.com/stepaside/Yarn</PackageProjectUrl>
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
     <PackageTags>Entity Framework EntityFramework EF Repository</PackageTags>
-    <PackageVersion>1.1.2</PackageVersion>
-    <AssemblyVersion>1.1.2</AssemblyVersion>
+    <PackageVersion>1.2.0</PackageVersion>
+    <AssemblyVersion>1.2.0</AssemblyVersion>
     <OutputPath>bin\$(Configuration)\</OutputPath>
     <RequireLicenseAcceptance>false</RequireLicenseAcceptance>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
