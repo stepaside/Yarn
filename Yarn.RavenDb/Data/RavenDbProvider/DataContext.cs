@@ -19,13 +19,13 @@ namespace Yarn.Data.RavenDbProvider
     {
         private static readonly ConcurrentDictionary<string, IDocumentStore> DocumentStores = new ConcurrentDictionary<string, IDocumentStore>();
 
-        private IDocumentSession _session;
+        private readonly IDocumentSession _session;
         private readonly string _connectionString;
 
         public DataContext(string connectionString)
         {
             _connectionString = connectionString;
-            _session = (IDocumentSession)DataContextCache.Current.Get(_connectionString);
+            _session = CreateDocumentStore().OpenSession(); ;
         }
 
         protected IDocumentStore CreateDocumentStore()
@@ -66,9 +66,6 @@ namespace Yarn.Data.RavenDbProvider
         {
             get
             {
-                if (_session != null) return _session;
-                _session = CreateDocumentStore().OpenSession();
-                DataContextCache.Current.Set(_connectionString, _session);
                 return _session;
             }
         }
@@ -91,9 +88,7 @@ namespace Yarn.Data.RavenDbProvider
         {
             if (!disposing) return;
             if (_session == null) return;
-            DataContextCache.Current.Cleanup(_connectionString);
             _session.Dispose();
-            _session = null;
         }
     }
 }

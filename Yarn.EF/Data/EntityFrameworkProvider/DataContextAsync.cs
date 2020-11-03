@@ -29,14 +29,10 @@ namespace Yarn.Data.EntityFrameworkProvider
             string nameOrConnectionString = null,
             string assemblyNameOrLocation = null,
             Assembly configurationAssembly = null,
-            Type dbContextType = null,
-            DataContextLifeCycle lifeCycle = DataContextLifeCycle.DataContextCache)
-            : base(
-                lazyLoadingEnabled, proxyCreationEnabled, autoDetectChangesEnabled, validateOnSaveEnabled,
-                migrationEnabled, nameOrConnectionString, assemblyNameOrLocation, configurationAssembly, dbContextType, lifeCycle)
-        {
-
-        }
+            Type dbContextType = null)
+            : base(lazyLoadingEnabled, proxyCreationEnabled, autoDetectChangesEnabled, validateOnSaveEnabled,
+                migrationEnabled, nameOrConnectionString, assemblyNameOrLocation, configurationAssembly, dbContextType)
+        { }
 
         public async Task SaveChangesAsync()
         {

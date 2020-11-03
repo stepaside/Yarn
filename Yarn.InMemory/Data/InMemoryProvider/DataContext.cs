@@ -11,18 +11,17 @@ namespace Yarn.Data.InMemoryProvider
 {
     public class DataContext : IDataContext<IOdb>
     {
-        private const string DataContextKey = "NDatabase.DataContext";
-        private IOdb _context = (IOdb)DataContextCache.Current.Get(DataContextKey);
+        private readonly IOdb _context;
+
+        public DataContext()
+        {
+            _context = OdbFactory.OpenInMemory();
+        }
 
         public IOdb Session
         {
             get
             {
-                if (_context == null)
-                {
-                    _context = OdbFactory.OpenInMemory();
-                    DataContextCache.Current.Set(DataContextKey, _context);
-                }
                 return _context;
             }
         }
@@ -52,12 +51,7 @@ namespace Yarn.Data.InMemoryProvider
         {
             if (disposing)
             {
-                if (_context != null)
-                {
-                    DataContextCache.Current.Cleanup(DataContextKey);
-                    _context.Dispose();
-                    _context = null;
-                }
+                _context?.Dispose();
             }
         }
     }

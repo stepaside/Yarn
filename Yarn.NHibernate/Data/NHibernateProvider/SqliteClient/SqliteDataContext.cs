@@ -17,13 +17,9 @@ namespace Yarn.Data.NHibernateProvider.SqliteClient
             : base(configuration, nameOrConnectionString, assemblyNameOrLocation, configurationAssembly)
         { }
 
-        protected override Tuple<ISessionFactory, NHibernate.Cfg.Configuration> ConfigureSessionFactory()
+        protected override (ISessionFactory Factory, NHibernate.Cfg.Configuration Configuration) ConfigureSessionFactory(string connectionString)
         {
-            var configurationAssembly = _configurationAssembly;
-            if (configurationAssembly == null)
-            {
-                configurationAssembly = Uri.IsWellFormedUriString(_assemblyNameOrLocation, UriKind.Absolute) ? Assembly.LoadFrom(_assemblyNameOrLocation) : Assembly.Load(_assemblyNameOrLocation);
-            }
+            var configurationAssembly = GetConfigurationAssembly();
 
             NHibernate.Cfg.Configuration config = null;
             var sessionFactory = Fluently.Configure()
@@ -32,7 +28,7 @@ namespace Yarn.Data.NHibernateProvider.SqliteClient
                 .ExposeConfiguration(c => config = c)
                 .BuildSessionFactory();
 
-            return Tuple.Create(sessionFactory, config);
+            return (Factory: sessionFactory, Configuration: config);
         }
     }
 }

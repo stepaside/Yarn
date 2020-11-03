@@ -35,7 +35,6 @@ namespace Yarn.Data.EntityFrameworkProvider
         private readonly string _assemblyNameOrLocation;
         private readonly Assembly _configurationAssembly;
         private readonly Type _dbContextType;
-        private readonly DataContextLifeCycle _lifeCycle;
 
         private bool? _codeFirst;
         private string _contextKey;
@@ -43,6 +42,11 @@ namespace Yarn.Data.EntityFrameworkProvider
         private string _source;
 
         protected Lazy<DbContext> Context = null;
+
+        public DataContext(DbContext dbContext)
+        {
+            Context = new Lazy<DbContext>(() => dbContext, true);
+        }
 
         public DataContext(
             bool lazyLoadingEnabled = true,
@@ -53,8 +57,7 @@ namespace Yarn.Data.EntityFrameworkProvider
             string nameOrConnectionString = null,
             string assemblyNameOrLocation = null,
             Assembly configurationAssembly = null,
-            Type dbContextType = null,
-            DataContextLifeCycle lifeCycle = DataContextLifeCycle.DataContextCache)
+            Type dbContextType = null)
         {
             _lazyLoadingEnabled = lazyLoadingEnabled;
             _proxyCreationEnabled = proxyCreationEnabled;
@@ -69,7 +72,6 @@ namespace Yarn.Data.EntityFrameworkProvider
             }
             _dbContextType = dbContextType;
             Context = new Lazy<DbContext>(InitializeDbContext, true);
-            _lifeCycle = lifeCycle;
         }
 
         private DbContext InitializeDbContext()
@@ -94,17 +96,8 @@ namespace Yarn.Data.EntityFrameworkProvider
             {
                 _modelKey = _dbContextType.FullName;
             }
-            
-            var dbContext = _lifeCycle == DataContextLifeCycle.DataContextCache ? (DbContext)DataContextCache.Current.Get(_contextKey) : null;
-            if (dbContext != null && dbContext.Database.Connection.State != ConnectionState.Broken)
-            {
-                return dbContext;
-            }
-            
-            if (dbContext != null)
-            {
-                dbContext.Dispose();
-            }
+
+            DbContext dbContext = null;
 
             var modelInfo = DbModelBuilders.GetOrAdd(_modelKey, k => ConfigureDbModel());
 
@@ -172,10 +165,6 @@ namespace Yarn.Data.EntityFrameworkProvider
                 }
             }
 
-            if (_lifeCycle == DataContextLifeCycle.DataContextCache)
-            {
-                DataContextCache.Current.Set(_contextKey, dbContext);
-            }
             return dbContext;
         }
 
@@ -207,8 +196,8 @@ namespace Yarn.Data.EntityFrameworkProvider
             else
             {
                 dbContextCtor = dbContextType.GetConstructor(new[] { typeof(DbConnection), typeof(bool) }) ??
-                                (dbContextType.GetConstructor(new[] { typeof(DbConnection) }) ??
-                                 dbContextType.GetConstructor(new[] { typeof(string) }));
+                                dbContextType.GetConstructor(new[] { typeof(DbConnection) }) ??
+                                 dbContextType.GetConstructor(new[] { typeof(string) });
             }
 
             return new ModelInfo
@@ -287,10 +276,6 @@ namespace Yarn.Data.EntityFrameworkProvider
 
             if (Context == null) return;
             
-            if (_contextKey != null && _lifeCycle == DataContextLifeCycle.DataContextCache)
-            {
-                DataContextCache.Current.Cleanup(_contextKey);
-            }
             Context.Value.Dispose();
             Context = null;
         }

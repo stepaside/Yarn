@@ -1,16 +1,12 @@
-﻿using System;
+﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Infrastructure;
+using System;
 using System.Collections;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Data;
 using System.Data.Common;
-using System.Data.Entity;
-using System.Data.Entity.Core.Metadata.Edm;
-using System.Data.Entity.Core.Objects;
-using System.Data.Entity.Core.Objects.DataClasses;
-using System.Data.Entity.Infrastructure;
-using System.Data.Entity.Migrations;
 using System.Data.SqlClient;
 using System.Linq;
 using System.Linq.Expressions;
@@ -23,42 +19,21 @@ using Yarn.Linq.Expressions;
 using Yarn.Reflection;
 using Yarn.Specification;
 
-namespace Yarn.Data.EntityFrameworkProvider
+namespace Yarn.Data.EntityFrameworkCoreProvider
 {
     public class Repository : IRepository, IMetaDataProvider, ILoadServiceProvider, IBulkOperationsProvider
     {
         private static readonly ConcurrentDictionary<Type, Dictionary<string, string>> ColumnMappings = new ConcurrentDictionary<Type, Dictionary<string, string>>();
 
-        protected IDataContext<DbContext> Context;
-
+        private readonly IDataContext _context;
         private readonly bool _mergeOnUpdate;
         private readonly bool _commitOnCrud;
 
         public Repository(IDataContext dataContext, bool mergeOnUpdate = false, bool commitOnCrud = true)
         {
-            Context = dataContext as IDataContext<DbContext>;
+            _context = dataContext;
             _mergeOnUpdate = mergeOnUpdate;
             _commitOnCrud = commitOnCrud;
-        }
-
-        public Repository(bool lazyLoadingEnabled = true,
-            bool proxyCreationEnabled = true,
-            bool autoDetectChangesEnabled = false,
-            bool validateOnSaveEnabled = true,
-            bool migrationEnabled = false,
-            string nameOrConnectionString = null,
-            string assemblyNameOrLocation = null,
-            Assembly configurationAssembly = null,
-            Type dbContextType = null,
-            bool mergeOnUpdate = false,
-            bool commitOnCrud = true)
-        {
-            _mergeOnUpdate = mergeOnUpdate;
-            _commitOnCrud = commitOnCrud;
-
-            Context = new DataContext(lazyLoadingEnabled, proxyCreationEnabled,
-                    autoDetectChangesEnabled, validateOnSaveEnabled, migrationEnabled, nameOrConnectionString,
-                    assemblyNameOrLocation, configurationAssembly, dbContextType);
         }
 
         public T GetById<T, TKey>(TKey id) where T : class
@@ -93,12 +68,11 @@ namespace Yarn.Data.EntityFrameworkProvider
             return PrepareSqlQuery<T>(command, parameters).ToArray();
         }
 
-        protected DbRawSqlQuery<T> PrepareSqlQuery<T>(string command, ParamList parameters) where T : class
+        protected IQueryable<T> PrepareSqlQuery<T>(string command, ParamList parameters) where T : class
         {
-            var connection = ((IObjectContextAdapter)DbContext).ObjectContext.Connection;
             var query = parameters != null
-                ? DbContext.Database.SqlQuery<T>(command, parameters.Select(p => p.Value is DbParameter ? p.Value : DbFactory.CreateParameter(connection, p.Key, p.Value)).ToArray())
-                : DbContext.Database.SqlQuery<T>(command);
+                ? Table<T>().FromSqlRaw(command, parameters.Select(p => p.Value is DbParameter ? p.Value : DbFactory.CreateParameter(DbContext.Database.GetDbConnection(), p.Key, p.Value)).ToArray())
+                : Table<T>().FromSqlRaw(command);
             return query;
         }
 
@@ -106,7 +80,7 @@ namespace Yarn.Data.EntityFrameworkProvider
         {
             try
             {
-                return Table<T>().Add(entity);
+                return Table<T>().Add(entity).Entity;
             }
             finally
             {
@@ -122,7 +96,7 @@ namespace Yarn.Data.EntityFrameworkProvider
             try
             {
 
-                return Table<T>().Remove(entity);
+                return Table<T>().Remove(entity).Entity;
             }
             finally
             {
@@ -160,7 +134,7 @@ namespace Yarn.Data.EntityFrameworkProvider
                 if (attachedEntity != null)
                 {
                     // Update only root attributes for lazy loaded entities
-                    if (DbContext.Configuration.LazyLoadingEnabled || !_mergeOnUpdate)
+                    if (!_mergeOnUpdate)
                     {
                         var attachedEntry = DbContext.Entry(attachedEntity);
                         attachedEntry.CurrentValues.SetValues(entity);
@@ -218,14 +192,24 @@ namespace Yarn.Data.EntityFrameworkProvider
 
         protected DbContext DbContext
         {
-            get { return ((IDataContext<DbContext>)DataContext).Session; }
+            get
+            {
+                if (_context is IDataContext<DbContext> dataContext)
+                {
+                    return dataContext.Session;
+                }
+                else
+                {
+                    return (DbContext)_context.GetType().GetProperty(nameof(IDataContext<DbContext>.Session)).GetValue(_context);
+                }
+            }
         }
 
         public virtual IDataContext DataContext
         {
             get
             {
-                return Context;
+                return _context;
             }
         }
 
@@ -239,11 +223,7 @@ namespace Yarn.Data.EntityFrameworkProvider
         {
             if (disposing)
             {
-                if (Context != null)
-                {
-                    Context.Dispose();
-                    Context = null;
-                }
+                _context?.Dispose();
             }
         }
 
@@ -442,12 +422,14 @@ namespace Yarn.Data.EntityFrameworkProvider
 
         public long Insert<T>(IEnumerable<T> entities) where T : class
         {
-            using (var dbContext = new DbContext(Context.Source))
+            long count;
+            using (var scope = new TransactionScope(TransactionScopeOption.Required, new TransactionOptions { IsolationLevel = System.Transactions.IsolationLevel.ReadCommitted }))
             {
-                dbContext.Set<T>().AddRange(entities);
-
-                return dbContext.SaveChanges();
+                DbContext.Set<T>().AddRange(entities);
+                count = DbContext.SaveChanges();
+                scope.Complete();
             }
+            return count;
         }
 
         public long Update<T>(Expression<Func<T, bool>> criteria, Expression<Func<T, T>> update) where T : class
@@ -457,7 +439,7 @@ namespace Yarn.Data.EntityFrameworkProvider
 
         public long Update<T>(params BulkUpdateOperation<T>[] bulkOperations) where T : class
         {
-            var connection = DbContext.Database.Connection;
+            var connection = DbContext.Database.GetDbConnection();
             var destroyConnection = false;
             var count = 0L;
             try
@@ -696,7 +678,7 @@ namespace Yarn.Data.EntityFrameworkProvider
         {
             var primaryKey = ((IMetaDataProvider)this).GetPrimaryKey<T>().First();
 
-            var connection = DbContext.Database.Connection;
+            var connection = DbContext.Database.GetDbConnection();
             var destroyConnection = false;
             var count = 0L;
             try
@@ -745,7 +727,7 @@ namespace Yarn.Data.EntityFrameworkProvider
 
         public long Delete<T>(params Expression<Func<T, bool>>[] criteria) where T : class
         {
-            var connection = DbContext.Database.Connection;
+            var connection = DbContext.Database.GetDbConnection();
             var destroyConnection = false;
             var count = 0L;
             try
@@ -863,17 +845,17 @@ namespace Yarn.Data.EntityFrameworkProvider
         {
             var context = DbContext;
             var comparer = new EntityEqualityComparer(this);
-            var autoDetectChangesEnabled = context.Configuration.AutoDetectChangesEnabled;
+            var autoDetectChangesEnabled = context.ChangeTracker.AutoDetectChangesEnabled;
             try
             {
-                context.Configuration.AutoDetectChangesEnabled = false;
+                context.ChangeTracker.AutoDetectChangesEnabled = false;
                 context.Entry(target).CurrentValues.SetValues(source);
                 MergeImplementation(context, source, target, comparer, null, paths, 0);
                 context.ChangeTracker.DetectChanges();
             }
             finally
             {
-                context.Configuration.AutoDetectChangesEnabled = autoDetectChangesEnabled;
+                context.ChangeTracker.AutoDetectChangesEnabled = autoDetectChangesEnabled;
 
                 if (_commitOnCrud)
                 {
@@ -926,12 +908,13 @@ namespace Yarn.Data.EntityFrameworkProvider
                         // Merge failed as we tried to change the parent
                         // Now try actually changing the parent
                         var hash = comparer.GetHashCode(newValue);
-                        var local = context.Set(newValue.GetType()).Local.Cast<object>().FirstOrDefault(e => comparer.GetHashCode(e) == hash);
-                        if (local != null && local != newValue)
+                        var local = GetLocal(context, newValue.GetType());
+                        var attached = local.Cast<object>().FirstOrDefault(e => comparer.GetHashCode(e) == hash);
+                        if (attached != null && attached != newValue)
                         {
                             // Found unchanged locally
                             // Assign existing parent
-                            PropertyAccessor.Set(target.GetType(), target, property.Name, local);
+                            PropertyAccessor.Set(target.GetType(), target, property.Name, attached);
                         }
                         else
                         {
@@ -965,15 +948,16 @@ namespace Yarn.Data.EntityFrameworkProvider
                     switch (entry.State)
                     {
                         case EntityState.Detached:
-                        {
-                            var hash = comparer.GetHashCode(item.Item2);
-                            var attachedTarget = context.Set(item.Item2.GetType()).Local.Cast<object>().FirstOrDefault(e => comparer.GetHashCode(e) == hash);
-                            if (attachedTarget != null)
                             {
-                                entry = context.Entry(attachedTarget);
-                                entry.CurrentValues.SetValues(item.Item1);
+                                var hash = comparer.GetHashCode(item.Item2);
+                                var local = GetLocal(context, item.Item2.GetType());
+                                var attachedTarget = local.Cast<object>().FirstOrDefault(e => comparer.GetHashCode(e) == hash);
+                                if (attachedTarget != null)
+                                {
+                                    entry = context.Entry(attachedTarget);
+                                    entry.CurrentValues.SetValues(item.Item1);
+                                }
                             }
-                        }
                             break;
                         case EntityState.Unchanged:
                             entry.CurrentValues.SetValues(item.Item1);
@@ -1013,18 +997,27 @@ namespace Yarn.Data.EntityFrameworkProvider
                         if (member == null || member.EntityEntry.State != EntityState.Detached || member.CurrentValue == null) continue;
 
                         var hash = comparer.GetHashCode(member.CurrentValue);
-                        var local = context.Set(member.CurrentValue.GetType()).Local.Cast<object>().FirstOrDefault(e => comparer.GetHashCode(e) == hash);
-                        if (local != null && local != member.CurrentValue)
+                        var local = GetLocal(context, member.CurrentValue.GetType());
+                        var attached = local.Cast<object>().FirstOrDefault(e => comparer.GetHashCode(e) == hash);
+                        if (attached != null && attached != member.CurrentValue)
                         {
                             // Found unchanged locally
                             // Assign existing parent
-                            PropertyAccessor.Set(item.GetType(), item, objectProperty.Name, local);
+                            PropertyAccessor.Set(item.GetType(), item, objectProperty.Name, attached);
                         }
                     }
 
                     entry.State = EntityState.Added;
                 }
             }
+        }
+
+        private static IEnumerable GetLocal(DbContext context, Type type)
+        {
+            var setMethod = context.GetType().GetMethod("Set").MakeGenericMethod(type);
+            var set = setMethod.Invoke(context, null);
+            var local = set.GetType().GetProperty("Local").GetValue(set) as IEnumerable;
+            return local;
         }
 
         private class EntityEqualityComparer : IEqualityComparer<object>

@@ -37,7 +37,7 @@ namespace Yarn.Data.NHibernateProvider
         where TConnectionString : ConnectionStringBuilder, new()
         where TDialect : Dialect
     {
-        private static ConcurrentDictionary<string, Tuple<ISessionFactory, NHibernate.Cfg.Configuration>> _sessionFactories = new ConcurrentDictionary<string, Tuple<ISessionFactory, NHibernate.Cfg.Configuration>>();
+        private static ConcurrentDictionary<string, (ISessionFactory Factory, NHibernate.Cfg.Configuration Configuration)> _sessionFactories = new ConcurrentDictionary<string, (ISessionFactory Factory, NHibernate.Cfg.Configuration Configuration)>();
         protected PersistenceConfiguration<TThisConfiguration, TConnectionString> Configuration = null;
         protected readonly string _nameOrConnectionString;
         protected readonly string _assemblyNameOrLocation;
@@ -60,7 +60,8 @@ namespace Yarn.Data.NHibernateProvider
             }
 
             _connectionString = GetConnectionString();
-            _session = (ISession)DataContextCache.Current.Get(_connectionString);
+            var factory = CreateSessionFactory().Factory;
+            _session = factory.OpenSession();
         }
 
         protected string GetConnectionString()
@@ -68,17 +69,28 @@ namespace Yarn.Data.NHibernateProvider
             return ConfigurationManager.ConnectionStrings[_nameOrConnectionString]?.ConnectionString ?? _nameOrConnectionString;
         }
 
-        protected Tuple<ISessionFactory, NHibernate.Cfg.Configuration> CreateSessionFactory()
+        protected (ISessionFactory Factory, NHibernate.Cfg.Configuration Configuration) CreateSessionFactory()
         {
-            var tuple = _sessionFactories.GetOrAdd(_connectionString, key =>
-            {
-                var factory = ConfigureSessionFactory();
-                return factory;
-            });
-            return tuple;
+            return _sessionFactories.GetOrAdd(_connectionString, ConfigureSessionFactory);
         }
 
-        protected virtual Tuple<ISessionFactory, NHibernate.Cfg.Configuration> ConfigureSessionFactory()
+        protected virtual (ISessionFactory Factory, NHibernate.Cfg.Configuration Configuration) ConfigureSessionFactory(string connectionString)
+        {
+            var configurationAssembly = GetConfigurationAssembly();
+
+            NHibernate.Cfg.Configuration config = null;
+
+            var sessionFactory = Fluently.Configure()
+                .Database(Configuration.Dialect<TDialect>().ConnectionString(connectionString))
+                //.Mappings(m => m.AutoMappings.Add(AutoMap.Assembly(assembly)))
+                .Mappings(m => m.FluentMappings.AddFromAssembly(configurationAssembly))
+                .ExposeConfiguration(c => config = c)
+                .BuildSessionFactory();
+
+            return (Factory: sessionFactory, Configuration: config);
+        }
+
+        protected Assembly GetConfigurationAssembly()
         {
             var configurationAssembly = _configurationAssembly;
             if (configurationAssembly == null)
@@ -86,16 +98,7 @@ namespace Yarn.Data.NHibernateProvider
                 configurationAssembly = Uri.IsWellFormedUriString(_assemblyNameOrLocation, UriKind.Absolute) ? Assembly.LoadFrom(_assemblyNameOrLocation) : Assembly.Load(_assemblyNameOrLocation);
             }
 
-            NHibernate.Cfg.Configuration config = null;
-
-            var sessionFactory = Fluently.Configure()
-                .Database(Configuration.Dialect<TDialect>().ConnectionString(_connectionString))
-                //.Mappings(m => m.AutoMappings.Add(AutoMap.Assembly(assembly)))
-                .Mappings(m => m.FluentMappings.AddFromAssembly(configurationAssembly))
-                .ExposeConfiguration(c => config = c)
-                .BuildSessionFactory();
-
-            return Tuple.Create(sessionFactory, config);
+            return configurationAssembly;
         }
 
         public override ISession Session
@@ -111,7 +114,6 @@ namespace Yarn.Data.NHibernateProvider
 
                     var factory = CreateSessionFactory().Item1;
                     _session = factory.OpenSession();
-                    DataContextCache.Current.Set(_connectionString, _session);
                 }
                 return _session;
             }
@@ -153,7 +155,6 @@ namespace Yarn.Data.NHibernateProvider
             {
                 if (_session != null)
                 {
-                    DataContextCache.Current.Cleanup(_connectionString);
                     _session.Dispose();
                     _session = null;
                 }

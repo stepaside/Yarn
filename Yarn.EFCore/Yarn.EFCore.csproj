@@ -1,0 +1,29 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>netstandard2.0</TargetFramework>
+    <RootNamespace>Yarn</RootNamespace>
+    <AssemblyTitle>Yarn.EFCore</AssemblyTitle>
+    <Company>Stepaside, Inc.</Company>
+    <Product>Yarn.EFCore</Product>
+    <Description>Yarn Entity Framework Core Provider</Description>
+    <Copyright>Copyright © Max Stepanskiy 2012-2020</Copyright>
+    <Authors>Max Stepanskiy</Authors>
+    <PackageProjectUrl>https://github.com/stepaside/Yarn</PackageProjectUrl>
+    <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+    <PackageTags>EntityFrameworkCore EFCore Repository</PackageTags>
+    <PackageVersion>1.0.0</PackageVersion>
+    <AssemblyVersion>1.0.0</AssemblyVersion>
+    <RequireLicenseAcceptance>false</RequireLicenseAcceptance>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Relational" Version="3.1.9" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Yarn\Yarn.csproj" />
+  </ItemGroup>
+
+</Project>
