@@ -297,7 +297,6 @@ namespace Yarn.Data.EntityFrameworkCoreProvider
                                 primaryKey[right.Member.Name] = primaryKey.ContainsKey(right.Member.Name);
                             }
 
-
                             break;
                         }
                         
