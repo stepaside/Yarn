@@ -879,6 +879,13 @@ namespace Yarn.Data.EntityFrameworkCoreProvider
                 properties = properties.Where(p => set.Contains(p.Name)).ToArray();
             }
 
+            MergeObjectProperties(context, source, target, comparer, ancestors, paths, level, properties);
+
+            MergeCollectionProperties(context, source, target, comparer, ancestors, paths, level, properties);
+        }
+
+        private static void MergeObjectProperties(DbContext context, object source, object target, IEqualityComparer<object> comparer, HashSet<object> ancestors, IReadOnlyCollection<string[]> paths, int level, PropertyInfo[] properties)
+        {
             foreach (var property in properties.Where(p => p.PropertyType != typeof(string) && p.CanRead && p.CanWrite && p.PropertyType.IsClass && !typeof(IEnumerable).IsAssignableFrom(p.PropertyType)))
             {
                 var value = PropertyAccessor.Get(target.GetType(), target, property.Name);
@@ -925,7 +932,10 @@ namespace Yarn.Data.EntityFrameworkCoreProvider
                     MergeImplementation(context, newValue, value, comparer, new HashSet<object>(ancestors), paths, level + 1);
                 }
             }
+        }
 
+        private static void MergeCollectionProperties(DbContext context, object source, object target, IEqualityComparer<object> comparer, HashSet<object> ancestors, IReadOnlyCollection<string[]> paths, int level, PropertyInfo[] properties)
+        {
             foreach (var property in properties.Where(p => p.PropertyType != typeof(string) && p.PropertyType.IsGenericType && typeof(IEnumerable).IsAssignableFrom(p.PropertyType)))
             {
                 var colletionProperty = context.Entry(target).Collection(property.Name);
