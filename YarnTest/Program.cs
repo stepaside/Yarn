@@ -82,6 +82,9 @@ namespace YarnTest
 
             var query = new GetCustomerByIdQuery("ANATR");
             var result = query.Execute(repo);
+
+            var customerRepo = new CustomerRepository(repo);
+            var customer = customerRepo.GetById("ANTON");
         }
     }
 }
