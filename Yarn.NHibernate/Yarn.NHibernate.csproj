@@ -9,8 +9,8 @@
     <OutputPath>bin\$(Configuration)\</OutputPath>
     <PackageId>Yarn.NHibernate</PackageId>
     <PackageTags>NHibernate FluentNHibernate Repository</PackageTags>
-    <PackageVersion>1.1.1</PackageVersion>
-    <AssemblyVersion>1.1.1</AssemblyVersion>
+    <PackageVersion>1.1.2</PackageVersion>
+    <AssemblyVersion>1.1.2</AssemblyVersion>
     <Authors>Max Stepanskiy</Authors>
     <Company>Stepaside, Inc.</Company>
     <Copyright>Copyright © Max Stepanskiy 2012-2020</Copyright>
@@ -28,7 +28,7 @@
   <Import Project="$(SolutionDir)\.nuget\NuGet.targets" Condition="Exists('$(SolutionDir)\.nuget\NuGet.targets')" />
   <ItemGroup>
     <PackageReference Include="FluentNHibernate" Version="3.0.1" />
-    <PackageReference Include="NHibernate" Version="5.3.3" />
+    <PackageReference Include="NHibernate" Version="5.3.4" />
   </ItemGroup>
   <ItemGroup>
     <Content Include="README.txt" />

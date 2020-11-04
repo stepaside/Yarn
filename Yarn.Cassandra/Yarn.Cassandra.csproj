@@ -27,7 +27,7 @@
     <StartupObject />
   </PropertyGroup>
   <ItemGroup>
-    <PackageReference Include="CassandraCSharpDriver" Version="3.15.0" />
+    <PackageReference Include="CassandraCSharpDriver" Version="3.16.1" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\Yarn\Yarn.csproj" />

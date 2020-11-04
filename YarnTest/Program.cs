@@ -79,6 +79,9 @@ namespace YarnTest
             {
                 Console.WriteLine("Not From Cache");
             }
+
+            var query = new GetCustomerByIdQuery("ANATR");
+            var result = query.Execute(repo);
         }
     }
 }
