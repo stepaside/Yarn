@@ -42,7 +42,14 @@ namespace Yarn.Specification
             if (propertyName == null) throw new ArgumentNullException("propertyName");
             ValidatePropertyName(propertyName);
 
-            Sorting = new Sorting<T>(propertyName);
+            if (Sorting == null)
+            {
+                Sorting = new Sorting<T>(propertyName);
+            }
+            else
+            {
+                Sorting = Sorting.Then(new Sorting<T>(propertyName));
+            }
             return this;
         }
 
@@ -51,7 +58,14 @@ namespace Yarn.Specification
             if (propertyName == null) throw new ArgumentNullException("propertyName");
             ValidatePropertyName(propertyName);
 
-            Sorting = new Sorting<T>(propertyName, true);
+            if (Sorting == null)
+            {
+                Sorting = new Sorting<T>(propertyName, true);
+            }
+            else
+            {
+                Sorting = Sorting.Then(new Sorting<T>(propertyName, true));
+            }
             return this;
         }
 
@@ -59,7 +73,14 @@ namespace Yarn.Specification
         {
             if (propertySelector == null) throw new ArgumentNullException("propertySelector");
 
-            Sorting = new Sorting<T>(propertySelector);
+            if (Sorting == null)
+            {
+                Sorting = new Sorting<T>(propertySelector);
+            }
+            else
+            {
+                Sorting = Sorting.Then(new Sorting<T>(propertySelector));
+            }
             return this;
         }
         
@@ -67,7 +88,14 @@ namespace Yarn.Specification
         {
             if (propertySelector == null) throw new ArgumentNullException("propertySelector");
 
-            Sorting = new Sorting<T>(propertySelector, true);
+            if (Sorting == null)
+            {
+                Sorting = new Sorting<T>(propertySelector, true);
+            }
+            else
+            {
+                Sorting = Sorting.Then(new Sorting<T>(propertySelector, true));
+            }
             return this;
         }
 

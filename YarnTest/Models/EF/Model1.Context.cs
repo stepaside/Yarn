@@ -7,7 +7,7 @@
 // </auto-generated>
 //------------------------------------------------------------------------------
 
-namespace YarnTest.Models.EF
+namespace Yarn.Test.Models.EF
 {
     using System;
     using System.Data.Entity;

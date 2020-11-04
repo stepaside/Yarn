@@ -2,7 +2,7 @@
 {
     public interface ICommand
     {
-        void Execute();
+        void Execute(IRepository repository);
     }
 
     public interface ICommand<T> : ICommand

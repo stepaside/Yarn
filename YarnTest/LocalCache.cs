@@ -6,7 +6,7 @@ using System.Text;
 using System.Threading.Tasks;
 using Yarn.Cache;
 
-namespace YarnTest
+namespace Yarn.Test
 {
     public class LocalCache : ICacheProvider
     {

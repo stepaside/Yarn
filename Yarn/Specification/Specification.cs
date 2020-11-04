@@ -9,6 +9,10 @@ namespace Yarn.Specification
 {
     public class Specification<T> : ISpecification<T>
     {
+        public static readonly Specification<T> AlwaysTrue = new Specification<T>(t => true);
+
+        public static readonly Specification<T> AlwaysFalse = new Specification<T>(t => false);
+
         public Specification(Expression<Func<T, bool>> predicate)
         {
             Predicate = predicate;
