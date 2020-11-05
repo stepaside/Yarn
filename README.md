@@ -7,6 +7,7 @@ Its goal is to enforce consistent approach to data persistence regardless of the
 
 Here is what it currently supports:
 - EF
+- EF Core
 - NHibernate
   - SQL Server
   - MySql
@@ -18,13 +19,16 @@ Here is what it currently supports:
 - In-memory object storage
 - <a href="https://github.com/stepaside/Nemo" target="_blank">Nemo</a> (micro-ORM library)
 - EventStore
-- Elasticsearch
 
 ### Quick example of the pattern usage
 
 ```c#
 // Bind IRepository to specific implementation (this should happen during application startup)
-ObjectContainer.Current.Register<IRepository>(() => new Yarn.Data.MongoDbProvider.Repository());
+ObjectContainer.Current.Register<IRepository>(() => new Yarn.Data.MongoDbProvider.Repository(
+                                                      new RepositoryOptions 
+                                                      { 
+                                                         ConnectionString = ConfigurationManager.AppSettings["MongoConnection"] 
+                                                      }));
 
 // Resolve IRepository (this may happen anywhere within application)
 // Let's assume we have defined entity Category
@@ -47,15 +51,16 @@ ObjectContainer.Initialize(() => new Any_IoC_Implementation_Based_On_IContainer(
 ObjectContainer.Current.Register<IRepository, Yarn.Data.EntityFrameworkProvider.Repository>();
 
 // IRepository is instantiated using parametrized constructor of Yarn.Data.EntityFrameworkProvider.Repository
-ObjectContainer.Current.Register<IRepository>(
-  () => new Yarn.Data.EntityFrameworkProvider.Repository(lazyLoadingEnabled: false));
+ObjectContainer.Current.Register<IRepository>(() => new Yarn.Data.EntityFrameworkProvider.Repository(
+                                                      ObjectContainer.Current.Resolve<IDataContext<DbContext>>()));
   
 // IRepository is instantiated unders a specific instance name
-ObjectContainer.Current.Register<IRepository>(
-  () => new Yarn.Data.EntityFrameworkProvider.Repository(lazyLoadingEnabled: false), "Lazy");
+ObjectContainer.Current.Register<IRepository>(() => new Yarn.Data.EntityFrameworkProvider.Repository(
+                                                      ObjectContainer.Current.Resolve<IDataContext<DbContext>>()), "Lazy");
 
 // IRepository is instantiated as a singleton
-ObjectContainer.Current.Register<IRepository>(new Yarn.Data.EntityFrameworkProvider.Repository());
+ObjectContainer.Current.Register<IRepository>(new Yarn.Data.EntityFrameworkProvider.Repository(
+                                                      ObjectContainer.Current.Resolve<IDataContext<DbContext>>()));
 
 // Resolved IRepository implementation
 var repo = ObjectContainer.Current.Resolve<IRepository>();
@@ -70,8 +75,13 @@ var repo = ObjectContainer.Current.Resolve<IRepository>("Lazy");
 // Bind IRepository to specific implementation (this should happen during application startup)
 // For this example one must provide "EF.Default.Model" application setting and "EF.Default.Connection" connection string setting
 // ("EF.Default.Model" points to an assembly which contains model class definition)
-ObjectContainer.Current.Register<IRepository>(() => new Yarn.Data.MongoDbProvider.Repository(), "mongo");
-ObjectContainer.Current.Register<IRepository>(() => new Yarn.Data.EntityFrameworkProvider.Repository(), "ef");
+ObjectContainer.Current.Register<IRepository>(() => new Yarn.Data.MongoDbProvider.Repository(
+                                                      new RepositoryOptions 
+                                                      { 
+                                                         ConnectionString = ConfigurationManager.AppSettings["MongoConnection"] 
+                                                      }), "mongo");
+ObjectContainer.Current.Register<IRepository>(() => new Yarn.Data.EntityFrameworkProvider.Repository(
+                                                      ObjectContainer.Current.Resolve<IDataContext<DbContext>>()), "ef");
 
 // Resolve IRepository (this may happen anywhere within application)
 // "mongo" will resolve to MongoDB implementation, while "ef" will resolve to EF implementation
@@ -86,13 +96,13 @@ var category = repo.GetById<Category, int>(1000);
 // With NHibernate one must specify implementation of the data context to be used with repository
 // For this example one must provide "NHibernate.MySqlClient.Model" application setting and "NHibernate.MySqlClient.Connection" connection string setting
 ObjectContainer.Current.Register<IRepository>(
-  () => new Yarn.Data.NHibernateProvider.Repository("nh_uow"), "nh");
-ObjectContainer.Current.Register<IDataContext>(
-  () => new Yarn.Data.NHibernateProvider.MySqlClient.MySqlDataContext(), "nh_uow");
+  () => new Yarn.Data.NHibernateProvider.Repository(ObjectContainer.Current.Resolve<IDataContext<ISession>>("nh_uow_mysql")), "nh");
+ObjectContainer.Current.Register<IDataContext<ISession>>(
+  () => new Yarn.Data.NHibernateProvider.MySqlClient.MySqlDataContext(), "nh_uow_mysql");
 
 // In order to use NHibernate with SQL Server one has to bind IDataContext to the SQL Server implementation
 // Similarly to the MySQL example "NHibernate.SqlClient.Model" application setting and "NHibernate.SqlClient.Connection" connection string setting should be defined
-// ObjectContainer.Current.Register<IDataContext>(() => new Yarn.Data.NHibernateProvider.SqlClient.Sql2012DataContext"nh_uow");
+// ObjectContainer.Current.Register<IDataContext<ISession>>(() => new Yarn.Data.NHibernateProvider.SqlClient.Sql2012DataContext(), "nh_uow_sql");
 
 var repo = ObjectContainer.Current.Resolve<IRepository>("nh");
 var categories = repo.FindAll<Category>(c => c.Name.Contains("cat"), offset: 50, limit: 10);
@@ -167,26 +177,10 @@ var categories1 = cachedRepo.FindAll<Category>(spec);
 var categories2 = cachedRepo.FindAll<Category>(spec);
 ```
 
-### Passing parameters to repository/data context constructor during initialization
-
-```c#
-// Bind IRepository to specific implementation
-// Constructor arguments may differ depending on a concrete implemnetations of IRepository
-
-// Here is the example based on Entity Framework repository implementation
-ObjectContainer.Current.Register<IRepository>(
-  () => new Yarn.Data.EntityFrameworkProvider.Repository(lazyLoadingEnabled: false, 
-                                                          nameOrConnectionString: "NorthwindConnection", 
-                                                          configurationAssembly: typeof(Customer).Assembly));
-                    
-// Here is the example based on NHiberante repository implementation using SQL Server database backend
-ObjectContainer.Current.Register<IRepository, Yarn.Data.NHibernate.Repository>();
-ObjectContainer.Current.Register<IDataContext>(
-  () => new Yarn.Data.NHibernate.SqlClient.Sql2012DataContext(nameOrConnectionString: "NorthwindConnection", 
-                                                              configurationAssembly: typeof(Customer).Assembly));
-```
-
 ### Eager loading
+
+In order for this to work `IRepository` implementation must also implement `ILoadServiceProvider`.
+NoSQL Yarn providers such as Yarn.MongoDB and Yarn.RavenDB do not implement this interface.
 
 ```c#
 // Bind IRepository to specific implementation (this should happen during application startup)
@@ -204,6 +198,8 @@ var customer = repo.As<ILoadServiceProvider>()
 ```
 
 ### Object graph merging
+
+Object graph merging only works for repositories that implement `ILoadServiceProvider` interface.
 
 ```c#
 // Bind IRepository to specific implementation (this should happen during application startup)
