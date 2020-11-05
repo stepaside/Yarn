@@ -16,8 +16,8 @@ namespace Yarn.Test.Models.EF
     {
         public Customer()
         {
-            this.Orders = new HashSet<Order>();
-            this.CustomerDemographics = new HashSet<CustomerDemographic>();
+            this.Orders = new List<Order>();
+            this.CustomerDemographics = new List<CustomerDemographic>();
         }
     
         public string CustomerID { get; set; }
@@ -32,7 +32,7 @@ namespace Yarn.Test.Models.EF
         public string Phone { get; set; }
         public string Fax { get; set; }
     
-        public virtual ICollection<Order> Orders { get; set; }
-        public virtual ICollection<CustomerDemographic> CustomerDemographics { get; set; }
+        public virtual IList<Order> Orders { get; set; }
+        public virtual IList<CustomerDemographic> CustomerDemographics { get; set; }
     }
 }

@@ -16,7 +16,7 @@ namespace Yarn.Test.Models.EF
     {
         public Order()
         {
-            this.Order_Details = new HashSet<Order_Detail>();
+            this.Order_Details = new List<Order_Detail>();
         }
     
         public int OrderID { get; set; }
@@ -36,7 +36,7 @@ namespace Yarn.Test.Models.EF
     
         public virtual Customer Customer { get; set; }
         public virtual Employee Employee { get; set; }
-        public virtual ICollection<Order_Detail> Order_Details { get; set; }
+        public virtual IList<Order_Detail> Order_Details { get; set; }
         public virtual Shipper Shipper { get; set; }
     }
 }

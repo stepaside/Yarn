@@ -33,13 +33,13 @@ namespace Yarn.Data.EntityFrameworkProvider
 
         private readonly RepositoryOptions _options;
 
-        public Repository(IDataContext dataContext, RepositoryOptions options)
+        public Repository(IDataContext<DbContext> dataContext, RepositoryOptions options)
         {
-            Context = dataContext as IDataContext<DbContext>;
+            Context = dataContext;
             _options = options;
         }
 
-        public Repository(IDataContext dataContext) 
+        public Repository(IDataContext<DbContext> dataContext) 
             : this (dataContext, new RepositoryOptions())
         { }
 

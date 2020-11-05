@@ -25,16 +25,16 @@ namespace Yarn.Data.EntityFrameworkCoreProvider
     {
         private static readonly ConcurrentDictionary<Type, Dictionary<string, string>> ColumnMappings = new ConcurrentDictionary<Type, Dictionary<string, string>>();
 
-        private readonly IDataContext _context;
+        private readonly IDataContext<DbContext> _context;
         private readonly RepositoryOptions _options;
 
-        public Repository(IDataContext dataContext, RepositoryOptions options)
+        public Repository(IDataContext<DbContext> dataContext, RepositoryOptions options)
         {
             _context = dataContext;
             _options = options;
         }
 
-        public Repository(IDataContext dataContext) 
+        public Repository(IDataContext<DbContext> dataContext) 
             : this(dataContext, new RepositoryOptions())
         { }
 
@@ -195,14 +195,7 @@ namespace Yarn.Data.EntityFrameworkCoreProvider
         {
             get
             {
-                if (_context is IDataContext<DbContext> dataContext)
-                {
-                    return dataContext.Session;
-                }
-                else
-                {
-                    return (DbContext)_context.GetType().GetProperty(nameof(IDataContext<DbContext>.Session)).GetValue(_context);
-                }
+                return _context.Session;
             }
         }
 

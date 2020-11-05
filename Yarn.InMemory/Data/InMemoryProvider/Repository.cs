@@ -13,13 +13,25 @@ namespace Yarn.Data.InMemoryProvider
 {
     public class Repository : IRepository, IMetaDataProvider, ILoadServiceProvider, IBulkOperationsProvider
     {
-        private DataContext _context;
+        private IDataContext<IOdb> _context;
         private readonly IMetaDataProvider _metaDataProvider;
 
-        public Repository(IMetaDataProvider metaDataProvider = null)
+        public Repository()
+            : this(null, null)
+        { }
+
+        public Repository(IDataContext<IOdb> context)
+            : this(context, null)
+        { }
+
+        public Repository(IMetaDataProvider metaDataProvider)
+            : this(null, metaDataProvider)
+        { }
+
+        public Repository(IDataContext<IOdb> context, IMetaDataProvider metaDataProvider)
         {
             _metaDataProvider = metaDataProvider ?? this;
-            _context = new DataContext();
+            _context = context ?? new DataContext();
         }
 
         public T GetById<T, TKey>(TKey id) where T : class

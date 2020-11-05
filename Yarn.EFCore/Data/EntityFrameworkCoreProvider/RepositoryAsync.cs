@@ -13,11 +13,11 @@ namespace Yarn.Data.EntityFrameworkCoreProvider
 {
     public class RepositoryAsync : Repository, IRepositoryAsync
     {
-        public RepositoryAsync(IDataContextAsync dataContext, RepositoryOptions options)
+        public RepositoryAsync(IDataContextAsync<DbContext> dataContext, RepositoryOptions options)
             : base(dataContext, options)
         { }
 
-        public RepositoryAsync(IDataContextAsync dataContext)
+        public RepositoryAsync(IDataContextAsync<DbContext> dataContext)
             : this(dataContext, new RepositoryOptions())
         { }
 

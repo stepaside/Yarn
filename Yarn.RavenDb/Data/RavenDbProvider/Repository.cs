@@ -11,16 +11,18 @@ using Yarn.Specification;
 
 namespace Yarn.Data.RavenDbProvider
 {
+
     public class Repository : IRepository, IMetaDataProvider, IBulkOperationsProvider
     {
         private IDataContext<IDocumentSession> _context;
         private readonly Action<IDocumentQueryCustomization> _queryCustomization;
         private readonly string _connectionString;
 
-        public Repository(string connectionString = null, Action<IDocumentQueryCustomization> queryCustomization = null)
+        public Repository(RepositoryOptions options)
         {
-            _connectionString = connectionString;
-            _queryCustomization = queryCustomization;
+            _connectionString = options.ConnectionString;
+            _queryCustomization = options.QueryCustomization;
+            _context = new DataContext(_connectionString);
         }
 
         public T GetById<T, TKey>(TKey id) where T : class
@@ -163,7 +165,7 @@ namespace Yarn.Data.RavenDbProvider
         {
             get
             {
-                return _context ?? (_context = new DataContext(_connectionString));
+                return _context;
             }
         }
 

@@ -9,22 +9,26 @@ namespace Yarn.Data.NemoProvider
         private readonly DbTransaction _transaction;
         private readonly string _source;
 
-        public DataContext(string connectionName = null, string connectionString = null, DbTransaction transaction = null)
+        public DataContext(DataContextOptions options)
+            : this(options, null)
+        { }
+
+        public DataContext(DataContextOptions options, DbTransaction transaction)
         {
             _transaction = transaction;
             if (transaction != null)
             {
                 _connection = transaction.Connection;
             }
-            else if (connectionName != null)
+            else if (options?.ConnectionName != null)
             {
-                _connection = DbFactory.CreateConnection(connectionName);
+                _connection = DbFactory.CreateConnection(options.ConnectionName);
                 _source = _connection.ConnectionString;
             }
-            else if (connectionString != null)
+            else if (options?.ConnectionString != null)
             {
-                _connection = DbFactory.CreateConnection(connectionString, DbFactory.GetProviderInvariantNameByConnectionString(connectionString));
-                _source = connectionString;
+                _connection = DbFactory.CreateConnection(options.ConnectionString, DbFactory.GetProviderInvariantNameByConnectionString(options.ConnectionString));
+                _source = options.ConnectionString;
             }
             else
             {

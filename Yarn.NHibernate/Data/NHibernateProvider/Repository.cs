@@ -25,13 +25,10 @@ namespace Yarn.Data.NHibernateProvider
     public class Repository : IRepository, IMetaDataProvider, ILoadServiceProvider
     {
         private IDataContext<ISession> _context;
-        protected readonly string DataContextInstanceName;
-
-        public Repository() : this(null) { }
-
-        public Repository(string dataContextInstanceName = null)
+       
+        public Repository(IDataContext<ISession> context)
         {
-            DataContextInstanceName = dataContextInstanceName;
+            _context = context;
         }
 
         public T GetById<T, TKey>(TKey id) where T : class
@@ -172,10 +169,6 @@ namespace Yarn.Data.NHibernateProvider
         {
             get
             {
-                if (_context == null)
-                {
-                    _context = ObjectContainer.Current.Resolve<IDataContext<ISession>>(DataContextInstanceName);
-                }
                 return _context;
             }
         }

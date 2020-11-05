@@ -19,9 +19,10 @@ namespace Yarn.Data.MongoDbProvider
         private IDataContext<IMongoDatabase> _context;
         private readonly string _connectionString;
 
-        public Repository(string connectionString = null)
+        public Repository(RepositoryOptions options)
         {
-            _connectionString = connectionString;
+            _connectionString = options.ConnectionString;
+            _context = new DataContext(_connectionString);
         }
 
         public T GetById<T, TKey>(TKey id) where T : class
@@ -219,7 +220,7 @@ namespace Yarn.Data.MongoDbProvider
 
         public IDataContext DataContext
         {
-            get { return _context ?? (_context = new DataContext(_connectionString)); }
+            get { return _context; }
         }
 
         public void Dispose()

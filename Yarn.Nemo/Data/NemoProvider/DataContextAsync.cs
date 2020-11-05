@@ -7,10 +7,13 @@ namespace Yarn.Data.NemoProvider
 {
     public class DataContextAsync : DataContext, IDataContextAsync<DbConnection>
     {
-        public DataContextAsync(string connectionName = null, string connectionString = null, DbTransaction transaction = null) 
-            : base(connectionName, connectionString, transaction)
-        {
-        }
+        public DataContextAsync(DataContextOptions options)
+            : this(options, null)
+        { }
+
+        public DataContextAsync(DataContextOptions options, DbTransaction transaction)
+            : base(options, transaction)
+        { }
 
         public async Task SaveChangesAsync()
         {

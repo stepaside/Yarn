@@ -15,7 +15,7 @@ using Raven.Client.Documents.Session;
 
 namespace Yarn.Data.RavenDbProvider
 {
-    public class DataContext : IDataContext<IDocumentSession>
+    internal class DataContext : IDataContext<IDocumentSession>
     {
         private static readonly ConcurrentDictionary<string, IDocumentStore> DocumentStores = new ConcurrentDictionary<string, IDocumentStore>();
 

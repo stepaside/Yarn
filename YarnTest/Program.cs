@@ -18,6 +18,9 @@ using Yarn.Reflection;
 using Yarn.Test.Models.EF;
 using Yarn.Test;
 using System.Linq.Expressions;
+using Nemo.Configuration;
+using Nemo.Attributes.Converters;
+using Nemo.Extensions;
 
 namespace YarnTest
 {
@@ -25,13 +28,18 @@ namespace YarnTest
     {
         static void Main(string[] args)
         {
+            var nemoConfig = ConfigurationFactory.CloneCurrentConfiguration();
+            nemoConfig.SetDefaultCacheRepresentation(Nemo.CacheRepresentation.None);
+
+            ObjectContainer.Current.Register<IRepository>(() => new Yarn.Data.NemoProvider.Repository(new Yarn.Data.NemoProvider.RepositoryOptions { UseStoredProcedures = false, Configuration = nemoConfig }, new Yarn.Data.NemoProvider.DataContextOptions { ConnectionName = "Yarn.EF2.Connection" }), "Nemo");
+
             ObjectContainer.Current.Register<IRepository>(() => new Repository(new DataContextOptions { LazyLoadingEnabled = false, ProxyCreationEnabled = false, NameOrConnectionString = "Yarn.EF2.Connection" }), "EF");
 
             ObjectContainer.Current.Register<IRepository>(() => new Repository(new DataContextOptions { LazyLoadingEnabled = false, ProxyCreationEnabled = false, DbContextType = typeof(NorthwindEntities) }), "EF2");
 
             ObjectContainer.Current.Register<IRepository>(() => new Yarn.Data.InMemoryProvider.Repository(), "InMemory");
 
-            var repo = ObjectContainer.Current.Resolve<IRepository>("EF2");
+            var repo = ObjectContainer.Current.Resolve<IRepository>("Nemo");
             if (repo == null)
             {
                 Console.WriteLine("RepoNull");
@@ -85,6 +93,46 @@ namespace YarnTest
 
             var customerRepo = new CustomerRepository(repo);
             var customer = customerRepo.GetById("ANTON");
+        }
+    }
+
+    public class CustomerMap : Nemo.Configuration.Mapping.EntityMap<Customer>
+    {
+        public CustomerMap()
+        {
+            TableName = "Customers";
+            Property(c => c.CustomerID).PrimaryKey();
+            // Need a better way to auto-map nullable fields
+            Property(c => c.Address).WithTransform<DBNullableStringConverter>();
+            Property(c => c.City).WithTransform<DBNullableStringConverter>();
+            Property(c => c.ContactName).WithTransform<DBNullableStringConverter>();
+            Property(c => c.ContactTitle).WithTransform<DBNullableStringConverter>();
+            Property(c => c.Country).WithTransform<DBNullableStringConverter>();
+            Property(c => c.Fax).WithTransform<DBNullableStringConverter>();
+            Property(c => c.PostalCode).WithTransform<DBNullableStringConverter>();           
+            Property(c => c.Region).WithTransform<DBNullableStringConverter>();
+        }
+    }
+
+    public class OrderMap : Nemo.Configuration.Mapping.EntityMap<Order>
+    {
+        public OrderMap()
+        {
+            TableName = "Orders";
+            Property(o => o.OrderID).PrimaryKey();
+            Property(o => o.CustomerID).References<Customer>();
+            Property(o => o.ShipRegion).WithTransform<DBNullableStringConverter>();
+        }
+    }
+
+    public class OrderDetailMap : Nemo.Configuration.Mapping.EntityMap<Order_Detail>
+    {
+        public OrderDetailMap()
+        {
+            TableName = "Order Details";
+            Property(o => o.OrderID).PrimaryKey();
+            Property(o => o.ProductID).PrimaryKey();
+            Property(o => o.OrderID).References<Order>();
         }
     }
 }

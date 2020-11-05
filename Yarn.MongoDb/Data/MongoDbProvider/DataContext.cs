@@ -10,15 +10,13 @@ using MongoDB.Driver.Linq;
 
 namespace Yarn.Data.MongoDbProvider
 {
-    public class DataContext : IDataContext<IMongoDatabase>
+    internal class DataContext : IDataContext<IMongoDatabase>
     {
         private IMongoDatabase _database;
         private MongoUrl _url;
         private readonly string _connectionString;
 
-        public DataContext() : this(null) { }
-
-        public DataContext(string connectionString = null)
+        public DataContext(string connectionString)
         {
             _connectionString = connectionString;
         }
