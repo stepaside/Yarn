@@ -94,15 +94,18 @@ var category = repo.GetById<Category, int>(1000);
 
 ```c#
 // With NHibernate one must specify implementation of the data context to be used with repository
-// For this example one must provide "NHibernate.MySqlClient.Model" application setting and "NHibernate.MySqlClient.Connection" connection string setting
-ObjectContainer.Current.Register<IRepository>(
-  () => new Yarn.Data.NHibernateProvider.Repository(ObjectContainer.Current.Resolve<IDataContext<ISession>>("nh_uow_mysql")), "nh");
+// For this example one must provide "NHibernate.MySqlClient.Model" application setting 
+// and "NHibernate.MySqlClient.Connection" connection string setting
+ObjectContainer.Current.Register<IRepository>(() => new Yarn.Data.NHibernateProvider.Repository(
+                                                  ObjectContainer.Current.Resolve<IDataContext<ISession>>("nh_uow_mysql")), "nh");
 ObjectContainer.Current.Register<IDataContext<ISession>>(
   () => new Yarn.Data.NHibernateProvider.MySqlClient.MySqlDataContext(), "nh_uow_mysql");
 
 // In order to use NHibernate with SQL Server one has to bind IDataContext to the SQL Server implementation
-// Similarly to the MySQL example "NHibernate.SqlClient.Model" application setting and "NHibernate.SqlClient.Connection" connection string setting should be defined
-// ObjectContainer.Current.Register<IDataContext<ISession>>(() => new Yarn.Data.NHibernateProvider.SqlClient.Sql2012DataContext(), "nh_uow_sql");
+// Similarly to the MySQL example "NHibernate.SqlClient.Model" application setting 
+// and "NHibernate.SqlClient.Connection" connection string setting should be defined
+// ObjectContainer.Current.Register<IDataContext<ISession>>(() =>
+                                                  new Yarn.Data.NHibernateProvider.SqlClient.Sql2012DataContext(), "nh_uow_sql");
 
 var repo = ObjectContainer.Current.Resolve<IRepository>("nh");
 var categories = repo.FindAll<Category>(c => c.Name.Contains("cat"), offset: 50, limit: 10);
