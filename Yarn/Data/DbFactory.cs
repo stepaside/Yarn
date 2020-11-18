@@ -175,6 +175,11 @@ namespace Yarn.Data
                 return GetDbProviderFactory(DataAccessProviderTypes.SqlServer);
             }
 
+            if (providerName == "microsoft.data.sqlclient")
+            {
+                return GetDbProviderFactory(DataAccessProviderTypes.SqlServerCore);
+            }
+
             if (providerName == "system.data.sqlite" || providerName == "microsoft.data.sqlite")
             {
                 return GetDbProviderFactory(DataAccessProviderTypes.SqLite);
@@ -203,6 +208,11 @@ namespace Yarn.Data
             if (type == DataAccessProviderTypes.SqlServer)
             {
                 return GetDbProviderFactory("System.Data.SqlClient.SqlClientFactory", "System.Data.SqlClient");
+            }
+
+            if (type == DataAccessProviderTypes.SqlServerCore)
+            {
+                return GetDbProviderFactory("Microsoft.Data.SqlClient.SqlClientFactory", "Microsoft.Data.SqlClient");
             }
 
             if (type == DataAccessProviderTypes.SqLite)

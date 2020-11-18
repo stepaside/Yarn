@@ -148,12 +148,15 @@ namespace Yarn.Data.EntityFrameworkProvider
 
             if (dbContextType == null)
             {
-                if (configurationAssembly == null)
+                if (configurationAssembly == null && !string.IsNullOrEmpty(_options.AssemblyNameOrLocation))
                 {
                     configurationAssembly = Uri.IsWellFormedUriString(_options.AssemblyNameOrLocation, UriKind.Absolute) ? Assembly.LoadFrom(_options.AssemblyNameOrLocation) : Assembly.Load(_options.AssemblyNameOrLocation);
                 }
 
-                dbContextType = configurationAssembly.GetTypes().FirstOrDefault(t => typeof(DbContext).IsAssignableFrom(t));
+                if (configurationAssembly != null)
+                {
+                    dbContextType = configurationAssembly.GetTypes().FirstOrDefault(t => typeof(DbContext).IsAssignableFrom(t));
+                }
             }
 
             if (dbContextType == null)
@@ -161,7 +164,10 @@ namespace Yarn.Data.EntityFrameworkProvider
                 var connection = CreateConnection(_options.NameOrConnectionString);
 
                 var builder = new DbModelBuilder();
-                builder.Configurations.AddFromAssembly(configurationAssembly);
+                if (configurationAssembly != null)
+                {
+                    builder.Configurations.AddFromAssembly(configurationAssembly);
+                }
                 dbModel = builder.Build(connection).Compile();
             }
             else

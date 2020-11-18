@@ -4,7 +4,7 @@ using Yarn.Test.Models.EF;
 using Yarn.Queries;
 using Yarn.Specification;
 
-namespace YarnTest
+namespace Yarn.Test
 {
     public class GetCustomerByIdQuery : IQuery<Customer>
     {

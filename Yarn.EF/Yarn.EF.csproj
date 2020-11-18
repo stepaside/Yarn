@@ -12,7 +12,7 @@
     <PackageProjectUrl>https://github.com/stepaside/Yarn</PackageProjectUrl>
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
     <PackageTags>Entity Framework EntityFramework EF Repository</PackageTags>
-    <PackageVersion>1.2.0</PackageVersion>
+    <PackageVersion>1.2.1</PackageVersion>
     <AssemblyVersion>1.2.0</AssemblyVersion>
     <OutputPath>bin\$(Configuration)\</OutputPath>
     <RequireLicenseAcceptance>false</RequireLicenseAcceptance>
