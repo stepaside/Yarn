@@ -13,7 +13,7 @@ namespace Yarn
         Task SaveChangesAsync(CancellationToken cancellationToken);
     }
 
-    public interface IDataContextAsync<TSession> : IDataContextAsync, IDataContext<TSession>
+    public interface IDataContextAsync<out TSession> : IDataContextAsync, IDataContext<TSession>
     {
     }
 }
