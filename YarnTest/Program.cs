@@ -30,7 +30,7 @@ namespace Yarn.Test
         static void Main(string[] args)
         {
             var nemoConfig = ConfigurationFactory.CloneCurrentConfiguration();
-            nemoConfig.SetDefaultCacheRepresentation(Nemo.CacheRepresentation.None);
+            nemoConfig.SetDefaultCacheRepresentation(Nemo.CacheRepresentation.None).SetAutoTypeCoercion(true);
 
             ObjectContainer.Current.Register<IRepository>(() => new Yarn.Data.NemoProvider.Repository(new Yarn.Data.NemoProvider.RepositoryOptions { UseStoredProcedures = false, Configuration = nemoConfig }, new Yarn.Data.NemoProvider.DataContextOptions { ConnectionName = "Yarn.EF2.Connection" }), "Nemo");
 
@@ -107,14 +107,14 @@ namespace Yarn.Test
             TableName = "Customers";
             Property(c => c.CustomerID).PrimaryKey();
             // Need a better way to auto-map nullable fields
-            Property(c => c.Address).WithTransform<DBNullableStringConverter>();
-            Property(c => c.City).WithTransform<DBNullableStringConverter>();
-            Property(c => c.ContactName).WithTransform<DBNullableStringConverter>();
-            Property(c => c.ContactTitle).WithTransform<DBNullableStringConverter>();
-            Property(c => c.Country).WithTransform<DBNullableStringConverter>();
-            Property(c => c.Fax).WithTransform<DBNullableStringConverter>();
-            Property(c => c.PostalCode).WithTransform<DBNullableStringConverter>();           
-            Property(c => c.Region).WithTransform<DBNullableStringConverter>();
+            //Property(c => c.Address).WithTransform<DBNullableStringConverter>();
+            //Property(c => c.City).WithTransform<DBNullableStringConverter>();
+            //Property(c => c.ContactName).WithTransform<DBNullableStringConverter>();
+            //Property(c => c.ContactTitle).WithTransform<DBNullableStringConverter>();
+            //Property(c => c.Country).WithTransform<DBNullableStringConverter>();
+            //Property(c => c.Fax).WithTransform<DBNullableStringConverter>();
+            //Property(c => c.PostalCode).WithTransform<DBNullableStringConverter>();           
+            //Property(c => c.Region).WithTransform<DBNullableStringConverter>();
         }
     }
 
@@ -125,7 +125,7 @@ namespace Yarn.Test
             TableName = "Orders";
             Property(o => o.OrderID).PrimaryKey();
             Property(o => o.CustomerID).References<Customer>();
-            Property(o => o.ShipRegion).WithTransform<DBNullableStringConverter>();
+            //Property(o => o.ShipRegion).WithTransform<DBNullableStringConverter>();
         }
     }
 

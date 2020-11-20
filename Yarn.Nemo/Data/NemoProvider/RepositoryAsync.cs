@@ -51,7 +51,7 @@ namespace Yarn.Data.NemoProvider
 
         public async Task<long> CountAsync<T>() where T : class
         {
-            SetConfiguration<T>();
+            SetConfiguration(typeof(T));
             return await ObjectFactory.CountAsync<T>(connection: Connection);
         }
 
@@ -62,13 +62,13 @@ namespace Yarn.Data.NemoProvider
 
         public async Task<long> CountAsync<T>(Expression<Func<T, bool>> criteria) where T : class
         {
-            SetConfiguration<T>();
+            SetConfiguration(typeof(T));
             return await ObjectFactory.CountAsync(criteria, connection: Connection);
         }
 
         public async Task<IList<T>> ExecuteAsync<T>(string command, ParamList parameters) where T : class
         {
-            SetConfiguration<T>();
+            SetConfiguration(typeof(T));
             var response = await ObjectFactory.ExecuteAsync<T>(new OperationRequest { Operation = command, OperationType = OperationType.Guess, Parameters = parameters != null ? parameters.Select(p => new Param { Name = p.Key, Value = p.Value }).ToArray() : null, Connection = Connection, Transaction = ((DataContext)DataContext).Transaction });
             return ObjectFactory.Translate<T>(response).ToList();
         }
@@ -80,7 +80,7 @@ namespace Yarn.Data.NemoProvider
 
         public Task<IEnumerable<T>> FindAllAsync<T>(Expression<Func<T, bool>> criteria, int offset = 0, int limit = 0, Sorting<T> orderBy = null) where T : class
         {
-            SetConfiguration<T>();
+            SetConfiguration(typeof(T));
             if (orderBy != null)
             {
                 return ObjectFactory.SelectAsync(criteria, connection: Connection, page: limit > 0 ? offset / limit + 1 : 0, pageSize: limit, skipCount: offset, orderBy: orderBy.ToArray().Select(s => new Nemo.Sorting<T> { OrderBy = s.OrderBy, Reverse = s.Reverse }).ToArray()).ToEnumerableAsync();
@@ -100,7 +100,7 @@ namespace Yarn.Data.NemoProvider
 
         public async Task<T> GetByIdAsync<T, TKey>(TKey id) where T : class
         {
-            SetConfiguration<T>();
+            SetConfiguration(typeof(T));
             var property = GetPrimaryKey<T>().First();
             return _options.UseStoredProcedures
                 ? (await ObjectFactory.RetrieveAsync<T>("GetById", parameters: new[] { new Param { Name = property, Value = id } }, connection: Connection)).FirstOrDefault()

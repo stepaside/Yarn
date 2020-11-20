@@ -45,22 +45,22 @@ namespace Yarn.Data.NemoProvider
             _configured = new HashSet<Type>();
         }
 
-        protected void SetConfiguration<T>() where T : class
+        protected void SetConfiguration(Type type)
         {
-            if (_configured.Contains(typeof(T))) return;
+            if (_configured.Contains(type)) return;
 
             if (!_options.UseStoredProcedures && _options.Configuration != null)
             {
                 _options.Configuration.SetGenerateDeleteSql(true).SetGenerateInsertSql(true).SetGenerateUpdateSql(true);
-                ConfigurationFactory.Set<T>(_options.Configuration);
+                ConfigurationFactory.Set(type, _options.Configuration);
             }
             else if (!_options.UseStoredProcedures)
             {
-                var config = ConfigurationFactory.Get<T>();
+                var config = _options.Configuration ?? ConfigurationFactory.Get(type);
                 if (config == ConfigurationFactory.DefaultConfiguration)
                 {
                     config = ConfigurationFactory.CloneCurrentConfiguration().SetGenerateDeleteSql(true).SetGenerateInsertSql(true).SetGenerateUpdateSql(true);
-                    ConfigurationFactory.Set<T>(config);
+                    ConfigurationFactory.Set(type, config);
                 }
                 else
                 {
@@ -69,14 +69,14 @@ namespace Yarn.Data.NemoProvider
             }
             else if (_options.Configuration != null)
             {
-                ConfigurationFactory.Set<T>(_options.Configuration);
+                ConfigurationFactory.Set(type, _options.Configuration);
             }
-            _configured.Add(typeof(T));
+            _configured.Add(type);
         }
 
         public T GetById<T, TKey>(TKey id) where T : class
         {
-            SetConfiguration<T>();
+            SetConfiguration(typeof(T));
 
             if (_options.UseStoredProcedures)
             {
@@ -104,7 +104,7 @@ namespace Yarn.Data.NemoProvider
 
         public IEnumerable<T> FindAll<T>(Expression<Func<T, bool>> criteria, int offset = 0, int limit = 0, Sorting<T> orderBy = null) where T : class
         {
-            SetConfiguration<T>();
+            SetConfiguration(typeof(T));
 
             if (orderBy != null)
             {
@@ -115,7 +115,7 @@ namespace Yarn.Data.NemoProvider
 
         public IList<T> Execute<T>(string command, ParamList parameters) where T : class
         {
-            SetConfiguration<T>();
+            SetConfiguration(typeof(T));
             var request = new OperationRequest { Operation = command, OperationType = OperationType.Guess, Parameters = parameters != null ? parameters.Select(p => new Param { Name = p.Key, Value = p.Value }).ToArray() : null, Connection = Connection, Transaction = ((DataContext)DataContext).Transaction };
             var response = ObjectFactory.Execute<T>(request);
             return ObjectFactory.Translate<T>(response).ToList();
@@ -123,32 +123,32 @@ namespace Yarn.Data.NemoProvider
 
         public T Add<T>(T entity) where T : class
         {
-            SetConfiguration<T>();
+            SetConfiguration(typeof(T));
             return entity.Insert() ? entity : null;
         }
         
         public T Remove<T>(T entity) where T : class
         {
-            SetConfiguration<T>();
+            SetConfiguration(typeof(T));
             return entity.Delete() ? entity : null;
         }
 
         public T Remove<T, TKey>(TKey id) where T : class
         {
-            SetConfiguration<T>();
+            SetConfiguration(typeof(T));
             var entity = GetById<T, TKey>(id);
             return Remove(entity);
         }
 
         public T Update<T>(T entity) where T : class
         {
-            SetConfiguration<T>();
+            SetConfiguration(typeof(T));
             return entity.Update() ? entity : null;
         }
 
         public long Count<T>() where T : class
         {
-            SetConfiguration<T>();
+            SetConfiguration(typeof(T));
             return ObjectFactory.Count<T>(connection: Connection);
         }
 
@@ -159,13 +159,13 @@ namespace Yarn.Data.NemoProvider
 
         public long Count<T>(Expression<Func<T, bool>> criteria) where T : class
         {
-            SetConfiguration<T>();
+            SetConfiguration(typeof(T)); 
             return ObjectFactory.Count(criteria, connection: Connection);
         }
 
         public IQueryable<T> All<T>() where T : class
         {
-            SetConfiguration<T>();
+            SetConfiguration(typeof(T));
             //return LinqExtensions.Defer(() => ObjectFactory.Select<T>()).AsQueryable();
             return new NemoQueryable<T>(Connection);
         }
@@ -196,19 +196,19 @@ namespace Yarn.Data.NemoProvider
 
         public string[] GetPrimaryKey<T>() where T : class
         {
-            SetConfiguration<T>();
+            SetConfiguration(typeof(T));
             return ObjectFactory.GetPrimaryKeyProperties(typeof(T));
         }
 
         public object[] GetPrimaryKeyValue<T>(T entity) where T : class
         {
-            SetConfiguration<T>();
+            SetConfiguration(typeof(T));
             return entity.GetPrimaryKey().Values.ToArray();
         }
 
         public ILoadService<T> Load<T>() where T : class
         {
-            SetConfiguration<T>();
+            SetConfiguration(typeof(T));
             return new LoadService<T>(this);
         }
 
@@ -246,6 +246,8 @@ namespace Yarn.Data.NemoProvider
                     type = Reflector.GetElementType(property.PropertyType) ?? property.PropertyType;
                     list.Add(type);
 
+                    _repository.SetConfiguration(type);
+
                     var pk2Candidates = Reflector.GetPropertyMap(type).Values.Where(p => p.Parent != null).GroupBy(p =>p.Parent).ToDictionary(g => g.Key, g => g.ToList());
 
                     List<ReflectedProperty> pk2;
@@ -276,6 +278,8 @@ namespace Yarn.Data.NemoProvider
 
             public T Update(T entity)
             {
+                _repository.SetConfiguration(typeof(T));
+
                 if (_repository._options.UseStoredProcedures)
                 {
                     var property = _repository.As<IMetaDataProvider>().GetPrimaryKey<T>().First();
@@ -299,6 +303,8 @@ namespace Yarn.Data.NemoProvider
 
             public IEnumerable<T> FindAll(Expression<Func<T, bool>> criteria, int offset = 0, int limit = 0, Sorting<T> sorting = null)
             {
+                _repository.SetConfiguration(typeof(T));
+
                 var typeCount = _types.Sum(t => t.Item1.Length);
                 
                 if (typeCount == 0)
@@ -390,6 +396,8 @@ namespace Yarn.Data.NemoProvider
 
             public IQueryable<T> All()
             {
+                _repository.SetConfiguration(typeof(T));
+
                 var typeCount = _types.Sum(t => t.Item1.Length);
 
                 if (typeCount == 0)
@@ -490,6 +498,8 @@ namespace Yarn.Data.NemoProvider
 
         public IEnumerable<T> GetById<T, TKey>(IEnumerable<TKey> ids) where T : class
         {
+            SetConfiguration(typeof(T));
+
             if (_options.UseStoredProcedures)
             {
                 var property = GetPrimaryKey<T>().First();
@@ -510,6 +520,8 @@ namespace Yarn.Data.NemoProvider
 
         public long Insert<T>(IEnumerable<T> entities) where T : class
         {
+            SetConfiguration(typeof(T));
+
             return ObjectFactory.Insert(entities);
         }
 
