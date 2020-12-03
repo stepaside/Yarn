@@ -27,7 +27,7 @@ namespace Yarn.Data.EntityFrameworkProvider.Migrations
                 {
                     var configuration = new DbMigrationsConfiguration<TContext>();
                     var migrator = new DbMigrator(configuration);
-                    migrator.Configuration.TargetDatabase = new DbConnectionInfo(context.Database.Connection.ConnectionString, DbFactory.GetProviderInvariantNameByConnectionString(context.Database.Connection.ConnectionString));
+                    migrator.Configuration.TargetDatabase = new DbConnectionInfo(context.Database.Connection.ConnectionString, DbFactory.GetProviderInvariantNameByConnectionString(context.Database.Connection.ConnectionString, null));
 
                     var migrations = migrator.GetPendingMigrations();
                     if (migrations.Any())

@@ -89,7 +89,7 @@ namespace Yarn.Data.EntityFrameworkProvider
         {
             var connection = ((IObjectContextAdapter)DbContext).ObjectContext.Connection;
             var query = parameters != null
-                ? DbContext.Database.SqlQuery<T>(command, parameters.Select(p => p.Value is DbParameter ? p.Value : DbFactory.CreateParameter(connection, p.Key, p.Value)).ToArray())
+                ? DbContext.Database.SqlQuery<T>(command, parameters.Select(p => p.Value is DbParameter ? p.Value : DbFactory.CreateParameter(connection, p.Key, p.Value, null)).ToArray())
                 : DbContext.Database.SqlQuery<T>(command);
             return query;
         }
@@ -588,7 +588,7 @@ namespace Yarn.Data.EntityFrameworkProvider
                                             {
                                                 if (value is string)
                                                 {
-                                                    var providerName = DbFactory.GetProviderInvariantNameByConnectionString(connection.ConnectionString);
+                                                    var providerName = DbFactory.GetProviderInvariantNameByConnectionString(connection.ConnectionString, null);
                                                     if (providerName.Contains("SqlClient"))
                                                     {
                                                         builder.AppendFormat(isLeft ? "[{0}] = [{0}] + @{1}" : "[{0}] = @{1} + [{0}]", columnName, "p" + i);

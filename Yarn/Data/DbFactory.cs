@@ -6,39 +6,56 @@ using System.Data.Common;
 using System.Configuration;
 using System.Reflection;
 using System.IO;
+using Microsoft.Extensions.Configuration;
+using Yarn.Data.Configuration;
 
 namespace Yarn.Data
 {
     public static class DbFactory
     {
-        public static string GetProviderInvariantName(string connectionName)
+        public static string GetProviderInvariantName(string connectionName, IConfiguration configration)
         {
-            var config = ConfigurationManager.ConnectionStrings[connectionName];
-            return config != null ? config.ProviderName : null;
+            if (configration != null)
+            {
+                var config = configration.ConnectionString(connectionName);
+                return config != null ? config.ProviderName : null;
+            }
+            else
+            {
+                var config = ConfigurationManager.ConnectionStrings[connectionName];
+                return config != null ? config.ProviderName : null;
+            }
         }
 
-        public static string GetProviderInvariantName(string connectionName, out string connectionString)
+        public static string GetProviderInvariantName(string connectionName, IConfiguration configration, out string connectionString)
         {
-            var config = ConfigurationManager.ConnectionStrings[connectionName];
-            connectionString = config != null ? config.ConnectionString : null;
-            return config != null ? config.ProviderName : null;
+            if (configration != null)
+            {
+                var config = configration.ConnectionString(connectionName);
+                connectionString = config != null ? config.ConnectionString : null;
+                return config != null ? config.ProviderName : null;
+            }
+            else
+            {
+                var config = ConfigurationManager.ConnectionStrings[connectionName];
+                connectionString = config != null ? config.ConnectionString : null;
+                return config != null ? config.ProviderName : null;
+            }
         }
 
-        public static string GetProviderInvariantNameByConnectionString(string connectionString)
+        public static string GetProviderInvariantNameByConnectionString(string connectionString, IConfiguration configration)
         {
             if (connectionString == null) return null;
 
             var builder = new DbConnectionStringBuilder { ConnectionString = connectionString };
 
-            object providerValue;
-            if (builder.TryGetValue("provider", out providerValue))
+            if (builder.TryGetValue("provider", out var providerValue))
             {
                 return providerValue.ToString();
             }
 
             var persistSecurityInfo = false;
-            object persistSecurityInfoValue;
-            if (builder.TryGetValue("persist security info", out persistSecurityInfoValue))
+            if (builder.TryGetValue("persist security info", out var persistSecurityInfoValue))
             {
                 persistSecurityInfo = Convert.ToBoolean(persistSecurityInfoValue);
             }
@@ -47,50 +64,88 @@ namespace Yarn.Data
 
             if (!lostPassword)
             {
-                for (var i = 0; i < ConfigurationManager.ConnectionStrings.Count; i++)
+                if (configration != null)
                 {
-                    var config = ConfigurationManager.ConnectionStrings[i];
-                    if (string.Equals(config.ConnectionString, connectionString, StringComparison.OrdinalIgnoreCase))
+                    foreach (var config in configration.ConnectionStrings())
                     {
-                        return config.ProviderName;
+                        if (string.Equals(config.ConnectionString, connectionString, StringComparison.OrdinalIgnoreCase))
+                        {
+                            return config.ProviderName;
+                        }
+                    }
+                }
+                else
+                {
+                    for (var i = 0; i < ConfigurationManager.ConnectionStrings.Count; i++)
+                    {
+                        var config = ConfigurationManager.ConnectionStrings[i];
+                        if (string.Equals(config.ConnectionString, connectionString, StringComparison.OrdinalIgnoreCase))
+                        {
+                            return config.ProviderName;
+                        }
                     }
                 }
             }
             else
             {
-                object uid;
-                if (builder.TryGetValue("uid", out uid))
+                if (builder.TryGetValue("uid", out var uid))
                 {
                     builder.Remove("uid");
                     builder["user id"] = uid;
                 }
 
-                for (var i = 0; i < ConfigurationManager.ConnectionStrings.Count; i++)
+                if (configration != null)
                 {
-                    var config = ConfigurationManager.ConnectionStrings[i];
-
-                    var otherBuilder = new DbConnectionStringBuilder { ConnectionString = config.ConnectionString };
-                    otherBuilder.Remove("pwd");
-                    otherBuilder.Remove("password");
-
-                    object otherUid;
-                    if (otherBuilder.TryGetValue("uid", out otherUid))
+                    foreach (var config in configration.ConnectionStrings())
                     {
-                        otherBuilder.Remove("uid");
-                        otherBuilder["user id"] = otherUid;
+                        var otherBuilder = new DbConnectionStringBuilder { ConnectionString = config.ConnectionString };
+                        otherBuilder.Remove("pwd");
+                        otherBuilder.Remove("password");
+
+                        if (otherBuilder.TryGetValue("uid", out var otherUid))
+                        {
+                            otherBuilder.Remove("uid");
+                            otherBuilder["user id"] = otherUid;
+                        }
+
+                        if (otherBuilder.Count != builder.Count) continue;
+
+                        var equivalenCount = builder.Cast<KeyValuePair<string, object>>()
+                            .Select(p =>otherBuilder.TryGetValue(p.Key, out var value) && string.Equals(Convert.ToString(value), Convert.ToString(p.Value), StringComparison.OrdinalIgnoreCase) ? 1 : 0)
+                            .Sum();
+
+                        if (equivalenCount == builder.Count)
+                        {
+                            return config.ProviderName;
+                        }
                     }
-
-                    if (otherBuilder.Count != builder.Count) continue;
-
-                    var equivalenCount = builder.Cast<KeyValuePair<string, object>>().Select(p =>
+                }
+                else
+                {
+                    for (var i = 0; i < ConfigurationManager.ConnectionStrings.Count; i++)
                     {
-                        object value;
-                        return otherBuilder.TryGetValue(p.Key, out value) && string.Equals(Convert.ToString(value), Convert.ToString(p.Value), StringComparison.OrdinalIgnoreCase) ? 1 : 0;
-                    }).Sum();
+                        var config = ConfigurationManager.ConnectionStrings[i];
 
-                    if (equivalenCount == builder.Count)
-                    {
-                        return config.ProviderName;
+                        var otherBuilder = new DbConnectionStringBuilder { ConnectionString = config.ConnectionString };
+                        otherBuilder.Remove("pwd");
+                        otherBuilder.Remove("password");
+
+                        if (otherBuilder.TryGetValue("uid", out var otherUid))
+                        {
+                            otherBuilder.Remove("uid");
+                            otherBuilder["user id"] = otherUid;
+                        }
+
+                        if (otherBuilder.Count != builder.Count) continue;
+
+                        var equivalenCount = builder.Cast<KeyValuePair<string, object>>()
+                            .Select(p => otherBuilder.TryGetValue(p.Key, out var value) && string.Equals(Convert.ToString(value), Convert.ToString(p.Value), StringComparison.OrdinalIgnoreCase) ? 1 : 0)
+                            .Sum();
+
+                        if (equivalenCount == builder.Count)
+                        {
+                            return config.ProviderName;
+                        }
                     }
                 }
             }
@@ -113,10 +168,10 @@ namespace Yarn.Data
             return connection;
         }
 
-        public static DbConnection CreateConnection(string connectionName)
+        public static DbConnection CreateConnection(string connectionName, IConfiguration configration)
         {
             string connectionString;
-            var providerName = GetProviderInvariantName(connectionName, out connectionString);
+            var providerName = GetProviderInvariantName(connectionName, configration, out connectionString);
             if (providerName == null) return null;
 
 #if NETSTANDARD2_0
@@ -132,19 +187,19 @@ namespace Yarn.Data
             return connection;
         }
 
-        public static DbDataAdapter CreateDataAdapter(DbConnection connection)
+        public static DbDataAdapter CreateDataAdapter(DbConnection connection, IConfiguration configuration)
         {
-            return CreateDataAdapter(connection.ConnectionString);
+            return CreateDataAdapter(connection.ConnectionString, configuration);
         }
 
-        public static DbDataAdapter CreateDataAdapter(IDataContext dataContext)
+        public static DbDataAdapter CreateDataAdapter(IDataContext dataContext, IConfiguration configuration)
         {
-            return CreateDataAdapter(dataContext.Source);
+            return CreateDataAdapter(dataContext.Source, configuration);
         }
 
-        public static DbDataAdapter CreateDataAdapter(string connectionString)
+        public static DbDataAdapter CreateDataAdapter(string connectionString, IConfiguration configuration)
         {
-            var providerName = GetProviderInvariantNameByConnectionString(connectionString);
+            var providerName = GetProviderInvariantNameByConnectionString(connectionString, configuration);
 #if NETSTANDARD2_0
             return providerName != null ? GetDbProviderFactory(providerName).CreateDataAdapter() : null;
 #else
@@ -152,19 +207,19 @@ namespace Yarn.Data
 #endif
         }
 
-        public static DbParameter CreateParameter(DbConnection connection, string name, object value)
+        public static DbParameter CreateParameter(DbConnection connection, string name, object value, IConfiguration configuration)
         {
-            return CreateParameter(connection.ConnectionString, name, value);
+            return CreateParameter(connection.ConnectionString, name, value, configuration);
         }
 
-        public static DbParameter CreateParameter(IDataContext dataContext, string name, object value)
+        public static DbParameter CreateParameter(IDataContext dataContext, string name, object value, IConfiguration configuration)
         {
-            return CreateParameter(dataContext.Source, name, value);
+            return CreateParameter(dataContext.Source, name, value, configuration);
         }
 
-        public static DbParameter CreateParameter(string connectionString, string name, object value)
+        public static DbParameter CreateParameter(string connectionString, string name, object value, IConfiguration configuration)
         {
-            var providerName = GetProviderInvariantNameByConnectionString(connectionString);
+            var providerName = GetProviderInvariantNameByConnectionString(connectionString, configuration);
             if (providerName != null)
             {
 

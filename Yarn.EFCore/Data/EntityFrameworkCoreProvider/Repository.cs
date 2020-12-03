@@ -1,5 +1,6 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.Extensions.Configuration;
 using System;
 using System.Collections;
 using System.Collections.Concurrent;
@@ -38,6 +39,10 @@ namespace Yarn.Data.EntityFrameworkCoreProvider
             : this(dataContext, new RepositoryOptions())
         { }
 
+        public Repository(IDataContext<DbContext> dataContext, IConfiguration configuration)
+            : this(dataContext, new RepositoryOptions() { Configuration = configuration })
+        { }
+
         public T GetById<T, TKey>(TKey id) where T : class
         {
             return Table<T>().Find(id);
@@ -73,7 +78,7 @@ namespace Yarn.Data.EntityFrameworkCoreProvider
         protected IQueryable<T> PrepareSqlQuery<T>(string command, ParamList parameters) where T : class
         {
             var query = parameters != null
-                ? Table<T>().FromSqlRaw(command, parameters.Select(p => p.Value is DbParameter ? p.Value : DbFactory.CreateParameter(DbContext.Database.GetDbConnection(), p.Key, p.Value)).ToArray())
+                ? Table<T>().FromSqlRaw(command, parameters.Select(p => p.Value is DbParameter ? p.Value : DbFactory.CreateParameter(DbContext.Database.GetDbConnection(), p.Key, p.Value, _options.Configuration)).ToArray())
                 : Table<T>().FromSqlRaw(command);
             return query;
         }
@@ -571,7 +576,7 @@ namespace Yarn.Data.EntityFrameworkCoreProvider
                                             {
                                                 if (value is string)
                                                 {
-                                                    var providerName = DbFactory.GetProviderInvariantNameByConnectionString(connection.ConnectionString);
+                                                    var providerName = DbFactory.GetProviderInvariantNameByConnectionString(connection.ConnectionString, _options.Configuration);
                                                     if (providerName.Contains("SqlClient"))
                                                     {
                                                         builder.AppendFormat(isLeft ? "[{0}] = [{0}] + @{1}" : "[{0}] = @{1} + [{0}]", columnName, "p" + i);

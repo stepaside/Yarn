@@ -49,6 +49,12 @@ namespace Yarn.Data.NemoProvider
         {
             if (_configured.Contains(type)) return;
 
+            if (_options == null)
+            {
+                _configured.Add(type);
+                return;
+            }
+            
             if (!_options.UseStoredProcedures && _options.Configuration != null)
             {
                 _options.Configuration.SetGenerateDeleteSql(true).SetGenerateInsertSql(true).SetGenerateUpdateSql(true);

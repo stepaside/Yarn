@@ -7,7 +7,7 @@
     <Company>Stepaside, Inc.</Company>
     <Product>Yarn.MongoDb</Product>
     <Description>Yarn MongoDB Provider</Description>
-    <PackageVersion>1.2.0</PackageVersion>
+    <PackageVersion>1.2.1</PackageVersion>
     <AssemblyVersion>1.2.0</AssemblyVersion>
     <Authors>Max Stepanskiy</Authors>
     <Copyright>Copyright © Max Stepanskiy 2012-2020</Copyright>
@@ -28,7 +28,7 @@
   <Import Project="$(SolutionDir)\.nuget\NuGet.targets" Condition="Exists('$(SolutionDir)\.nuget\NuGet.targets')" />
   <ItemGroup>
     <PackageReference Include="Microsoft.CSharp" Version="4.7.0" />
-    <PackageReference Include="MongoDB.Driver" Version="2.11.4" />
+    <PackageReference Include="MongoDB.Driver" Version="2.11.5" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\Yarn\Yarn.csproj" />

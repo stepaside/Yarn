@@ -1,4 +1,5 @@
 ﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Configuration;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
@@ -19,6 +20,10 @@ namespace Yarn.Data.EntityFrameworkCoreProvider
 
         public RepositoryAsync(IDataContextAsync<DbContext> dataContext)
             : this(dataContext, new RepositoryOptions())
+        { }
+
+        public RepositoryAsync(IDataContextAsync<DbContext> dataContext, IConfiguration configuration)
+            : this(dataContext, new RepositoryOptions() { Configuration = configuration })
         { }
 
         public async Task<T> GetByIdAsync<T, TKey>(TKey id) where T : class

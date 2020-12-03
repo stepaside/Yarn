@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Microsoft.Extensions.Configuration;
+using System;
 using System.Collections.Concurrent;
 using System.Configuration;
 using System.Data;
@@ -54,7 +55,7 @@ namespace Yarn.Data.EntityFrameworkProvider
 
         internal static DbConnection CreateConnection(string nameOrConnectionString)
         {
-            var connection = DbFactory.CreateConnection(nameOrConnectionString) ?? DbFactory.CreateConnection(nameOrConnectionString, DbFactory.GetProviderInvariantNameByConnectionString(nameOrConnectionString));
+            var connection = DbFactory.CreateConnection(nameOrConnectionString, (IConfiguration)null) ?? DbFactory.CreateConnection(nameOrConnectionString, DbFactory.GetProviderInvariantNameByConnectionString(nameOrConnectionString, null));
             return connection;
         }
 

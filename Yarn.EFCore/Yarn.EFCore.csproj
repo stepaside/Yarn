@@ -12,7 +12,7 @@
     <PackageProjectUrl>https://github.com/stepaside/Yarn</PackageProjectUrl>
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
     <PackageTags>EntityFrameworkCore EFCore Repository</PackageTags>
-    <PackageVersion>1.0.0</PackageVersion>
+    <PackageVersion>1.0.1</PackageVersion>
     <AssemblyVersion>1.0.0</AssemblyVersion>
     <RequireLicenseAcceptance>false</RequireLicenseAcceptance>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>

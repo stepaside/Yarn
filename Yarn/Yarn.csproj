@@ -9,7 +9,7 @@
     <Product>Yarn</Product>
     <Description>Yet Another Repository for .Net</Description>
     <Copyright>Copyright © Max Stepanskiy 2012-2020</Copyright>
-    <PackageVersion>1.2.3</PackageVersion>
+    <PackageVersion>1.2.4</PackageVersion>
     <AssemblyVersion>1.2.0</AssemblyVersion>
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
     <OutputPath>bin\$(Configuration)\</OutputPath>
@@ -28,6 +28,8 @@
   </PropertyGroup>
   <Import Project="$(SolutionDir)\.nuget\nuget.targets" />
   <ItemGroup>
+    <PackageReference Include="Microsoft.Extensions.Configuration" Version="3.1.9" />
+    <PackageReference Include="Microsoft.Extensions.Configuration.Binder" Version="3.1.9" />
     <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="3.1.9" />
     <PackageReference Include="System.Configuration.ConfigurationManager" Version="4.7.0" />
     <PackageReference Include="System.Data.Common" Version="4.3.0" />

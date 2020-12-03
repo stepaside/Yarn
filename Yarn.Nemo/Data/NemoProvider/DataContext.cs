@@ -22,18 +22,22 @@ namespace Yarn.Data.NemoProvider
             }
             else if (options?.ConnectionName != null)
             {
-                _connection = DbFactory.CreateConnection(options.ConnectionName);
+                _connection = DbFactory.CreateConnection(options.ConnectionName, GetConfiguration(options));
             }
             else if (options?.ConnectionString != null)
             {
-                _connection = DbFactory.CreateConnection(options.ConnectionString, DbFactory.GetProviderInvariantNameByConnectionString(options.ConnectionString));
+                _connection = DbFactory.CreateConnection(options.ConnectionString, DbFactory.GetProviderInvariantNameByConnectionString(options.ConnectionString, GetConfiguration(options)));
             }
             else
             {
-                _connection = DbFactory.CreateConnection(ConfigurationFactory.DefaultConnectionName);
+                _connection = DbFactory.CreateConnection(ConfigurationFactory.DefaultConnectionName, GetConfiguration(options));
             }
-            _source = options.ConnectionString;
+            _source = _connection?.ConnectionString;
+        }
 
+        private static Microsoft.Extensions.Configuration.IConfiguration GetConfiguration(DataContextOptions options)
+        {
+            return (options.Configuration ?? ConfigurationFactory.DefaultConfiguration).SystemConfiguration;
         }
 
         public void SaveChanges()
