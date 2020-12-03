@@ -30,6 +30,11 @@ namespace Yarn.Extensions
             return first.Compose(second, Expression.OrElse);
         }
 
+        public static Expression<Func<T, bool>> Not<T>(this Expression<Func<T, bool>> expression)
+        {
+            return Expression.Lambda<Func<T, bool>>(Expression.Not(expression.Body), expression.Parameters);
+        }
+
         public static Expression<Func<T, bool>> BuildOrExpression<T, TKey>(this Expression<Func<T, TKey>> valueSelector, IList<TKey> values)
             where T : class
         {

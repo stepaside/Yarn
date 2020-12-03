@@ -23,17 +23,17 @@ namespace Yarn.Data.NemoProvider
             else if (options?.ConnectionName != null)
             {
                 _connection = DbFactory.CreateConnection(options.ConnectionName);
-                _source = _connection.ConnectionString;
             }
             else if (options?.ConnectionString != null)
             {
                 _connection = DbFactory.CreateConnection(options.ConnectionString, DbFactory.GetProviderInvariantNameByConnectionString(options.ConnectionString));
-                _source = options.ConnectionString;
             }
             else
             {
                 _connection = DbFactory.CreateConnection(ConfigurationFactory.DefaultConnectionName);
             }
+            _source = options.ConnectionString;
+
         }
 
         public void SaveChanges()

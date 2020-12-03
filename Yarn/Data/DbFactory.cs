@@ -134,7 +134,17 @@ namespace Yarn.Data
 
         public static DbDataAdapter CreateDataAdapter(DbConnection connection)
         {
-            var providerName = GetProviderInvariantNameByConnectionString(connection.ConnectionString);
+            return CreateDataAdapter(connection.ConnectionString);
+        }
+
+        public static DbDataAdapter CreateDataAdapter(IDataContext dataContext)
+        {
+            return CreateDataAdapter(dataContext.Source);
+        }
+
+        public static DbDataAdapter CreateDataAdapter(string connectionString)
+        {
+            var providerName = GetProviderInvariantNameByConnectionString(connectionString);
 #if NETSTANDARD2_0
             return providerName != null ? GetDbProviderFactory(providerName).CreateDataAdapter() : null;
 #else
@@ -144,7 +154,17 @@ namespace Yarn.Data
 
         public static DbParameter CreateParameter(DbConnection connection, string name, object value)
         {
-            var providerName = GetProviderInvariantNameByConnectionString(connection.ConnectionString);
+            return CreateParameter(connection.ConnectionString, name, value);
+        }
+
+        public static DbParameter CreateParameter(IDataContext dataContext, string name, object value)
+        {
+            return CreateParameter(dataContext.Source, name, value);
+        }
+
+        public static DbParameter CreateParameter(string connectionString, string name, object value)
+        {
+            var providerName = GetProviderInvariantNameByConnectionString(connectionString);
             if (providerName != null)
             {
 

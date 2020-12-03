@@ -9,7 +9,7 @@
     <Product>Yarn</Product>
     <Description>Yet Another Repository for .Net</Description>
     <Copyright>Copyright © Max Stepanskiy 2012-2020</Copyright>
-    <PackageVersion>1.2.2</PackageVersion>
+    <PackageVersion>1.2.3</PackageVersion>
     <AssemblyVersion>1.2.0</AssemblyVersion>
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
     <OutputPath>bin\$(Configuration)\</OutputPath>

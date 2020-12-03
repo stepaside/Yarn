@@ -38,6 +38,11 @@ namespace Yarn.Specification
             return new Specification<T>(Predicate.Or(predicate));
         }
 
+        public Specification<T> Not()
+        {
+           return new Specification<T>(Predicate.Not());
+        }
+
         public bool IsSatisfiedBy(T item)
         {
             return Apply(new[] { item }.AsQueryable()).Any();
