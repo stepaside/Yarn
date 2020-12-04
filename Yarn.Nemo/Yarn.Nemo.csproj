@@ -9,7 +9,7 @@
     <OutputPath>bin\$(Configuration)\</OutputPath>
     <PackageId>Yarn.Nemo</PackageId>
     <PackageTags>Nemo Repository</PackageTags>
-    <PackageVersion>1.2.4</PackageVersion>
+    <PackageVersion>1.2.5</PackageVersion>
     <AssemblyVersion>1.2.0</AssemblyVersion>
     <Authors>Max Stepanskiy</Authors>
     <Company>Stepaside, Inc.</Company>

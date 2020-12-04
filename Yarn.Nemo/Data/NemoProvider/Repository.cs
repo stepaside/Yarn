@@ -31,6 +31,10 @@ namespace Yarn.Data.NemoProvider
         {
             _context = context;
             _configured = new HashSet<Type>();
+            if (context is DataContext dataContext && dataContext.Options != null)
+            {
+                _options = new RepositoryOptions { Configuration = dataContext.Options.Configuration };
+            }
         }
 
         public Repository(RepositoryOptions options, DataContextOptions dataContextOptions)
@@ -39,6 +43,11 @@ namespace Yarn.Data.NemoProvider
 
         public Repository(RepositoryOptions options, DataContextOptions dataContextOptions, DbTransaction transaction)
         {
+            var configuration = options.Configuration ?? dataContextOptions.Configuration;
+
+            options.Configuration = configuration;
+            dataContextOptions.Configuration = configuration;
+
             _options = options;
             dataContextOptions.ConnectionName = dataContextOptions.ConnectionName ?? options.Configuration?.DefaultConnectionName;
             _context = new DataContext(dataContextOptions, transaction);

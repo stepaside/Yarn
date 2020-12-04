@@ -5,34 +5,31 @@ namespace Yarn.Data.NemoProvider
 {
     public class DataContext : IDataContext<DbConnection>
     {
-        private readonly DbConnection _connection;
-        private readonly DbTransaction _transaction;
-        private readonly string _source;
-
         public DataContext(DataContextOptions options)
             : this(options, null)
         { }
 
         public DataContext(DataContextOptions options, DbTransaction transaction)
         {
-            _transaction = transaction;
+            Options = options;
+            Transaction = transaction;
             if (transaction != null)
             {
-                _connection = transaction.Connection;
+                Session = transaction.Connection;
             }
             else if (options?.ConnectionName != null)
             {
-                _connection = DbFactory.CreateConnection(options.ConnectionName, GetConfiguration(options));
+                Session = DbFactory.CreateConnection(options.ConnectionName, GetConfiguration(options));
             }
             else if (options?.ConnectionString != null)
             {
-                _connection = DbFactory.CreateConnection(options.ConnectionString, DbFactory.GetProviderInvariantNameByConnectionString(options.ConnectionString, GetConfiguration(options)));
+                Session = DbFactory.CreateConnection(options.ConnectionString, DbFactory.GetProviderInvariantNameByConnectionString(options.ConnectionString, GetConfiguration(options)));
             }
             else
             {
-                _connection = DbFactory.CreateConnection(ConfigurationFactory.DefaultConnectionName, GetConfiguration(options));
+                Session = DbFactory.CreateConnection(ConfigurationFactory.DefaultConnectionName, GetConfiguration(options));
             }
-            _source = _connection?.ConnectionString;
+            Source = Session?.ConnectionString;
         }
 
         private static Microsoft.Extensions.Configuration.IConfiguration GetConfiguration(DataContextOptions options)
@@ -40,44 +37,34 @@ namespace Yarn.Data.NemoProvider
             return (options.Configuration ?? ConfigurationFactory.DefaultConfiguration).SystemConfiguration;
         }
 
+        internal DataContextOptions Options { get; }
+
         public void SaveChanges()
         {
-            if (_transaction == null)
+            if (Transaction == null)
             {
                 return;
             }
 
             try
             {
-                _transaction.Commit();
+                Transaction.Commit();
             }
             catch
             {
-                _transaction.Rollback();
+                Transaction.Rollback();
             }
         }
 
-        public string Source
-        {
-            get { return _source; }
-        }
+        public string Source { get; }
 
-        public DbTransaction Transaction
-        {
-            get { return _transaction; }
-        }
+        public DbTransaction Transaction { get; }
 
         public void Dispose()
         {
-            if (_connection != null)
-            {
-                _connection.Dispose();
-            }
+            Session?.Dispose();
         }
 
-        public DbConnection Session
-        {
-            get { return _connection; }
-        }
+        public DbConnection Session { get; }
     }
 }
