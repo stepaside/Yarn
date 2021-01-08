@@ -1,7 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <RootNamespace>Yarn</RootNamespace>
-    <TargetFrameworks>netstandard2.0</TargetFrameworks>
+    <TargetFrameworks>netstandard2.0;net472</TargetFrameworks>
     <SolutionDir Condition="$(SolutionDir) == '' Or $(SolutionDir) == '*Undefined*'">..\</SolutionDir>
     <AssemblyTitle>Yarn.Nemo</AssemblyTitle>
     <Product>Yarn.Nemo</Product>
@@ -9,7 +9,7 @@
     <OutputPath>bin\$(Configuration)\</OutputPath>
     <PackageId>Yarn.Nemo</PackageId>
     <PackageTags>Nemo Repository</PackageTags>
-    <PackageVersion>1.2.5</PackageVersion>
+    <PackageVersion>1.2.6</PackageVersion>
     <AssemblyVersion>1.2.0</AssemblyVersion>
     <Authors>Max Stepanskiy</Authors>
     <Company>Stepaside, Inc.</Company>

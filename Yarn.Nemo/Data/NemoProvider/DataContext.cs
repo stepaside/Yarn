@@ -32,9 +32,14 @@ namespace Yarn.Data.NemoProvider
             Source = Session?.ConnectionString;
         }
 
+
         private static Microsoft.Extensions.Configuration.IConfiguration GetConfiguration(DataContextOptions options)
         {
+#if NETSTANDARD
             return (options.Configuration ?? ConfigurationFactory.DefaultConfiguration).SystemConfiguration;
+#else
+            return null;
+#endif
         }
 
         internal DataContextOptions Options { get; }
