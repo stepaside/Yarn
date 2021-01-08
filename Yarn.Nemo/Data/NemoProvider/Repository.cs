@@ -276,7 +276,7 @@ namespace Yarn.Data.NemoProvider
                     var a1 = Expression.Parameter(parent);
                     var a2 = Expression.Parameter(type);
 
-                    var equals = pk1.Join(pk2, x => x.Position, y => y.Position, (p1, p2) => Expression.Equal(Expression.PropertyOrField(a1, p1.PropertyName), Expression.PropertyOrField(a2, p2.PropertyName)));
+                    var equals = pk1.Join(pk2, x => x.KeyPosition, y => y.RefPosition, (p1, p2) => Expression.Equal(Expression.PropertyOrField(a1, p1.PropertyName), Expression.PropertyOrField(a2, p2.PropertyName)));
 
                     var body = equals.Aggregate(Expression.AndAlso);
                     var join = Expression.Lambda(body, a1, a2);
