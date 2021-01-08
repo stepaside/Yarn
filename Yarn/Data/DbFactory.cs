@@ -13,11 +13,11 @@ namespace Yarn.Data
 {
     public static class DbFactory
     {
-        public static string GetProviderInvariantName(string connectionName, IConfiguration configration)
+        public static string GetProviderInvariantName(string connectionName, IConfiguration configuration)
         {
-            if (configration != null)
+            if (configuration != null)
             {
-                var config = configration.ConnectionString(connectionName);
+                var config = configuration.ConnectionString(connectionName);
                 return config != null ? config.ProviderName : null;
             }
             else
@@ -27,11 +27,11 @@ namespace Yarn.Data
             }
         }
 
-        public static string GetProviderInvariantName(string connectionName, IConfiguration configration, out string connectionString)
+        public static string GetProviderInvariantName(string connectionName, IConfiguration configuration, out string connectionString)
         {
-            if (configration != null)
+            if (configuration != null)
             {
-                var config = configration.ConnectionString(connectionName);
+                var config = configuration.ConnectionString(connectionName);
                 connectionString = config != null ? config.ConnectionString : null;
                 return config != null ? config.ProviderName : null;
             }
@@ -43,7 +43,7 @@ namespace Yarn.Data
             }
         }
 
-        public static string GetProviderInvariantNameByConnectionString(string connectionString, IConfiguration configration)
+        public static string GetProviderInvariantNameByConnectionString(string connectionString, IConfiguration configuration)
         {
             if (connectionString == null) return null;
 
@@ -64,9 +64,9 @@ namespace Yarn.Data
 
             if (!lostPassword)
             {
-                if (configration != null)
+                if (configuration != null)
                 {
-                    foreach (var config in configration.ConnectionStrings())
+                    foreach (var config in configuration.ConnectionStrings())
                     {
                         if (string.Equals(config.ConnectionString, connectionString, StringComparison.OrdinalIgnoreCase))
                         {
@@ -94,9 +94,9 @@ namespace Yarn.Data
                     builder["user id"] = uid;
                 }
 
-                if (configration != null)
+                if (configuration != null)
                 {
-                    foreach (var config in configration.ConnectionStrings())
+                    foreach (var config in configuration.ConnectionStrings())
                     {
                         var otherBuilder = new DbConnectionStringBuilder { ConnectionString = config.ConnectionString };
                         otherBuilder.Remove("pwd");
@@ -168,10 +168,10 @@ namespace Yarn.Data
             return connection;
         }
 
-        public static DbConnection CreateConnection(string connectionName, IConfiguration configration)
+        public static DbConnection CreateConnection(string connectionName, IConfiguration configuration)
         {
             string connectionString;
-            var providerName = GetProviderInvariantName(connectionName, configration, out connectionString);
+            var providerName = GetProviderInvariantName(connectionName, configuration, out connectionString);
             if (providerName == null) return null;
 
 #if NETSTANDARD2_0
