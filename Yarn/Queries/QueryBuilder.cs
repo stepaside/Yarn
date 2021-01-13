@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
 using Yarn.Extensions;
@@ -9,15 +10,28 @@ namespace Yarn.Queries
     public class QueryBuilder<T>
         where T : class
     {
-        private Expression<Func<T, object>> _include;
+        private List<Expression<Func<T, object>>> _includes;
         private ISpecification<T> _query;
         private Sorting<T> _orderBy;
         private int _pageNumber;
         private int _pageSize;
 
+        public QueryBuilder<T> Include(params Expression<Func<T, object>>[] includes)
+        {
+            _includes = includes.Where(i => i != null).ToList();
+            return this;
+        }
+
         public QueryBuilder<T> Include(Expression<Func<T, object>> include)
         {
-            _include = include;
+            if (include == null) throw new ArgumentNullException(nameof(include));
+
+            if (_includes == null)
+            {
+                _includes = new List<Expression<Func<T, object>>>();
+            }
+
+            _includes.Add(include);
             return this;
         }
 
@@ -48,10 +62,29 @@ namespace Yarn.Queries
         public IQueryable<T> Build(IRepository repository)
         {
             IQueryable<T> query;
-            if (_include != null)
+            if (_includes != null)
             {
-                var loadService = repository.As<ILoadService<T>>().Include(_include);
-                query = loadService.All();
+                ILoadService<T> loadService = null;
+                foreach (var include in _includes)
+                {
+                    if (loadService == null)
+                    {
+                        loadService = repository.As<ILoadService<T>>().Include(include);
+                    }
+                    else
+                    {
+                        loadService = loadService.Include(include);
+                    }
+                }
+
+                if (loadService != null)
+                {
+                    query = loadService.All();
+                }
+                else
+                {
+                    query = repository.All<T>();
+                }
             }
             else
             {
