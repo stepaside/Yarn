@@ -63,10 +63,20 @@ namespace Yarn.Data.NemoProvider
                 _configured.Add(type);
                 return;
             }
-            
+
+            DataContextOptions dataContextOptions = null;
+            if (_context is DataContext dataContext && dataContext.Options != null)
+            {
+                dataContextOptions = dataContext.Options;
+            }
+
             if (!_options.UseStoredProcedures && _options.Configuration != null)
             {
                 _options.Configuration.SetGenerateDeleteSql(true).SetGenerateInsertSql(true).SetGenerateUpdateSql(true);
+                if (dataContextOptions?.ConnectionName != null)
+                {
+                    _options.Configuration.SetDefaultConnectionName(dataContextOptions.ConnectionName);
+                }
                 ConfigurationFactory.Set(type, _options.Configuration);
             }
             else if (!_options.UseStoredProcedures)
@@ -75,15 +85,27 @@ namespace Yarn.Data.NemoProvider
                 if (config == ConfigurationFactory.DefaultConfiguration)
                 {
                     config = ConfigurationFactory.CloneCurrentConfiguration().SetGenerateDeleteSql(true).SetGenerateInsertSql(true).SetGenerateUpdateSql(true);
+                    if (dataContextOptions?.ConnectionName != null)
+                    {
+                        config = config.SetDefaultConnectionName(dataContextOptions.ConnectionName);
+                    }
                     ConfigurationFactory.Set(type, config);
                 }
                 else
                 {
                     config.SetGenerateDeleteSql(true).SetGenerateInsertSql(true).SetGenerateUpdateSql(true);
+                    if (dataContextOptions?.ConnectionName != null)
+                    {
+                        config.SetDefaultConnectionName(dataContextOptions.ConnectionName);
+                    }
                 }
             }
             else if (_options.Configuration != null)
             {
+                if (dataContextOptions?.ConnectionName != null)
+                {
+                    _options.Configuration.SetDefaultConnectionName(dataContextOptions.ConnectionName);
+                }
                 ConfigurationFactory.Set(type, _options.Configuration);
             }
             _configured.Add(type);

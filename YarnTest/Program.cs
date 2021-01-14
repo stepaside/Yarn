@@ -42,7 +42,13 @@ namespace Yarn.Test
 
             ObjectContainer.Current.Register<IRepository>(() => new Yarn.Data.InMemoryProvider.Repository(), "InMemory");
 
-            var repo = ObjectContainer.Current.Resolve<IRepository>("EF");
+            var repo = ObjectContainer.Current.Resolve<IRepository>("Nemo");
+
+            //var retrieved = repo.GetById<Customer, string>("ALFKI");
+
+            //var inserted = new Customer { CustomerID = "WXYZ", CompanyName = "Last Customer" };
+            //repo.Add(inserted);
+
             if (repo == null)
             {
                 Console.WriteLine("RepoNull");
