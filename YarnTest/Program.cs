@@ -43,10 +43,8 @@ namespace Yarn.Test
             ObjectContainer.Current.Register<IRepository>(() => new Yarn.Data.InMemoryProvider.Repository(), "InMemory");
 
             var repo = ObjectContainer.Current.Resolve<IRepository>("Nemo");
-
             //var retrieved = repo.GetById<Customer, string>("ALFKI");
-
-            //var inserted = new Customer { CustomerID = "WXYZ", CompanyName = "Last Customer" };
+            //var inserted = new Order { CustomerID = "ALFKI", ShipName = "Ship 1" };
             //repo.Add(inserted);
 
             if (repo == null)
@@ -129,7 +127,7 @@ namespace Yarn.Test
         public OrderMap()
         {
             TableName = "Orders";
-            Property(o => o.OrderID).PrimaryKey();
+            Property(o => o.OrderID).PrimaryKey().Generated();
             Property(o => o.CustomerID).References<Customer>();
             //Property(o => o.ShipRegion).WithTransform<DBNullableStringConverter>();
         }
