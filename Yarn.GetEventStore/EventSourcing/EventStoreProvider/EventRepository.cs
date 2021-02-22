@@ -8,7 +8,7 @@ using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using Yarn.EventSourcing;
 
-namespace Yarn.EventSourcing.GetEventStoreProvider
+namespace Yarn.EventSourcing.EventStoreProvider
 {
     public class EventRepository : IEventRepositoryAsync
     {
@@ -45,7 +45,7 @@ namespace Yarn.EventSourcing.GetEventStoreProvider
             StreamEventsSlice streamEventsSlice;
             do
             {
-                streamEventsSlice = await _connection.ReadStreamEventsForwardAsync(streamName, start, 200, false);
+                streamEventsSlice = await _connection.ReadStreamEventsForwardAsync(streamName, start, 200, false).ConfigureAwait(false);
                 start = streamEventsSlice.NextEventNumber;
                 list.AddRange(streamEventsSlice.Events.Select(ConvertEvent));
             }
@@ -74,7 +74,7 @@ namespace Yarn.EventSourcing.GetEventStoreProvider
                     }
                 };
                 var events = array.Select(e => ToEventData(e, commitHeaders)).ToList();
-                await _connection.AppendToStreamAsync(streamName, expectedVersion, events);
+                await _connection.AppendToStreamAsync(streamName, expectedVersion, events).ConfigureAwait(false);
                 aggregate.ClearUncommittedEvents();
             }
         }

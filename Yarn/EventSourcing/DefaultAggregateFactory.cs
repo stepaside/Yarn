@@ -5,9 +5,16 @@ namespace Yarn.EventSourcing
 {
     public class DefaultAggregateFactory : IAggregateFactory
     {
+        private readonly IServiceProvider _locator;
+
+        public DefaultAggregateFactory(IServiceProvider locator) 
+        {
+            _locator = locator;
+        }
+
         public virtual T Create<T>(IEnumerable<object> events) where T : class, IAggregate
         {
-            var item = Activator.CreateInstance<T>();
+            var item = _locator?.GetService(typeof(T)) as T ?? Activator.CreateInstance<T>();
 
             var aggregate = item as Aggregate;
             if (aggregate == null)

@@ -41,7 +41,7 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Yarn.StructureMap", "Yarn.S
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Yarn.Nemo", "Yarn.Nemo\Yarn.Nemo.csproj", "{27CF3400-FAAB-458A-8800-C3276D4282F4}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Yarn.GetEventStore", "Yarn.GetEventStore\Yarn.GetEventStore.csproj", "{FD9B6435-1612-41C9-BB3E-468E2F2D373A}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Yarn.EventStore", "Yarn.GetEventStore\Yarn.EventStore.csproj", "{FD9B6435-1612-41C9-BB3E-468E2F2D373A}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Yarn.Cassandra", "Yarn.Cassandra\Yarn.Cassandra.csproj", "{04DB1638-CA8F-4834-9759-EAC1D37F0C3B}"
 EndProject

@@ -33,8 +33,7 @@ namespace Yarn.EventSourcing
         {
             var handlers = AllHandlers.GetOrAdd(aggregate.GetType(), type => ScanAggregate(type));
 
-            Action<IAggregate, object> handler;
-            if (handlers.TryGetValue(eventData.GetType(), out handler))
+            if (handlers.TryGetValue(eventData.GetType(), out var handler))
             {
                 handler(aggregate, eventData);
             }
