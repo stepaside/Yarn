@@ -9,7 +9,7 @@
     <OutputPath>bin\$(Configuration)\</OutputPath>
     <PackageId>Yarn.Nemo</PackageId>
     <PackageTags>Nemo Repository</PackageTags>
-    <PackageVersion>1.2.11-beta</PackageVersion>
+    <PackageVersion>1.2.11-beta.1.0.0</PackageVersion>
     <AssemblyVersion>1.2.0</AssemblyVersion>
     <Authors>Max Stepanskiy</Authors>
     <Company>Stepaside, Inc.</Company>
@@ -33,7 +33,7 @@
     <Error Condition="!Exists('$(SolutionDir)\.nuget\NuGet.targets')" Text="$([System.String]::Format('$(ErrorText)', '$(SolutionDir)\.nuget\NuGet.targets'))" />
   </Target>
   <ItemGroup>
-    <PackageReference Include="Nemo" Version="2.6.0-beta.1.0.4" />
+    <PackageReference Include="Nemo" Version="2.6.0-beta.1.0.5" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\Yarn\Yarn.csproj" />
