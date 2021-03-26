@@ -51,53 +51,31 @@ namespace Yarn.Data.NemoProvider
             _options = options;
             dataContextOptions.ConnectionName = dataContextOptions.ConnectionName ?? options.Configuration?.DefaultConnectionName;
             _context = new DataContext(dataContextOptions, transaction);
-            _configured = new HashSet<Type>();
+
+            EnsureConfiguration();
         }
 
-        protected void SetConfiguration(Type type)
+        private void EnsureConfiguration()
         {
-            if (_configured.Contains(type)) return;
-
-            if (_options == null)
-            {
-                _configured.Add(type);
-                return;
-            }
-
+            if (_options == null) return;
+            
             DataContextOptions dataContextOptions = null;
             if (_context is DataContext dataContext && dataContext.Options != null)
             {
                 dataContextOptions = dataContext.Options;
             }
 
-            if (!_options.UseStoredProcedures && _options.Configuration != null)
+            if (!_options.UseStoredProcedures)
             {
+                if (_options.Configuration == null)
+                {
+                    _options.Configuration = ConfigurationFactory.CloneCurrentConfiguration();
+                }
+
                 _options.Configuration.SetGenerateDeleteSql(true).SetGenerateInsertSql(true).SetGenerateUpdateSql(true);
                 if (dataContextOptions?.ConnectionName != null)
                 {
                     _options.Configuration.SetDefaultConnectionName(dataContextOptions.ConnectionName);
-                }
-                ConfigurationFactory.Set(type, _options.Configuration);
-            }
-            else if (!_options.UseStoredProcedures)
-            {
-                var config = _options.Configuration ?? ConfigurationFactory.Get(type);
-                if (config == ConfigurationFactory.DefaultConfiguration)
-                {
-                    config = ConfigurationFactory.CloneCurrentConfiguration().SetGenerateDeleteSql(true).SetGenerateInsertSql(true).SetGenerateUpdateSql(true);
-                    if (dataContextOptions?.ConnectionName != null)
-                    {
-                        config = config.SetDefaultConnectionName(dataContextOptions.ConnectionName);
-                    }
-                    ConfigurationFactory.Set(type, config);
-                }
-                else
-                {
-                    config.SetGenerateDeleteSql(true).SetGenerateInsertSql(true).SetGenerateUpdateSql(true);
-                    if (dataContextOptions?.ConnectionName != null)
-                    {
-                        config.SetDefaultConnectionName(dataContextOptions.ConnectionName);
-                    }
                 }
             }
             else if (_options.Configuration != null)
@@ -106,22 +84,22 @@ namespace Yarn.Data.NemoProvider
                 {
                     _options.Configuration.SetDefaultConnectionName(dataContextOptions.ConnectionName);
                 }
-                ConfigurationFactory.Set(type, _options.Configuration);
             }
-            _configured.Add(type);
+            else
+            {
+                _options.Configuration = ConfigurationFactory.CloneCurrentConfiguration();
+            }
         }
 
         public T GetById<T, TKey>(TKey id) where T : class
         {
-            SetConfiguration(typeof(T));
-
-            if (_options.UseStoredProcedures)
+            if (_options != null && _options.UseStoredProcedures)
             {
                 var property = GetPrimaryKey<T>().First();
-                return ObjectFactory.Retrieve<T>("GetById", parameters: new[] { new Param { Name = property, Value = id } }, connection: Connection).FirstOrDefault();
+                return ObjectFactory.Retrieve<T>("GetById", parameters: new[] { new Param { Name = property, Value = id } }, connection: Connection, config: _options.Configuration).FirstOrDefault();
             }
 
-            return ObjectFactory.Select(this.BuildPrimaryKeyExpression<T, TKey>(id), connection: Connection, selectOption: SelectOption.FirstOrDefault).FirstOrDefault();
+            return ObjectFactory.Select(this.BuildPrimaryKeyExpression<T, TKey>(id), connection: Connection, selectOption: SelectOption.FirstOrDefault, config: _options.Configuration).FirstOrDefault();
         }
 
         public T Find<T>(ISpecification<T> criteria) where T : class
@@ -141,51 +119,43 @@ namespace Yarn.Data.NemoProvider
 
         public IEnumerable<T> FindAll<T>(Expression<Func<T, bool>> criteria, int offset = 0, int limit = 0, Sorting<T> orderBy = null) where T : class
         {
-            SetConfiguration(typeof(T));
-
             if (orderBy != null)
             {
-                return ObjectFactory.Select(criteria, connection: Connection, page: limit > 0 ? offset / limit + 1 : 0, pageSize: limit, orderBy: orderBy.ToArray().Select(s => new Nemo.Sorting<T> { OrderBy = s.OrderBy, Reverse = s.Reverse }).ToArray());
+                return ObjectFactory.Select(criteria, connection: Connection, page: limit > 0 ? offset / limit + 1 : 0, pageSize: limit, config: _options.Configuration, orderBy: orderBy.ToArray().Select(s => new Nemo.Sorting<T> { OrderBy = s.OrderBy, Reverse = s.Reverse }).ToArray());
             }
-            return ObjectFactory.Select(criteria, connection: Connection, page: limit > 0 ? offset / limit + 1 : 0, pageSize: limit, skipCount: offset);
+            return ObjectFactory.Select(criteria, connection: Connection, page: limit > 0 ? offset / limit + 1 : 0, pageSize: limit, skipCount: offset, config: _options.Configuration);
         }
 
         public IList<T> Execute<T>(string command, ParamList parameters) where T : class
         {
-            SetConfiguration(typeof(T));
             var request = new OperationRequest { Operation = command, OperationType = OperationType.Guess, Parameters = parameters != null ? parameters.Select(p => new Param { Name = p.Key, Value = p.Value }).ToArray() : null, Connection = Connection, Transaction = ((DataContext)DataContext).Transaction };
             var response = ObjectFactory.Execute<T>(request);
-            return ObjectFactory.Translate<T>(response).ToList();
+            return ObjectFactory.Translate<T>(response, _options.Configuration).ToList();
         }
 
         public T Add<T>(T entity) where T : class
         {
-            SetConfiguration(typeof(T));
-            return entity.Insert() ? entity : null;
+            return entity.Insert(_options.Configuration) ? entity : null;
         }
         
         public T Remove<T>(T entity) where T : class
         {
-            SetConfiguration(typeof(T));
-            return entity.Delete() ? entity : null;
+            return entity.Delete(_options.Configuration) ? entity : null;
         }
 
         public T Remove<T, TKey>(TKey id) where T : class
         {
-            SetConfiguration(typeof(T));
             var entity = GetById<T, TKey>(id);
             return Remove(entity);
         }
 
         public T Update<T>(T entity) where T : class
         {
-            SetConfiguration(typeof(T));
-            return entity.Update() ? entity : null;
+            return entity.Update(_options.Configuration) ? entity : null;
         }
 
         public long Count<T>() where T : class
         {
-            SetConfiguration(typeof(T));
             return ObjectFactory.Count<T>(connection: Connection);
         }
 
@@ -196,15 +166,13 @@ namespace Yarn.Data.NemoProvider
 
         public long Count<T>(Expression<Func<T, bool>> criteria) where T : class
         {
-            SetConfiguration(typeof(T)); 
             return ObjectFactory.Count(criteria, connection: Connection);
         }
 
         public IQueryable<T> All<T>() where T : class
         {
-            SetConfiguration(typeof(T));
             //return LinqExtensions.Defer(() => ObjectFactory.Select<T>()).AsQueryable();
-            return new NemoQueryable<T>(Connection);
+            return new NemoQueryable<T>(Connection, _options.Configuration);
         }
         
         public DbConnection Connection
@@ -233,19 +201,16 @@ namespace Yarn.Data.NemoProvider
 
         public string[] GetPrimaryKey<T>() where T : class
         {
-            SetConfiguration(typeof(T));
             return ObjectFactory.GetPrimaryKeyProperties(typeof(T));
         }
 
         public object[] GetPrimaryKeyValue<T>(T entity) where T : class
         {
-            SetConfiguration(typeof(T));
             return entity.GetPrimaryKey().Values.ToArray();
         }
 
         public ILoadService<T> Load<T>() where T : class
         {
-            SetConfiguration(typeof(T));
             return new LoadService<T>(this);
         }
 
@@ -283,8 +248,6 @@ namespace Yarn.Data.NemoProvider
                     type = Reflector.GetElementType(property.PropertyType) ?? property.PropertyType;
                     list.Add(type);
 
-                    _repository.SetConfiguration(type);
-
                     var pk2Candidates = Reflector.GetPropertyMap(type).Values.Where(p => p.Parent != null).GroupBy(p =>p.Parent).ToDictionary(g => g.Key, g => g.ToList());
 
                     List<ReflectedProperty> pk2;
@@ -315,14 +278,12 @@ namespace Yarn.Data.NemoProvider
 
             public T Update(T entity)
             {
-                _repository.SetConfiguration(typeof(T));
-
                 if (_repository._options.UseStoredProcedures)
                 {
                     var property = _repository.As<IMetaDataProvider>().GetPrimaryKey<T>().First();
                     var value = _repository.As<IMetaDataProvider>().GetPrimaryKeyValue(entity).First();
                     var response = ObjectFactory.Execute<T>(new OperationRequest { Operation = "GetById", OperationType = OperationType.StoredProcedure, Types = _types.Select(t => t.Item1).Flatten().Distinct().ToArray(), Parameters = new[] { new Param { Name = property, Value = value } }, Connection = _repository.Connection });
-                    var item = ObjectFactory.Translate<T>(response).FirstOrDefault();
+                    var item = ObjectFactory.Translate<T>(response, _repository._options.Configuration).FirstOrDefault();
                     using (ObjectScope.New(item))
                     {
                         Reflection.Mapper.Map(entity, item);
@@ -340,8 +301,6 @@ namespace Yarn.Data.NemoProvider
 
             public IEnumerable<T> FindAll(Expression<Func<T, bool>> criteria, int offset = 0, int limit = 0, Sorting<T> sorting = null)
             {
-                _repository.SetConfiguration(typeof(T));
-
                 var typeCount = _types.Sum(t => t.Item1.Length);
                 
                 if (typeCount == 0)
@@ -379,18 +338,18 @@ namespace Yarn.Data.NemoProvider
 
                     var request = new OperationRequest { Operation = "FindAll", OperationType = OperationType.StoredProcedure, Types = _types.Select(t => t.Item1).Flatten().Distinct().ToArray(), Parameters = parameters, Connection = _repository.Connection };
                     var response = ObjectFactory.Execute<T>(request);
-                    var result = ObjectFactory.Translate<T>(response);
+                    var result = ObjectFactory.Translate<T>(response, _repository._options.Configuration);
                     if (request.Types.Count > 1)
                     {
-                        result = ((IMultiResult)result).Aggregate<T>();
+                        result = ((IMultiResult)result).Aggregate<T>(_repository._options.Configuration);
                     }
                     return result;
                 }
                 else
                 {
                     var result = sorting != null
-                        ? ObjectFactory.Select(criteria, page: limit > 0 ? offset / limit + 1 : 0, pageSize: limit, skipCount: offset, connection: _repository.Connection, orderBy: sorting.ToArray().Select(s => new Nemo.Sorting<T> { OrderBy = s.OrderBy, Reverse = s.Reverse }).ToArray())
-                        : ObjectFactory.Select(criteria, page: limit > 0 ? offset / limit + 1 : 0, pageSize: limit, skipCount: offset, connection: _repository.Connection);
+                        ? ObjectFactory.Select(criteria, page: limit > 0 ? offset / limit + 1 : 0, pageSize: limit, skipCount: offset, connection: _repository.Connection, config: _repository._options.Configuration, orderBy: sorting.ToArray().Select(s => new Nemo.Sorting<T> { OrderBy = s.OrderBy, Reverse = s.Reverse }).ToArray())
+                        : ObjectFactory.Select(criteria, page: limit > 0 ? offset / limit + 1 : 0, pageSize: limit, skipCount: offset, connection: _repository.Connection, config: _repository._options.Configuration);
 
                     foreach (var types in _types)
                     {
@@ -433,8 +392,6 @@ namespace Yarn.Data.NemoProvider
 
             public IQueryable<T> All()
             {
-                _repository.SetConfiguration(typeof(T));
-
                 var typeCount = _types.Sum(t => t.Item1.Length);
 
                 if (typeCount == 0)
@@ -452,12 +409,12 @@ namespace Yarn.Data.NemoProvider
                     return LinqExtensions.Defer(() =>
                     {
                         var response = ObjectFactory.Execute<T>(new OperationRequest { Operation = "GetAll", OperationType = OperationType.StoredProcedure, Types = _types.Select(t => t.Item1).Flatten().Distinct().ToArray(), Connection = _repository.Connection });
-                        return ObjectFactory.Translate<T>(response);
+                        return ObjectFactory.Translate<T>(response, _repository._options.Configuration);
                     }).AsQueryable();
                 }
                 else
                 {
-                    var result = ObjectFactory.Select<T>(connection: _repository.Connection);
+                    var result = ObjectFactory.Select<T>(connection: _repository.Connection, config: _repository._options.Configuration);
 
                     foreach (var types in _types)
                     {
@@ -535,13 +492,11 @@ namespace Yarn.Data.NemoProvider
 
         public IEnumerable<T> GetById<T, TKey>(IEnumerable<TKey> ids) where T : class
         {
-            SetConfiguration(typeof(T));
-
             if (_options.UseStoredProcedures)
             {
                 var property = GetPrimaryKey<T>().First();
                 var idList = ids.Select(k => k.ToString()).ToDelimitedString(",");
-                return ObjectFactory.Retrieve<T>("GetById", parameters: new[] { new Param { Name = property + "List", Value = idList } }, connection: Connection);
+                return ObjectFactory.Retrieve<T>("GetById", parameters: new[] { new Param { Name = property + "List", Value = idList } }, connection: Connection, config: _options.Configuration);
             }
 
             var primaryKey = ((IMetaDataProvider)this).GetPrimaryKey<T>().First();
@@ -552,14 +507,12 @@ namespace Yarn.Data.NemoProvider
 
             var predicate = idSelector.BuildOrExpression(ids.ToArray());
 
-            return ObjectFactory.Select(predicate, connection: Connection);
+            return ObjectFactory.Select(predicate, connection: Connection, config: _options.Configuration);
         }
 
         public long Insert<T>(IEnumerable<T> entities) where T : class
         {
-            SetConfiguration(typeof(T));
-
-            return ObjectFactory.Insert(entities);
+            return ObjectFactory.Insert(entities, config: _options.Configuration);
         }
 
         public long Update<T>(Expression<Func<T, bool>> criteria, Expression<Func<T, T>> update) where T : class

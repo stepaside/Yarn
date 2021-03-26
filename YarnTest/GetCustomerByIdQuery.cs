@@ -3,21 +3,34 @@ using Yarn;
 using Yarn.Test.Models.EF;
 using Yarn.Queries;
 using Yarn.Specification;
+using System;
 
 namespace Yarn.Test
 {
-    public class GetCustomerByIdQuery : IQuery<Customer>
+    public class CustomerByIdQuery : IQuery<Customer>
     {
-        public GetCustomerByIdQuery(string id)
+        public string Id { get; set; }
+
+        public bool IsValid()
         {
-            CustomerId = id;
+            return !string.IsNullOrEmpty(Id);
+        }
+    }
+
+    public class CustomerByIdQueryHandler : IQueryHandler<CustomerByIdQuery, Customer>
+    {
+        private readonly IRepository _repository;
+
+        public CustomerByIdQueryHandler(IRepository repository)
+        {
+            _repository = repository;
         }
 
-        public string CustomerId { get; set; }
-
-        public IQueryResult<Customer> Execute(IRepository repository)
+        public IQueryResult<Customer> Handle(CustomerByIdQuery request)
         {
-            var query = new QueryBuilder<Customer>().Where(new Specification<Customer>(c => c.CustomerID == CustomerId)).Build(repository);
+            if (!request.IsValid()) throw new ArgumentException("Invalid query specified");
+
+            var query = new QueryBuilder<Customer>().Where(new Specification<Customer>(c => c.CustomerID == request.Id)).Build(_repository);
             return new QueryResult<Customer>(query.FirstOrDefault());
         }
     }

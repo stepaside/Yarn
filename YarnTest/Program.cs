@@ -96,8 +96,8 @@ namespace Yarn.Test
                 Console.WriteLine("Not From Cache");
             }
 
-            var query = new GetCustomerByIdQuery("ANATR");
-            var result = query.Execute(repo);
+            var query = new CustomerByIdQueryHandler(repo);
+            var result = query.Handle(new CustomerByIdQuery { Id = "ANATR" });
 
             var customerRepo = new CustomerRepository(repo);
             var customer = customerRepo.GetById("ANTON");

@@ -1,22 +1,40 @@
 ﻿using Yarn;
 using Yarn.Test.Models.EF;
 using Yarn.Queries;
+using System;
 
 namespace YarnTest
 {
     public class InsertCustomerCommand : ICommand
     {
-        private readonly Customer _customer;
-
         public InsertCustomerCommand(Customer customer)
         {
-            _customer = customer;
+            Customer = customer;
         }
 
-        public void Execute(IRepository repository)
+        public Customer Customer { get; }
+
+        public bool IsValid()
         {
-            repository.Add(_customer);
-            repository.DataContext.SaveChanges();
+            return Customer != null && !string.IsNullOrEmpty(Customer.CustomerID);
+        }
+    }
+
+    public class InsertCustomerCommandHandler : ICommandHandler<InsertCustomerCommand>
+    {
+        private readonly IRepository _repository;
+
+        public InsertCustomerCommandHandler(IRepository repository)
+        {
+            _repository = repository;
+        }
+
+        public void Handle(InsertCustomerCommand command)
+        {
+            if (!command.IsValid()) throw new ArgumentException("Invalid command specified");
+
+            _repository.Add(command.Customer);
+            _repository.DataContext.SaveChanges();
         }
     }
 }

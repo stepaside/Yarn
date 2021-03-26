@@ -4,20 +4,11 @@ namespace Yarn.Queries
 {
     public interface ICommand
     {
-        void Execute(IRepository repository);
+        bool IsValid();
     }
 
-    public interface ICommandAsync : ICommand
+    public interface ICommand<out TResult>
     {
-        Task ExecuteAsync(IRepositoryAsync repository);
-    }
-
-    public interface ICommand<T> : ICommand
-    {
-        T Result { get; }
-    }
-
-    public interface ICommandAsync<T> : ICommand<T>, ICommandAsync
-    {
+        bool IsValid();
     }
 }
