@@ -33,7 +33,7 @@
     <Error Condition="!Exists('$(SolutionDir)\.nuget\NuGet.targets')" Text="$([System.String]::Format('$(ErrorText)', '$(SolutionDir)\.nuget\NuGet.targets'))" />
   </Target>
   <ItemGroup>
-    <PackageReference Include="Nemo" Version="2.6.0-beta.1.0.5" />
+    <PackageReference Include="Nemo" Version="2.6.0-beta.1.0.6" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\Yarn\Yarn.csproj" />

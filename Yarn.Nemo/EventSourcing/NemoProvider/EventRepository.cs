@@ -76,7 +76,7 @@ namespace Yarn.EventSourcing.NemoProvider
         {
             var metadata = Json.Parse(x.Metadata);
             var crlType = metadata["EventClrType"];
-            var typeName = crlType != null ? crlType.Value.As<string>() : null;
+            var typeName = crlType != null ? (string)crlType.Value : null;
             return typeName != null ? x.Event.FromJson(Type.GetType(typeName)) : null;
         }
 
