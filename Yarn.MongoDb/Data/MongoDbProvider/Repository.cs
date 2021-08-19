@@ -18,10 +18,12 @@ namespace Yarn.Data.MongoDbProvider
         private readonly ConcurrentDictionary<Type, object> _collections = new ConcurrentDictionary<Type, object>();
         private IDataContext<IMongoDatabase> _context;
         private readonly string _connectionString;
+        private readonly IDictionary<Type, string> _collectionsMap;
 
         public Repository(RepositoryOptions options)
         {
             _connectionString = options.ConnectionString;
+            _collectionsMap = options.Collections;
             _context = new DataContext(_connectionString);
         }
 
@@ -242,11 +244,14 @@ namespace Yarn.Data.MongoDbProvider
         {
             return (IMongoCollection<T>)_collections.GetOrAdd(typeof(T), type =>
             {
-                var name = type.Name.ToLower();
+                if (!_collectionsMap.TryGetValue(type, out var name))
+                {
+                    name = type.Name.ToLower();
+                }
                 var database = Database;
 
                 var filter = new BsonDocument("name", name);
-                if (!database.ListCollections(new ListCollectionsOptions { Filter = filter}).Any())
+                if (!database.ListCollections(new ListCollectionsOptions { Filter = filter }).Any())
                 {
                     database.CreateCollection(name);
                 }
