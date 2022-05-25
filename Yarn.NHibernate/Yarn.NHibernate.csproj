@@ -9,11 +9,11 @@
     <OutputPath>bin\$(Configuration)\</OutputPath>
     <PackageId>Yarn.NHibernate</PackageId>
     <PackageTags>NHibernate FluentNHibernate Repository</PackageTags>
-    <PackageVersion>1.2.0</PackageVersion>
-    <AssemblyVersion>1.2.0</AssemblyVersion>
+    <PackageVersion>1.3.0</PackageVersion>
+    <AssemblyVersion>1.3.0</AssemblyVersion>
     <Authors>Max Stepanskiy</Authors>
     <Company>Stepaside, Inc.</Company>
-    <Copyright>Copyright © Max Stepanskiy 2012-2020</Copyright>
+    <Copyright>Copyright © Max Stepanskiy 2012-2022</Copyright>
     <PackageProjectUrl>https://github.com/stepaside/Yarn</PackageProjectUrl>
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
     <RequireLicenseAcceptance>false</RequireLicenseAcceptance>
@@ -27,8 +27,8 @@
   </PropertyGroup>
   <Import Project="$(SolutionDir)\.nuget\NuGet.targets" Condition="Exists('$(SolutionDir)\.nuget\NuGet.targets')" />
   <ItemGroup>
-    <PackageReference Include="FluentNHibernate" Version="3.0.1" />
-    <PackageReference Include="NHibernate" Version="5.3.4" />
+    <PackageReference Include="FluentNHibernate" Version="3.1.0" />
+    <PackageReference Include="NHibernate" Version="5.3.12" />
   </ItemGroup>
   <ItemGroup>
     <Content Include="README.txt" />

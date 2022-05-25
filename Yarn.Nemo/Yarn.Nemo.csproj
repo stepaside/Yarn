@@ -13,7 +13,7 @@
     <AssemblyVersion>1.2.0</AssemblyVersion>
     <Authors>Max Stepanskiy</Authors>
     <Company>Stepaside, Inc.</Company>
-    <Copyright>Copyright © Max Stepanskiy 2012-2020</Copyright>
+    <Copyright>Copyright © Max Stepanskiy 2012-2022</Copyright>
     <PackageProjectUrl>https://github.com/stepaside/Yarn</PackageProjectUrl>
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
     <RequireLicenseAcceptance>false</RequireLicenseAcceptance>
@@ -33,7 +33,7 @@
     <Error Condition="!Exists('$(SolutionDir)\.nuget\NuGet.targets')" Text="$([System.String]::Format('$(ErrorText)', '$(SolutionDir)\.nuget\NuGet.targets'))" />
   </Target>
   <ItemGroup>
-    <PackageReference Include="Nemo" Version="2.6.0-beta.1.0.6" />
+    <PackageReference Include="Nemo" Version="2.7.0" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\Yarn\Yarn.csproj" />

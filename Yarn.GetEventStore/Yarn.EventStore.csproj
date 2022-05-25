@@ -7,10 +7,10 @@
     <Product>Yarn.Events</Product>
     <Description>Yarn EventStore Provider</Description>
     <OutputPath>bin\$(Configuration)\</OutputPath>
-    <PackageVersion>1.0.0</PackageVersion>
-    <AssemblyVersion>1.0.0</AssemblyVersion>
+    <PackageVersion>1.3.0</PackageVersion>
+    <AssemblyVersion>1.3.0</AssemblyVersion>
     <Authors>Max Stepanskiy</Authors>
-    <Copyright>Copyright © Max Stepanskiy 2012-2020</Copyright>
+    <Copyright>Copyright © Max Stepanskiy 2012-2022</Copyright>
     <PackageProjectUrl>https://github.com/stepaside/Yarn</PackageProjectUrl>
     <PackageId>Yarn.EventStore</PackageId>
     <PackageTags>EventStore Repository</PackageTags>
@@ -25,8 +25,8 @@
     <DebugType>pdbonly</DebugType>
   </PropertyGroup>
   <ItemGroup>
-    <PackageReference Include="EventStore.Client" Version="20.10.0" />
-    <PackageReference Include="Newtonsoft.Json" Version="12.0.3" />
+    <PackageReference Include="EventStore.Client" Version="21.2.2" />
+    <PackageReference Include="Newtonsoft.Json" Version="13.0.1" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\Yarn\Yarn.csproj" />

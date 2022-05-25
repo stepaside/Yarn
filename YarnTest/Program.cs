@@ -32,17 +32,17 @@ namespace Yarn.Test
             var nemoConfig = ConfigurationFactory.CloneCurrentConfiguration();
             nemoConfig.SetDefaultCacheRepresentation(Nemo.CacheRepresentation.None).SetAutoTypeCoercion(true);
 
-            ObjectContainer.Current.Register<IRepository>(() => new Yarn.Data.NemoProvider.Repository(new Yarn.Data.NemoProvider.RepositoryOptions { UseStoredProcedures = false, Configuration = nemoConfig }, new Yarn.Data.NemoProvider.DataContextOptions { ConnectionName = "Yarn.EF2.Connection" }), "Nemo");
+            var repoNemo = new Yarn.Data.NemoProvider.Repository(new Yarn.Data.NemoProvider.RepositoryOptions { UseStoredProcedures = false, Configuration = nemoConfig }, new Yarn.Data.NemoProvider.DataContextOptions { ConnectionName = "Yarn.EF2.Connection" });
 
-            ObjectContainer.Current.Register<IRepository>(() => new Yarn.Data.EntityFrameworkProvider.Repository(new Yarn.Data.EntityFrameworkProvider.DataContextOptions { LazyLoadingEnabled = false, ProxyCreationEnabled = false, NameOrConnectionString = "Yarn.EF2.Connection", ConfigurationAssembly = typeof(Program).Assembly }), "EF");
+            var repodEf =  new Yarn.Data.EntityFrameworkProvider.Repository(new Yarn.Data.EntityFrameworkProvider.DataContextOptions { LazyLoadingEnabled = false, ProxyCreationEnabled = false, NameOrConnectionString = "Yarn.EF2.Connection", ConfigurationAssembly = typeof(Program).Assembly });
 
-            ObjectContainer.Current.Register<IRepository>(() => new Yarn.Data.EntityFrameworkProvider.Repository(new Yarn.Data.EntityFrameworkProvider.DataContextOptions { LazyLoadingEnabled = false, ProxyCreationEnabled = false, DbContextType = typeof(NorthwindEntities) }), "EF2");
+            var repodEf2 = new Yarn.Data.EntityFrameworkProvider.Repository(new Yarn.Data.EntityFrameworkProvider.DataContextOptions { LazyLoadingEnabled = false, ProxyCreationEnabled = false, DbContextType = typeof(NorthwindEntities) });
 
-            ObjectContainer.Current.Register<IRepository>(() => new Yarn.Data.EntityFrameworkCoreProvider.Repository(new Yarn.Data.EntityFrameworkCoreProvider.DataContext(new NorthwindEntitiesCore())), "EFCore");
+            var repoEfCore = new Yarn.Data.EntityFrameworkCoreProvider.Repository(new Yarn.Data.EntityFrameworkCoreProvider.DataContext(new NorthwindEntitiesCore()));
 
-            ObjectContainer.Current.Register<IRepository>(() => new Yarn.Data.InMemoryProvider.Repository(), "InMemory");
+            var repoInMemory = new Yarn.Data.InMemoryProvider.Repository();
 
-            var repo = ObjectContainer.Current.Resolve<IRepository>("Nemo");
+            var repo = repoNemo;
             //var retrieved = repo.GetById<Customer, string>("ALFKI");
             //var inserted = new Order { CustomerID = "ALFKI", ShipName = "Ship 1" };
             //repo.Add(inserted);

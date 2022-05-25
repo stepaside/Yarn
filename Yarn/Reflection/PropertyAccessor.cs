@@ -104,7 +104,7 @@ namespace Yarn.Reflection
                 return null;
             }
 
-            var setter = new DynamicMethod("Set_" + propertyInfo.Name, typeof(void), new[] { typeof(object), typeof(object) }, typeof(ObjectContainer), true);
+            var setter = new DynamicMethod("Set_" + propertyInfo.Name, typeof(void), new[] { typeof(object), typeof(object) }, typeof(CallContext), true);
             var generator = setter.GetILGenerator();
             if (!setMethod.IsStatic)
             {
@@ -141,7 +141,7 @@ namespace Yarn.Reflection
                 return null;
             }
 
-            var getter = new DynamicMethod("Get_" + propertyInfo.Name, typeof(object), new[] { typeof(object) }, typeof(ObjectContainer), true);
+            var getter = new DynamicMethod("Get_" + propertyInfo.Name, typeof(object), new[] { typeof(object) }, typeof(CallContext), true);
             var generator = getter.GetILGenerator();
             if (!getMethod.IsStatic)
             {

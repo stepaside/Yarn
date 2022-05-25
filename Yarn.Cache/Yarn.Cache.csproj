@@ -6,13 +6,13 @@
     <Company>Stepaside, Inc.</Company>
     <Product>Yarn.Cache</Product>
     <Description>Yarn Repository Cache Decorator</Description>
-    <Copyright>Copyright © Max Stepanskiy 2012-2020</Copyright>
+    <Copyright>Copyright © Max Stepanskiy 2012-2022</Copyright>
     <Authors>Max Stepanskiy</Authors>
     <PackageId>Yarn.Cache</PackageId>
     <PackageProjectUrl>https://github.com/stepaside/Yarn</PackageProjectUrl>
     <PackageTags>Cache Repository</PackageTags>
-    <PackageVersion>1.2.0</PackageVersion>
-    <AssemblyVersion>1.2.0</AssemblyVersion>
+    <PackageVersion>1.3.0</PackageVersion>
+    <AssemblyVersion>1.3.0</AssemblyVersion>
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
     <OutputPath>bin\$(Configuration)\</OutputPath>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>

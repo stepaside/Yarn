@@ -7,13 +7,13 @@
     <Company>Stepaside, Inc.</Company>
     <Product>Yarn.EF</Product>
     <Description>Yarn Entity Framework Provider</Description>
-    <Copyright>Copyright © Max Stepanskiy 2012-2020</Copyright>
+    <Copyright>Copyright © Max Stepanskiy 2012-2022</Copyright>
     <Authors>Max Stepanskiy</Authors>
     <PackageProjectUrl>https://github.com/stepaside/Yarn</PackageProjectUrl>
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
     <PackageTags>Entity Framework EntityFramework EF Repository</PackageTags>
-    <PackageVersion>1.2.2</PackageVersion>
-    <AssemblyVersion>1.2.0</AssemblyVersion>
+    <PackageVersion>1.3.0</PackageVersion>
+    <AssemblyVersion>1.3.0</AssemblyVersion>
     <OutputPath>bin\$(Configuration)\</OutputPath>
     <RequireLicenseAcceptance>false</RequireLicenseAcceptance>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
