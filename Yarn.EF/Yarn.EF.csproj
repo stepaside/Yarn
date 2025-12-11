@@ -12,8 +12,8 @@
     <PackageProjectUrl>https://github.com/stepaside/Yarn</PackageProjectUrl>
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
     <PackageTags>Entity Framework EntityFramework EF Repository</PackageTags>
-    <PackageVersion>1.3.0</PackageVersion>
-    <AssemblyVersion>1.3.0</AssemblyVersion>
+    <PackageVersion>1.4.0</PackageVersion>
+    <AssemblyVersion>1.4.0</AssemblyVersion>
     <OutputPath>bin\$(Configuration)\</OutputPath>
     <RequireLicenseAcceptance>false</RequireLicenseAcceptance>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
@@ -26,7 +26,7 @@
   </PropertyGroup>
   <Import Project="$(SolutionDir)\.nuget\NuGet.targets" Condition="Exists('$(SolutionDir)\.nuget\NuGet.targets')" />
   <ItemGroup>
-    <PackageReference Include="EntityFramework" Version="6.4.4" />
+    <PackageReference Include="EntityFramework" Version="6.5.1" />
   </ItemGroup>
   <ItemGroup>
     <Reference Include="System.ComponentModel.DataAnnotations" />

@@ -6,12 +6,12 @@ namespace Yarn.Data.NemoProvider
     {
         public RepositoryOptions() { }
 
-        public RepositoryOptions(IConfiguration configuration)
+        public RepositoryOptions(INemoConfiguration configuration)
         {
             Configuration = configuration;
         }
 
         public bool UseStoredProcedures { get; set; }
-        public IConfiguration Configuration { get; set; }
+        public INemoConfiguration Configuration { get; set; }
     }
 }

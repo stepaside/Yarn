@@ -10,8 +10,8 @@
     <Company>Stepaside, Inc.</Company>
     <PackageProjectUrl>https://github.com/stepaside/Yarn</PackageProjectUrl>
     <PackageId>Yarn.Cassandra</PackageId>
-    <PackageVersion>1.0.0</PackageVersion>
-    <AssemblyVersion>1.0.0</AssemblyVersion>
+    <PackageVersion>1.4.0</PackageVersion>
+    <AssemblyVersion>1.4.0</AssemblyVersion>
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
     <OutputPath>bin\$(Configuration)\</OutputPath>
     <RequireLicenseAcceptance>false</RequireLicenseAcceptance>

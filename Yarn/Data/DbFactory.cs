@@ -1,13 +1,11 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 using System.Data.Common;
-using System.Configuration;
-using System.Reflection;
-using System.IO;
 using Microsoft.Extensions.Configuration;
 using Yarn.Data.Configuration;
+using System.Reflection;
+using System.IO;
 
 namespace Yarn.Data
 {
@@ -22,7 +20,7 @@ namespace Yarn.Data
             }
             else
             {
-                var config = ConfigurationManager.ConnectionStrings[connectionName];
+                var config = System.Configuration.ConfigurationManager.ConnectionStrings[connectionName];
                 return config != null ? config.ProviderName : null;
             }
         }
@@ -37,7 +35,7 @@ namespace Yarn.Data
             }
             else
             {
-                var config = ConfigurationManager.ConnectionStrings[connectionName];
+                var config = System.Configuration.ConfigurationManager.ConnectionStrings[connectionName];
                 connectionString = config != null ? config.ConnectionString : null;
                 return config != null ? config.ProviderName : null;
             }
@@ -76,9 +74,9 @@ namespace Yarn.Data
                 }
                 else
                 {
-                    for (var i = 0; i < ConfigurationManager.ConnectionStrings.Count; i++)
+                    for (var i = 0; i < System.Configuration.ConfigurationManager.ConnectionStrings.Count; i++)
                     {
-                        var config = ConfigurationManager.ConnectionStrings[i];
+                        var config = System.Configuration.ConfigurationManager.ConnectionStrings[i];
                         if (string.Equals(config.ConnectionString, connectionString, StringComparison.OrdinalIgnoreCase))
                         {
                             return config.ProviderName;
@@ -122,9 +120,9 @@ namespace Yarn.Data
                 }
                 else
                 {
-                    for (var i = 0; i < ConfigurationManager.ConnectionStrings.Count; i++)
+                    for (var i = 0; i < System.Configuration.ConfigurationManager.ConnectionStrings.Count; i++)
                     {
-                        var config = ConfigurationManager.ConnectionStrings[i];
+                        var config = System.Configuration.ConfigurationManager.ConnectionStrings[i];
 
                         var otherBuilder = new DbConnectionStringBuilder { ConnectionString = config.ConnectionString };
                         otherBuilder.Remove("pwd");
