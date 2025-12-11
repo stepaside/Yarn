@@ -9,8 +9,8 @@
     <OutputPath>bin\$(Configuration)\</OutputPath>
     <PackageId>Yarn.RavenDb</PackageId>
     <PackageTags>Raven RavenDB Repository</PackageTags>
-    <PackageVersion>1.3.0</PackageVersion>
-    <AssemblyVersion>1.3.0</AssemblyVersion>
+    <PackageVersion>1.4.0</PackageVersion>
+    <AssemblyVersion>1.4.0</AssemblyVersion>
     <Authors>Max Stepanskiy</Authors>
     <Company>Stepaside, Inc.</Company>
     <Copyright>Copyright © Max Stepanskiy 2012-2022</Copyright>

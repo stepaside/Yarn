@@ -7,8 +7,8 @@
     <Company>Stepaside, Inc.</Company>
     <Product>Yarn.InMemory</Product>
     <Description>Yarn In-memory Provider</Description>
-    <PackageVersion>1.3.0</PackageVersion>
-    <AssemblyVersion>1.3.0</AssemblyVersion>
+    <PackageVersion>1.4.0</PackageVersion>
+    <AssemblyVersion>1.4.0</AssemblyVersion>
     <Authors>Max Stepanskiy</Authors>
     <Copyright>Copyright © Max Stepanskiy 2012-2022</Copyright>
     <PackageProjectUrl>https://github.com/stepaside/Yarn</PackageProjectUrl>    
