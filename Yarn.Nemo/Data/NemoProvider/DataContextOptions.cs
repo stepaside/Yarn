@@ -6,13 +6,13 @@ namespace Yarn.Data.NemoProvider
     {
         public DataContextOptions() { }
 
-        public DataContextOptions(IConfiguration configuration)
+        public DataContextOptions(INemoConfiguration configuration)
         {
             Configuration = configuration;
         }
 
         public string ConnectionName { get; set; }
         public string ConnectionString { get; set; }
-        public IConfiguration Configuration { get; set; }
+        public INemoConfiguration Configuration { get; set; }
 }
 }
